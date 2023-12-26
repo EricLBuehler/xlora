@@ -30,8 +30,8 @@ from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from transformers.activations import ACT2FN
-from cache_utils import Cache, DynamicCache
-from modeling_attn_mask_utils import (
+from utils.cache_utils import Cache, DynamicCache
+from utils.modeling_attn_mask_utils import (
     _prepare_4d_causal_attention_mask,
     _prepare_4d_causal_attention_mask_for_sdpa,
 )
@@ -47,9 +47,9 @@ from transformers.utils import (
     logging,
     replace_return_docstrings,
 )
-from configuration_mistral import MistralConfig
+from utils.configuration_mistral import MistralConfig
 
-from import_utils import (
+from utils.import_utils import (
     is_flash_attn_2_available,
     is_flash_attn_greater_or_equal_2_10,
 )
