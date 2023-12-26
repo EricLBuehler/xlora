@@ -10,4 +10,3 @@ val = x[0]
 
 print(val)
 print(val.requires_grad)
-b
