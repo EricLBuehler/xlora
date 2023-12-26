@@ -30,6 +30,7 @@ from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from transformers.activations import ACT2FN
+from mole_classifier import MoleClassifier
 from utils.cache_utils import Cache, DynamicCache
 from utils.modeling_attn_mask_utils import (
     _prepare_4d_causal_attention_mask,
@@ -47,7 +48,7 @@ from transformers.utils import (
     logging,
     replace_return_docstrings,
 )
-from utils.configuration_mistral import MistralConfig
+from src.configuration_mistral import MistralConfig
 
 from utils.import_utils import (
     is_flash_attn_2_available,
@@ -1000,7 +1001,7 @@ MISTRAL_INPUTS_DOCSTRING = r"""
     "The bare Mistral Model outputting raw hidden-states without any specific head on top.",
     MISTRAL_START_DOCSTRING,
 )
-class MistralModel(MistralPreTrainedModel):
+class MoLEMistralModel(MistralPreTrainedModel):
     """
     Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`MistralDecoderLayer`]
 
@@ -1008,7 +1009,7 @@ class MistralModel(MistralPreTrainedModel):
         config: MistralConfig
     """
 
-    def __init__(self, config: MistralConfig):
+    def __init__(self, config: MistralConfig, n_mole_classes: int):
         super().__init__(config)
         self.padding_idx = config.pad_token_id
         self.vocab_size = config.vocab_size
@@ -1028,6 +1029,9 @@ class MistralModel(MistralPreTrainedModel):
         self.gradient_checkpointing = False
         # Initialize weights and apply final processing
         self.post_init()
+
+        # Setup the MoLE classifier
+        self.mole_classifier = MoleClassifier(n_mole_classes)
 
     def get_input_embeddings(self):
         return self.embed_tokens
@@ -1149,6 +1153,9 @@ class MistralModel(MistralPreTrainedModel):
 
         hidden_states = inputs_embeds
 
+        mole_output = self.mole_classifier(hidden_states)
+        mole_probs = list(mole_output)
+
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
@@ -1219,7 +1226,7 @@ class MistralForCausalLM(MistralPreTrainedModel):
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = MistralModel(config)
+        self.model = MoLEMistralModel(config)
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
@@ -1441,7 +1448,7 @@ class MistralForSequenceClassification(MistralPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
-        self.model = MistralModel(config)
+        self.model = MoLEMistralModel(config)
         self.score = nn.Linear(config.hidden_size, self.num_labels, bias=False)
 
         # Initialize weights and apply final processing

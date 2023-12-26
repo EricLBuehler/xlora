@@ -14,7 +14,7 @@
 # limitations under the License.
 """ Mistral model configuration"""
 
-from configuration_utils import PretrainedConfig
+from utils.configuration_utils import PretrainedConfig
 from utils import logging
 
 
