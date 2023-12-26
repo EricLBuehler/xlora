@@ -27,7 +27,7 @@ from packaging import version
 
 from . import __version__
 from dynamic_module_utils import custom_object_save
-from .utils import (
+from . import (
     CONFIG_NAME,
     PushToHubMixin,
     add_model_info_to_auto_map,

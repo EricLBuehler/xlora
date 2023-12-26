@@ -27,7 +27,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from huggingface_hub import try_to_load_from_cache
 
-from .utils import (
+from . import (
     HF_MODULES_CACHE,
     TRANSFORMERS_DYNAMIC_MODULE_NAME,
     cached_file,
