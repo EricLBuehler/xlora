@@ -2,14 +2,11 @@ from typing import Optional
 
 from torch import Tensor
 
-from utils.mole_utils import is_scalar_tensor
-
 
 _scalings: Optional[Tensor] = None
 
 
-@property
-def scalings() -> Tensor:
+def get_scalings() -> Tensor:
     """
     Reads the scaling states (a tensor with 1 dim), raising AssertionError if the state has not been set.
     """
@@ -17,8 +14,7 @@ def scalings() -> Tensor:
     return _scalings
 
 
-@scalings.setter
-def scalings(value: Tensor) -> None:
+def set_scalings(value: Tensor) -> None:
     """
     Sets the scaling states to a Tensor. A tensor with 1 dim is expected.
     """
