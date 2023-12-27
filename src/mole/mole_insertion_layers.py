@@ -2,6 +2,8 @@ from typing import Any
 from peft.tuners import lora
 from torch import Tensor
 
+from utils.mole_utils import is_scalar_tensor
+
 
 class MoLELinear(lora.Linear):
     def __init__(self, other: lora.Linear) -> None:
@@ -10,6 +12,8 @@ class MoLELinear(lora.Linear):
                 setattr(self, attr, getattr(other, attr))
 
     def forward(self, x: Tensor, scaling: Tensor, *args: Any, **kwargs: Any) -> Tensor:
+        assert is_scalar_tensor(scaling)
+
         previous_dtype = x.dtype
 
         if self.disable_adapters:
