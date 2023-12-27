@@ -1155,8 +1155,8 @@ class MoLEMistralModel(MistralPreTrainedModel):
         hidden_states = inputs_embeds
 
         mole_output = self.mole_classifier(hidden_states)
-        mole_probs = list(mole_output)
-        scaling = mole_probs
+        mole_scalings = list(mole_output)
+        scalings = mole_scalings
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None

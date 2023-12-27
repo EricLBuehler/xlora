@@ -5,22 +5,22 @@ from torch import Tensor
 from utils.mole_utils import is_scalar_tensor
 
 
-_scaling: Optional[Tensor] = None
+_scalings: Optional[Tensor] = None
 
 
 @property
-def scaling() -> Tensor:
+def scalings() -> Tensor:
     """
-    Reads the scaling state (a tensor with 1 dim), raising AssertionError if the state has not been set.
+    Reads the scaling states (a tensor with 1 dim), raising AssertionError if the state has not been set.
     """
-    assert _scaling is not None
-    return _scaling
+    assert _scalings is not None
+    return _scalings
 
 
-@scaling.setter
-def scaling(value: Tensor) -> None:
+@scalings.setter
+def scalings(value: Tensor) -> None:
     """
-    Sets the scaling state to a Tensor. A tensor with 1 dim is expected.
+    Sets the scaling states to a Tensor. A tensor with 1 dim is expected.
     """
     assert value.ndim == 1
     _scaling = value
