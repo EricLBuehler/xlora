@@ -30,7 +30,7 @@ from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from transformers.activations import ACT2FN
-from mole.mole_state import scaling
+from mole import mole_state
 from mole_classifier import MoleClassifier
 from utils.cache_utils import Cache, DynamicCache
 from utils.modeling_attn_mask_utils import (
@@ -1156,7 +1156,7 @@ class MoLEMistralModel(MistralPreTrainedModel):
 
         mole_output = self.mole_classifier(hidden_states)
         mole_scalings = list(mole_output)
-        scalings = mole_scalings
+        mole_state.set_scalings(mole_scalings)
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
