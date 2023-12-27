@@ -2,6 +2,7 @@ from typing import Any
 from peft.tuners import lora
 from torch import Tensor
 
+
 class MoLELinear(lora.Linear):
     def __init__(self, other: lora.Linear) -> None:
         for attr in dir(other):
