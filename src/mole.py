@@ -1,7 +1,8 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 import torch.nn as nn
 
 from peft.tuners import lora
+from peft.tuners.tuners_utils import PeftConfig
 
 from mole.mole_insertion_layers import MoLELayer
 
@@ -9,6 +10,7 @@ from mole.mole_insertion_layers import MoLELayer
 def convert_layers_to_mole(
     base: nn.Module,
     adapters: List[str],
+    peft_config: Dict[str, PeftConfig],
     combination_type: str = "svd",
     svd_rank: Optional[bool] = None,
     svd_clamp: Optional[float] = None,
@@ -21,6 +23,7 @@ def convert_layers_to_mole(
             new_layer = MoLELayer(
                 adapters=adapters,
                 target=module,
+                peft_config=peft_config,
                 combination_type=combination_type,
                 svd_rank=svd_rank,
                 svd_clamp=svd_clamp,
