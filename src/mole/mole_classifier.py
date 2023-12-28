@@ -11,7 +11,7 @@ logger = logging.get_logger(__name__)
 
 class MoleClassifier(MistralPreTrainedModel):
     """
-    A classifier to select LoRA layers for MoLE. It is a Mistral model with a single decoder layer.
+    A classifier to select LoRA layers for MoLE. It uses a single Mistral decoder layer to generate the LoRA alpha values.
     """
 
     def __init__(self, config: MistralConfig, n_classes: int):
