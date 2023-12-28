@@ -108,6 +108,4 @@ class MoleClassifier(MistralPreTrainedModel):
             torch.arange(batch_size, device=logits.device), sequence_lengths
         ]
 
-        # NOTE(EricLBuehler): This reduces the shape from (batch_size, n_classes) to (n_classes,).
-        # We should study the effects of this step!
-        return pooled_logits.mean(dim=-1)
+        return pooled_logits
