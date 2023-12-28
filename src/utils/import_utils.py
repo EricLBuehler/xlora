@@ -862,7 +862,7 @@ def is_training_run_on_sagemaker():
     return "SAGEMAKER_JOB_NAME" in os.environ
 
 
-def is_soundfile_availble():
+def is_soundfile_available():
     return _soundfile_available
 
 
@@ -1214,14 +1214,14 @@ Please note that you may need to restart your runtime after installation.
 
 # docstyle-ignore
 LIBROSA_IMPORT_ERROR = """
-{0} requires thes librosa library. But that was not found in your environment. You can install them with pip:
+{0} requires the librosa library. But that was not found in your environment. You can install them with pip:
 `pip install librosa`
 Please note that you may need to restart your runtime after installation.
 """
 
 # docstyle-ignore
 PRETTY_MIDI_IMPORT_ERROR = """
-{0} requires thes pretty_midi library. But that was not found in your environment. You can install them with pip:
+{0} requires the pretty_midi library. But that was not found in your environment. You can install them with pip:
 `pip install pretty_midi`
 Please note that you may need to restart your runtime after installation.
 """

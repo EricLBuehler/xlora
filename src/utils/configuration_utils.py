@@ -339,7 +339,7 @@ class PretrainedConfig(PushToHubMixin):
             if num_labels is not None and len(self.id2label) != num_labels:
                 logger.warning(
                     f"You passed along `num_labels={num_labels}` with an incompatible id to label map: "
-                    f"{self.id2label}. The number of labels wil be overwritten to {self.num_labels}."
+                    f"{self.id2label}. The number of labels will be overwritten to {self.num_labels}."
                 )
             self.id2label = {int(key): value for key, value in self.id2label.items()}
             # Keys are always strings in JSON so convert ids to int here.
