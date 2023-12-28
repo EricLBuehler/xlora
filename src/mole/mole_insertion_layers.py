@@ -59,8 +59,6 @@ class MoLEBaseLayer:
                 documentation. Defaults to None.
         """
 
-        if adapter_name in list(peft_config.keys()):
-            return
         for adapter in adapters:
             if adapter not in list(peft_config.keys()):
                 raise ValueError(f"Adapter {adapter} does not exist")
@@ -226,6 +224,7 @@ class MoLELayer(MoLEBaseLayer):
         self,
         adapters: List[str],
         target: lora.LoraLayer,
+        peft_config: Dict[str, PeftConfig],
         combination_type: str = "svd",
         svd_rank: Optional[bool] = None,
         svd_clamp: Optional[float] = None,
@@ -236,6 +235,7 @@ class MoLELayer(MoLEBaseLayer):
 
         self.adapters = adapters
         self.target = target
+        self.peft_config = peft_config
 
         self.combination_type = combination_type
         self.svd_rank = svd_rank
@@ -256,7 +256,7 @@ class MoLELayer(MoLEBaseLayer):
                 adapters=self.adapters,
                 weights=list(batch_scalings),
                 adapter_name=MOLE_ADAPTER_NAME,
-                peft_config=self.target.peft_config,  # TODO(EricLBuehler)
+                peft_config=self.peft_config,
                 combination_type=self.combination_type,
                 svd_rank=self.svd_rank,
                 svd_clamp=self.svd_clamp,
