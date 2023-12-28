@@ -104,8 +104,10 @@ class MoleClassifier(MistralPreTrainedModel):
                 sequence_lengths = -1
 
         # Get it for the last token
-        pooled_logits = logits[
+        pooled_logits: torch.Tensor = logits[
             torch.arange(batch_size, device=logits.device), sequence_lengths
         ]
 
-        return pooled_logits
+        # NOTE(EricLBuehler): This reduces the shape from (batch_size, n_classes) to (n_classes,).
+        # We should study the effects of this step!
+        return pooled_logits.mean(dim=-1)
