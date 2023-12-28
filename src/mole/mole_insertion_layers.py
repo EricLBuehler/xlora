@@ -248,18 +248,24 @@ class MoLELayer(MoLEBaseLayer):
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         scalings = mole_state.get_scalings()
-        self.add_weighted_adapter(
-            target=self.target,
-            adapters=self.adapters,
-            weights=list(scalings),
-            adapter_name=MOLE_ADAPTER_NAME,
-            peft_config=self.target.peft_config,  # TODO(EricLBuehler)
-            combination_type=self.combination_type,
-            svd_rank=self.svd_rank,
-            svd_clamp=self.svd_clamp,
-            svd_full_matrices=self.svd_full_matrices,
-            svd_driver=self.svd_driver,
-        )
-        self.target.set_adapter(MOLE_ADAPTER_NAME)
+        outputs = []
+        for batch_scalings in scalings:
+            self.add_weighted_adapter(
+                target=self.target,
+                adapters=self.adapters,
+                weights=list(batch_scalings),
+                adapter_name=MOLE_ADAPTER_NAME,
+                peft_config=self.target.peft_config,  # TODO(EricLBuehler)
+                combination_type=self.combination_type,
+                svd_rank=self.svd_rank,
+                svd_clamp=self.svd_clamp,
+                svd_full_matrices=self.svd_full_matrices,
+                svd_driver=self.svd_driver,
+            )
+            self.target.set_adapter(MOLE_ADAPTER_NAME)
 
-        return self.target.forward(x, *args, **kwargs)
+            output = self.target.forward(x, *args, **kwargs)
+            output = output.unsqueeze(0)
+            outputs.append(output)
+
+        return torch.cat(tensors=outputs, dim=0)
