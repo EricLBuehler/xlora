@@ -1,20 +1,10 @@
 import logging
-from typing import Optional, List, Tuple, Union
+from typing import Optional, List
 import torch.nn as nn
 import torch
 from configuration_mistral import MistralConfig
 
 from mistral import MistralDecoderLayer, MistralPreTrainedModel, MistralRMSNorm
-
-from transformers.modeling_outputs import (
-    BaseModelOutputWithPast,
-)
-from utils.modeling_attn_mask_utils import (
-    _prepare_4d_causal_attention_mask,
-    _prepare_4d_causal_attention_mask_for_sdpa,
-)
-
-from utils.cache_utils import Cache, DynamicCache
 
 logger = logging.get_logger(__name__)
 
@@ -60,7 +50,6 @@ class MoleClassifier(MistralPreTrainedModel):
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
-        next_decoder_cache = None
 
         for decoder_layer in self.layers:
             if output_hidden_states:
@@ -87,9 +76,6 @@ class MoleClassifier(MistralPreTrainedModel):
                 )
 
             hidden_states = layer_outputs[0]
-
-            if use_cache:
-                next_decoder_cache = layer_outputs[2 if output_attentions else 1]
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
