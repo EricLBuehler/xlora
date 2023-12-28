@@ -13,6 +13,10 @@ MOLE_ADAPTER_NAME = "mole_adapter"
 
 
 class MoLEBaseLayer:
+    """
+    This is a utility class which manages merging LoRA adapters using specified weights.
+    """
+
     @classmethod
     def add_weighted_adapter(
         cls,
@@ -27,38 +31,6 @@ class MoLEBaseLayer:
         svd_full_matrices: Optional[bool] = True,
         svd_driver: Optional[str] = None,
     ) -> None:
-        """
-        This method adds a new adapter by merging the given adapters with the given weights.
-
-        When using the `cat` combination_type you should be aware that rank of the resulting adapter will be equal to
-        the sum of all adapters ranks. So it's possible that the mixed adapter may become too big and result in OOM
-        errors.
-
-        Args:
-            adapters (`list`):
-                List of adapter names to be merged.
-            weights (`list`):
-                List of weights for each adapter.
-            adapter_name (`str`):
-                Name of the new adapter.
-            combination_type (`str`):
-                Type of merging. Can be one of [`svd`, `linear`, `cat`]. When using the `cat` combination_type you
-                should be aware that rank of the resulting adapter will be equal to the sum of all adapters ranks. So
-                it's possible that the mixed adapter may become too big and result in OOM errors.
-            svd_rank (`int`, *optional*):
-                Rank of output adapter for svd. If None provided, will use max rank of merging adapters.
-            svd_clamp (`float`, *optional*):
-                A quantile threshold for clamping SVD decomposition output. If None is provided, do not perform
-                clamping. Defaults to None.
-            svd_full_matrices (`bool`, *optional*):
-                Controls whether to compute the full or reduced SVD, and consequently, the shape of the returned
-                tensors U and Vh. Defaults to True.
-            svd_driver (`str`, *optional*):
-                Name of the cuSOLVER method to be used. This keyword argument only works when merging on CUDA. Can be
-                one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
-                documentation. Defaults to None.
-        """
-
         for adapter in adapters:
             if adapter not in list(peft_config.keys()):
                 raise ValueError(f"Adapter {adapter} does not exist")
@@ -220,6 +192,12 @@ class MoLEBaseLayer:
 
 
 class MoLELayer(MoLEBaseLayer):
+    """
+    A MoLELayer wraps any LoraLayer and performs the MoLE operation on the LoRA adaptors specified.
+    Its primary API is the forward method, which uses the scalings from mole_state to execute the
+    MoLE algorithm. To avoid a RuntimeException, set the scaling state.
+    """
+
     def __init__(
         self,
         adapters: List[str],
@@ -231,6 +209,38 @@ class MoLELayer(MoLEBaseLayer):
         svd_full_matrices: Optional[bool] = True,
         svd_driver: Optional[str] = None,
     ) -> None:
+        """
+        This method adds a new adapter by merging the given adapters with the given weights.
+
+        When using the `cat` combination_type you should be aware that rank of the resulting adapter will be equal to
+        the sum of all adapters ranks. So it's possible that the mixed adapter may become too big and result in OOM
+        errors.
+
+        Args:
+            adapters (`list`):
+                List of adapter names to be merged.
+            target (`list`):
+                The LoraLayer which will be targeted for MoLE.
+            peft_config: (`dict`):
+                PeftConfigs for each adapter in the LoraLayer.
+            combination_type (`str`):
+                Type of merging. Can be one of [`svd`, `linear`, `cat`]. When using the `cat` combination_type you
+                should be aware that rank of the resulting adapter will be equal to the sum of all adapters ranks. So
+                it's possible that the mixed adapter may become too big and result in OOM errors.
+            svd_rank (`int`, *optional*):
+                Rank of output adapter for svd. If None provided, will use max rank of merging adapters.
+            svd_clamp (`float`, *optional*):
+                A quantile threshold for clamping SVD decomposition output. If None is provided, do not perform
+                clamping. Defaults to None.
+            svd_full_matrices (`bool`, *optional*):
+                Controls whether to compute the full or reduced SVD, and consequently, the shape of the returned
+                tensors U and Vh. Defaults to True.
+            svd_driver (`str`, *optional*):
+                Name of the cuSOLVER method to be used. This keyword argument only works when merging on CUDA. Can be
+                one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
+                documentation. Defaults to None.
+        """
+
         self.freeze_adapter(target)
 
         self.adapters = adapters
@@ -248,6 +258,10 @@ class MoLELayer(MoLEBaseLayer):
         assert is_bound
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
+        """
+        This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
+        To use it, a bound method must be created (bound to an instance of the MoLELayer class).
+        """
         scalings = mole_state.get_scalings()
         outputs = []
         for batch_scalings in scalings:
