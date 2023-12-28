@@ -8,7 +8,7 @@ _scalings: Optional[Tensor] = None
 
 def get_scalings() -> Tensor:
     """
-    Reads the scaling states (a tensor with 1 dim), raising AssertionError if the state has not been set.
+    Reads the scaling states (a tensor with 2 dims), raising AssertionError if the state has not been set.
     """
     assert _scalings is not None
     return _scalings
@@ -16,7 +16,7 @@ def get_scalings() -> Tensor:
 
 def set_scalings(value: Tensor) -> None:
     """
-    Sets the scaling states to a Tensor. A tensor with 1 dim is expected.
+    Sets the scaling states to a Tensor. A tensor with 2 dim is expected: batch size and num classes
     """
-    assert value.ndim == 1
+    assert value.ndim == 2
     _scaling = value
