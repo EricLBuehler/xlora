@@ -244,7 +244,8 @@ class MoLELayer(MoLEBaseLayer):
         self.svd_driver = svd_driver
 
         assert hasattr(target, "forward")
-        assert hasattr(target.forward, "__self__")
+        is_bound = hasattr(target.forward, "__self__")
+        assert is_bound
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         scalings = mole_state.get_scalings()
