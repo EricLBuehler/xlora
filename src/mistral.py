@@ -31,7 +31,7 @@ from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from transformers.activations import ACT2FN
 from mole import mole_state
-from mole_classifier import MoleClassifier
+from mole.mole_classifier import MoleClassifier
 from utils.cache_utils import Cache, DynamicCache
 from utils.modeling_attn_mask_utils import (
     _prepare_4d_causal_attention_mask,

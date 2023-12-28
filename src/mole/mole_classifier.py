@@ -45,8 +45,10 @@ class MoleClassifier(MistralPreTrainedModel):
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
-        return_dict: Optional[bool] = None,
     ) -> torch.Tensor:
+        """
+        Using the primary input, hidden states, predict `self.n_classes` LoRA alpha values.
+        """
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
