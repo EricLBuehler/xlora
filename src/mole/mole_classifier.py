@@ -37,8 +37,8 @@ class MoleClassifier(MistralPreTrainedModel):
     def forward(
         self,
         batch_size: int,
-        input_ids: torch.LongTensor = None,
-        hidden_states: torch.Tensor = None,
+        input_ids: Optional[torch.LongTensor] = None,
+        hidden_states: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,

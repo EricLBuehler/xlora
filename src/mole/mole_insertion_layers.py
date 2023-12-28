@@ -1,19 +1,233 @@
-from ast import List
-from typing import Any
+import math
+from typing import Any, Dict, List, Optional, Union
+import peft
 from peft.tuners import lora
+from peft.tuners.tuners_utils import PeftConfig
 from torch import Tensor
+import torch
+import torch.nn as nn
 
 from mole import mole_state
 
 
-class MoLELinear:
-    def __init__(self, adapters: List[lora.Linear]) -> None:
-        # TODO(EricLBuehler): Freeze the LoRA adapters
+class MoLEAdapterWrapper:
+    def __init__(self, adapters: List[lora.LoraLayer]) -> None:
         for adapter in adapters:
-            pass
+            self.freeze_adapter(adapter)
+
         self.adapters = adapters
 
-    def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
+    @staticmethod
+    def freeze_adapter(adapter: lora.LoraLayer):
+        for name in lora.LoraLayer.adapter_layer_names:
+            if hasattr(adapter, name):
+                adapter_layer = getattr(adapter, name)
+                assert isinstance(adapter_layer, nn.ModuleDict)
+                for _, value in adapter_layer.items():
+                    value.requires_grad_(False)
+
+    def forward(self, x: Tensor, *args: Any, **kwargs: Any):
         # TODO(EricLBuehler): Combine the LoRA adapters using the scaling
         _scaling = mole_state.get_scalings()
         pass
+
+    @staticmethod
+    def add_weighted_adapter(
+        target: lora.LoraLayer,
+        adapters: List[str],
+        weights: List[float],
+        adapter_name: str,
+        peft_config: Dict[str, PeftConfig],
+        combination_type: str = "svd",
+        svd_rank: Optional[bool] = None,
+        svd_clamp: Optional[float] = None,
+        svd_full_matrices: Optional[bool] = True,
+        svd_driver: Optional[str] = None,
+    ) -> None:
+        """
+        This method adds a new adapter by merging the given adapters with the given weights.
+
+        When using the `cat` combination_type you should be aware that rank of the resulting adapter will be equal to
+        the sum of all adapters ranks. So it's possible that the mixed adapter may become too big and result in OOM
+        errors.
+
+        Args:
+            adapters (`list`):
+                List of adapter names to be merged.
+            weights (`list`):
+                List of weights for each adapter.
+            adapter_name (`str`):
+                Name of the new adapter.
+            combination_type (`str`):
+                Type of merging. Can be one of [`svd`, `linear`, `cat`]. When using the `cat` combination_type you
+                should be aware that rank of the resulting adapter will be equal to the sum of all adapters ranks. So
+                it's possible that the mixed adapter may become too big and result in OOM errors.
+            svd_rank (`int`, *optional*):
+                Rank of output adapter for svd. If None provided, will use max rank of merging adapters.
+            svd_clamp (`float`, *optional*):
+                A quantile threshold for clamping SVD decomposition output. If None is provided, do not perform
+                clamping. Defaults to None.
+            svd_full_matrices (`bool`, *optional*):
+                Controls whether to compute the full or reduced SVD, and consequently, the shape of the returned
+                tensors U and Vh. Defaults to True.
+            svd_driver (`str`, *optional*):
+                Name of the cuSOLVER method to be used. This keyword argument only works when merging on CUDA. Can be
+                one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
+                documentation. Defaults to None.
+        """
+
+        if adapter_name in list(peft_config.keys()):
+            return
+        for adapter in adapters:
+            if adapter not in list(peft_config.keys()):
+                raise ValueError(f"Adapter {adapter} does not exist")
+
+        # if there is only one adapter, we can only use linear merging
+        combination_type = "linear" if len(adapters) == 1 else combination_type
+
+        adapters_ranks = [peft_config[adapter].r for adapter in adapters]
+        if combination_type == "linear":
+            # all adapters ranks should be same, new rank is just this value
+            if len(set(adapters_ranks)) != 1:
+                raise ValueError(
+                    "All adapters must have the same r value when using `linear` combination_type"
+                )
+            new_rank = adapters_ranks[0]
+        elif combination_type == "cat":
+            # adapters ranks may be different, new rank is sum of all ranks
+            # be careful, because output adapter rank may be really big if mixing a lot of adapters
+            new_rank = sum(adapters_ranks)
+        elif combination_type == "svd":
+            # new rank is the max of all ranks of the adapters if not provided
+            new_rank = svd_rank or max(adapters_ranks)
+        else:
+            raise ValueError(f"Invalid combination_type: {combination_type}")
+
+        # Do we really need that?
+        MoLEAdapterWrapper.freeze_adapter(
+            adapter_name
+        )  # TODO(EricLBuehler): THIS DOES NOT WORK. FIX ME
+
+        if adapter_name in target.lora_A:
+            target_lora_A = target.lora_A[adapter_name].weight
+            target_lora_B = target.lora_B[adapter_name].weight
+        elif adapter_name in target.lora_embedding_A:
+            target_lora_A = target.lora_embedding_A[adapter_name]
+            target_lora_B = target.lora_embedding_B[adapter_name]
+        else:
+            return
+
+        target_lora_A.data = target_lora_A.data * 0.0
+        target_lora_B.data = target_lora_B.data * 0.0
+        if combination_type == "linear":
+            for adapter, weight in zip(adapters, weights):
+                if adapter in target.lora_A:
+                    current_adapter_lora_A = target.lora_A[adapter].weight
+                    current_adapter_lora_B = target.lora_B[adapter].weight
+                elif adapter in target.lora_embedding_A:
+                    current_adapter_lora_A = target.lora_embedding_A[adapter]
+                    current_adapter_lora_B = target.lora_embedding_B[adapter]
+                else:
+                    continue
+                target_lora_A.data += (
+                    current_adapter_lora_A.data
+                    * math.sqrt(weight)
+                    * target.scaling[adapter]
+                )
+                target_lora_B.data += current_adapter_lora_B.data * math.sqrt(weight)
+        elif combination_type == "cat":
+            loras_A, loras_B = [], []
+            for adapter, weight in zip(adapters, weights):
+                if adapter in target.lora_A:
+                    current_adapter_lora_A = target.lora_A[adapter].weight
+                    current_adapter_lora_B = target.lora_B[adapter].weight
+                elif adapter in target.lora_embedding_A:
+                    current_adapter_lora_A = target.lora_embedding_A[adapter]
+                    current_adapter_lora_B = target.lora_embedding_B[adapter]
+                else:
+                    continue
+                loras_A.append(
+                    current_adapter_lora_A.data * weight * target.scaling[adapter]
+                )
+                loras_B.append(current_adapter_lora_B.data)
+
+            if len(loras_A) == 0:
+                raise ValueError(
+                    "No matching LoRAs found. Please raise an issue on Github."
+                )
+            loras_A = torch.cat(loras_A, dim=0)
+            loras_B = torch.cat(loras_B, dim=1)
+            target_lora_A.data[: loras_A.shape[0], :] = loras_A
+            target_lora_B.data[:, : loras_B.shape[1]] = loras_B
+        elif combination_type == "svd":
+            (
+                target_lora_A.data,
+                target_lora_B.data,
+            ) = MoLEAdapterWrapper._svd_weighted_adapter(
+                adapters,
+                weights,
+                new_rank,
+                target,
+                target_lora_A,
+                target_lora_B,
+                svd_clamp,
+                full_matrices=svd_full_matrices,
+                driver=svd_driver,
+            )
+
+    @staticmethod
+    def _svd_weighted_adapter(
+        adapters: List[str],
+        weights: List[float],
+        new_rank: int,
+        target: lora.LoraLayer,
+        target_lora_A: Union[Tensor, nn.Module],
+        target_lora_B: Union[Tensor, nn.Module],
+        clamp: Optional[float] = None,
+        full_matrices: Optional[bool] = True,
+        driver: Optional[str] = None,
+    ):
+        valid_adapters = []
+        valid_weights = []
+        for adapter, weight in zip(adapters, weights):
+            if adapter in target.lora_A or adapter in target.lora_embedding_A:
+                valid_adapters.append(adapter)
+                valid_weights.append(weight)
+
+        # if no valid adapter, nothing to do
+        if len(valid_adapters) == 0:
+            raise ValueError(
+                "No matching LoRAs found. Please raise an issue on Github."
+            )
+
+        delta_weight = valid_weights[0] * target.get_delta_weight(valid_adapters[0])
+        for adapter, weight in zip(valid_adapters[1:], valid_weights[1:]):
+            delta_weight += weight * target.get_delta_weight(adapter)
+        conv2d = isinstance(target, peft.tuners.lora.layer.Conv2d)
+        if conv2d:
+            conv2d_1x1 = target.weight.size()[2:4] == (1, 1)
+            if not conv2d_1x1:
+                delta_weight = delta_weight.flatten(start_dim=1)
+            else:
+                delta_weight = delta_weight.squeeze()
+        if hasattr(target, "fan_in_fan_out") and target.fan_in_fan_out:
+            delta_weight = delta_weight.T
+
+        # based on https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py#L114-L131
+        U, S, Vh = torch.linalg.svd(
+            delta_weight, full_matrices=full_matrices, driver=driver
+        )
+        U = U[:, :new_rank]
+        S = S[:new_rank]
+        U = U @ torch.diag(S)
+        Vh = Vh[:new_rank, :]
+        if clamp is not None:
+            dist = torch.cat([U.flatten(), Vh.flatten()])
+            hi_val = torch.quantile(dist, clamp)
+            low_val = -hi_val
+            U = U.clamp(low_val, hi_val)
+            Vh = Vh.clamp(low_val, hi_val)
+        if conv2d:
+            U = U.reshape(target_lora_B.data.shape)
+            Vh = Vh.reshape(target_lora_A.data.shape)
+        return Vh, U
