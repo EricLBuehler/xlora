@@ -9,58 +9,13 @@ import torch.nn as nn
 
 from mole import mole_state
 
+MOLE_ADAPTER_NAME = "mole_adapter"
 
-class MoLEAdapterWrapper:
-    def __init__(
-        self,
-        adapters: List[str],
-        target: lora.LoraLayer,
-        combination_type: str = "svd",
-        svd_rank: Optional[bool] = None,
-        svd_clamp: Optional[float] = None,
-        svd_full_matrices: Optional[bool] = True,
-        svd_driver: Optional[str] = None,
-    ) -> None:
-        self.freeze_adapter(target)
 
-        self.adapters = adapters
-        self.target = target
-
-        self.combination_type = combination_type
-        self.svd_rank = svd_rank
-        self.svd_clamp = svd_clamp
-        self.svd_full_matrices = svd_full_matrices
-        self.svd_driver = svd_driver
-
-    @staticmethod
-    def freeze_adapter(target: lora.LoraLayer):
-        for name in lora.LoraLayer.adapter_layer_names:
-            if hasattr(target, name):
-                adapter_layer = getattr(target, name)
-                assert isinstance(adapter_layer, nn.ModuleDict)
-                for _, value in adapter_layer.items():
-                    value.requires_grad_(False)
-
-    def forward(self, x: Tensor, *args: Any, **kwargs: Any):
-        # TODO(EricLBuehler): Combine the LoRA adapters using the scaling
-        scalings = mole_state.get_scalings()
-        MoLEAdapterWrapper.add_weighted_adapter(
-            target=self.target,
-            adapters=self.adapters,
-            weights=list(scalings),
-            adapter_name="mole_adapter",
-            peft_config=self.target.peft_config,
-            combination_type=self.combination_type,
-            svd_rank=self.svd_rank,
-            svd_clamp=self.svd_clamp,
-            svd_full_matrices=self.svd_full_matrices,
-            svd_driver=self.svd_driver,
-        )
-        self.target.set_adapter("mole_adapter")
-        pass
-
-    @staticmethod
+class MoLEBaseLayer:
+    @classmethod
     def add_weighted_adapter(
+        cls,
         target: lora.LoraLayer,
         adapters: List[str],
         weights: List[float],
@@ -186,7 +141,7 @@ class MoLEAdapterWrapper:
             (
                 target_lora_A.data,
                 target_lora_B.data,
-            ) = MoLEAdapterWrapper._svd_weighted_adapter(
+            ) = cls.svd_weighted_adapter(
                 adapters,
                 weights,
                 new_rank,
@@ -198,8 +153,9 @@ class MoLEAdapterWrapper:
                 driver=svd_driver,
             )
 
-    @staticmethod
-    def _svd_weighted_adapter(
+    @classmethod
+    def svd_weighted_adapter(
+        cls,
         adapters: List[str],
         weights: List[float],
         new_rank: int,
@@ -254,3 +210,56 @@ class MoLEAdapterWrapper:
             U = U.reshape(target_lora_B.data.shape)
             Vh = Vh.reshape(target_lora_A.data.shape)
         return Vh, U
+
+    @classmethod
+    def freeze_adapter(cls, target: lora.LoraLayer):
+        for name in lora.LoraLayer.adapter_layer_names:
+            if hasattr(target, name):
+                adapter_layer = getattr(target, name)
+                assert isinstance(adapter_layer, nn.ModuleDict)
+                for _, value in adapter_layer.items():
+                    value.requires_grad_(False)
+
+
+class MoLELayer(MoLEBaseLayer):
+    def __init__(
+        self,
+        adapters: List[str],
+        target: lora.LoraLayer,
+        combination_type: str = "svd",
+        svd_rank: Optional[bool] = None,
+        svd_clamp: Optional[float] = None,
+        svd_full_matrices: Optional[bool] = True,
+        svd_driver: Optional[str] = None,
+    ) -> None:
+        self.freeze_adapter(target)
+
+        self.adapters = adapters
+        self.target = target
+
+        self.combination_type = combination_type
+        self.svd_rank = svd_rank
+        self.svd_clamp = svd_clamp
+        self.svd_full_matrices = svd_full_matrices
+        self.svd_driver = svd_driver
+
+        assert hasattr(target, "forward")
+        assert hasattr(target.forward, "__self__")
+
+    def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
+        scalings = mole_state.get_scalings()
+        self.add_weighted_adapter(
+            target=self.target,
+            adapters=self.adapters,
+            weights=list(scalings),
+            adapter_name=MOLE_ADAPTER_NAME,
+            peft_config=self.target.peft_config,  # TODO(EricLBuehler)
+            combination_type=self.combination_type,
+            svd_rank=self.svd_rank,
+            svd_clamp=self.svd_clamp,
+            svd_full_matrices=self.svd_full_matrices,
+            svd_driver=self.svd_driver,
+        )
+        self.target.set_adapter(MOLE_ADAPTER_NAME)
+
+        return self.target.forward(x, *args, **kwargs)
