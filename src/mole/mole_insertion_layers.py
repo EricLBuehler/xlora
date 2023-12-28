@@ -11,24 +11,52 @@ from mole import mole_state
 
 
 class MoLEAdapterWrapper:
-    def __init__(self, adapters: List[lora.LoraLayer]) -> None:
-        for adapter in adapters:
-            self.freeze_adapter(adapter)
+    def __init__(
+        self,
+        adapters: List[str],
+        target: lora.LoraLayer,
+        combination_type: str = "svd",
+        svd_rank: Optional[bool] = None,
+        svd_clamp: Optional[float] = None,
+        svd_full_matrices: Optional[bool] = True,
+        svd_driver: Optional[str] = None,
+    ) -> None:
+        self.freeze_adapter(target)
 
         self.adapters = adapters
+        self.target = target
+
+        self.combination_type = combination_type
+        self.svd_rank = svd_rank
+        self.svd_clamp = svd_clamp
+        self.svd_full_matrices = svd_full_matrices
+        self.svd_driver = svd_driver
 
     @staticmethod
-    def freeze_adapter(adapter: lora.LoraLayer):
+    def freeze_adapter(target: lora.LoraLayer):
         for name in lora.LoraLayer.adapter_layer_names:
-            if hasattr(adapter, name):
-                adapter_layer = getattr(adapter, name)
+            if hasattr(target, name):
+                adapter_layer = getattr(target, name)
                 assert isinstance(adapter_layer, nn.ModuleDict)
                 for _, value in adapter_layer.items():
                     value.requires_grad_(False)
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any):
         # TODO(EricLBuehler): Combine the LoRA adapters using the scaling
-        _scaling = mole_state.get_scalings()
+        scalings = mole_state.get_scalings()
+        MoLEAdapterWrapper.add_weighted_adapter(
+            target=self.target,
+            adapters=self.adapters,
+            weights=list(scalings),
+            adapter_name="mole_adapter",
+            peft_config=self.target.peft_config,
+            combination_type=self.combination_type,
+            svd_rank=self.svd_rank,
+            svd_clamp=self.svd_clamp,
+            svd_full_matrices=self.svd_full_matrices,
+            svd_driver=self.svd_driver,
+        )
+        self.target.set_adapter("mole_adapter")
         pass
 
     @staticmethod
@@ -102,11 +130,6 @@ class MoLEAdapterWrapper:
             new_rank = svd_rank or max(adapters_ranks)
         else:
             raise ValueError(f"Invalid combination_type: {combination_type}")
-
-        # Do we really need that?
-        MoLEAdapterWrapper.freeze_adapter(
-            adapter_name
-        )  # TODO(EricLBuehler): THIS DOES NOT WORK. FIX ME
 
         if adapter_name in target.lora_A:
             target_lora_A = target.lora_A[adapter_name].weight
