@@ -1154,7 +1154,18 @@ class MoLEMistralModel(MistralPreTrainedModel):
 
         hidden_states = inputs_embeds
 
-        mole_output = self.mole_classifier(hidden_states)
+        mole_output = self.mole_classifier.forward(
+            batch_size=batch_size,
+            input_ids=input_ids,
+            hidden_states=hidden_states,
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            past_key_values=past_key_values,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=None,
+        )
         mole_scalings = list(mole_output)
         mole_state.set_scalings(mole_scalings)
 
