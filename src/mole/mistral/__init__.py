@@ -1,1 +1,1 @@
-import mistral
+from . import mistral, configuration_mistral

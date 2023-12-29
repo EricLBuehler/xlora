@@ -26,7 +26,7 @@ from typing import List, Optional, Tuple, Union
 import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
-from configuration_mistral import MistralConfig
+from transformers import MistralConfig
 from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 from transformers.activations import ACT2FN
@@ -42,18 +42,18 @@ from transformers.utils import (
     logging,
     replace_return_docstrings,
 )
-from utils.cache_utils import Cache, DynamicCache
-from utils.import_utils import (
+from ..utils.cache_utils import Cache, DynamicCache
+from transformers.utils.import_utils import (
     is_flash_attn_2_available,
     is_flash_attn_greater_or_equal_2_10,
 )
-from utils.modeling_attn_mask_utils import (
+from ..utils.modeling_attn_mask_utils import (
     _prepare_4d_causal_attention_mask,
     _prepare_4d_causal_attention_mask_for_sdpa,
 )
 
-from mole import mole_state
-from mole.mole_classifier import MoleClassifier
+from ..mole import mole_state
+from ..mole.mole_classifier import MoleClassifier
 
 if is_flash_attn_2_available():
     from flash_attn import flash_attn_func, flash_attn_varlen_func

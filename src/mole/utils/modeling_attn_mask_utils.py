@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
 
@@ -160,13 +159,7 @@ class AttentionMaskConverter:
         mask = mask.to(dtype)
 
         if past_key_values_length > 0:
-            mask = torch.cat(
-                [
-                    torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device),
-                    mask,
-                ],
-                dim=-1,
-            )
+            mask = torch.cat([torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device), mask], dim=-1)
 
         # add lower triangular sliding window mask if necessary
         if sliding_window is not None:
@@ -193,9 +186,7 @@ class AttentionMaskConverter:
 
     @staticmethod
     def _unmask_unattended(
-        expanded_mask: torch.Tensor,
-        attention_mask: torch.Tensor,
-        unmasked_value: Union[bool, float],
+        expanded_mask: torch.Tensor, attention_mask: torch.Tensor, unmasked_value: Union[bool, float]
     ):
         # fmt: off
         """
@@ -313,10 +304,7 @@ def _prepare_4d_causal_attention_mask(
     # 4d mask is passed through the layers
     if attention_mask is not None and len(attention_mask.shape) == 2:
         attention_mask = attn_mask_converter.to_4d(
-            attention_mask,
-            input_shape[-1],
-            key_value_length=key_value_length,
-            dtype=inputs_embeds.dtype,
+            attention_mask, input_shape[-1], key_value_length=key_value_length, dtype=inputs_embeds.dtype
         )
     elif attention_mask is not None and len(attention_mask.shape) == 4:
         expected_shape = (input_shape[0], 1, input_shape[1], key_value_length)
@@ -332,11 +320,7 @@ def _prepare_4d_causal_attention_mask(
             )
     else:
         attention_mask = attn_mask_converter.to_causal_4d(
-            input_shape[0],
-            input_shape[-1],
-            key_value_length,
-            dtype=inputs_embeds.dtype,
-            device=inputs_embeds.device,
+            input_shape[0], input_shape[-1], key_value_length, dtype=inputs_embeds.dtype, device=inputs_embeds.device
         )
 
     return attention_mask
@@ -409,11 +393,7 @@ def _prepare_4d_causal_attention_mask_for_sdpa(
         expanded_4d_mask = None
     elif attention_mask is True:
         expanded_4d_mask = attn_mask_converter.to_causal_4d(
-            input_shape[0],
-            input_shape[-1],
-            key_value_length,
-            dtype=inputs_embeds.dtype,
-            device=inputs_embeds.device,
+            input_shape[0], input_shape[-1], key_value_length, dtype=inputs_embeds.dtype, device=inputs_embeds.device
         )
     else:
         expanded_4d_mask = attn_mask_converter.to_4d(

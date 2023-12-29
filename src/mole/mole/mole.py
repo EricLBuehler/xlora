@@ -64,3 +64,8 @@ def convert_layers_to_mole(
                 svd_driver=svd_driver,
             )
             module.forward = new_layer.forward
+
+
+def add_mole_to_model(model: nn.Module):
+    def hook(module, *args, **kwargs) -> None:
+        pass
