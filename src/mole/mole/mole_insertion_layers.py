@@ -1,11 +1,12 @@
 import math
 from typing import Any, Dict, List, Optional, Union
+
 import peft
+import torch
+import torch.nn as nn
 from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig
 from torch import Tensor
-import torch
-import torch.nn as nn
 
 from mole import mole_state
 
@@ -42,9 +43,7 @@ class MoLEBaseLayer:
         if combination_type == "linear":
             # all adapters ranks should be same, new rank is just this value
             if len(set(adapters_ranks)) != 1:
-                raise ValueError(
-                    "All adapters must have the same r value when using `linear` combination_type"
-                )
+                raise ValueError("All adapters must have the same r value when using `linear` combination_type")
             new_rank = adapters_ranks[0]
         elif combination_type == "cat":
             # adapters ranks may be different, new rank is sum of all ranks
@@ -77,11 +76,7 @@ class MoLEBaseLayer:
                     current_adapter_lora_B = target.lora_embedding_B[adapter]
                 else:
                     continue
-                target_lora_A.data += (
-                    current_adapter_lora_A.data
-                    * math.sqrt(weight)
-                    * target.scaling[adapter]
-                )
+                target_lora_A.data += current_adapter_lora_A.data * math.sqrt(weight) * target.scaling[adapter]
                 target_lora_B.data += current_adapter_lora_B.data * math.sqrt(weight)
         elif combination_type == "cat":
             loras_A, loras_B = [], []
@@ -94,15 +89,11 @@ class MoLEBaseLayer:
                     current_adapter_lora_B = target.lora_embedding_B[adapter]
                 else:
                     continue
-                loras_A.append(
-                    current_adapter_lora_A.data * weight * target.scaling[adapter]
-                )
+                loras_A.append(current_adapter_lora_A.data * weight * target.scaling[adapter])
                 loras_B.append(current_adapter_lora_B.data)
 
             if len(loras_A) == 0:
-                raise ValueError(
-                    "No matching LoRAs found. Please raise an issue on Github."
-                )
+                raise ValueError("No matching LoRAs found. Please raise an issue on Github.")
             loras_A = torch.cat(loras_A, dim=0)
             loras_B = torch.cat(loras_B, dim=1)
             target_lora_A.data[: loras_A.shape[0], :] = loras_A
@@ -145,9 +136,7 @@ class MoLEBaseLayer:
 
         # if no valid adapter, nothing to do
         if len(valid_adapters) == 0:
-            raise ValueError(
-                "No matching LoRAs found. Please raise an issue on Github."
-            )
+            raise ValueError("No matching LoRAs found. Please raise an issue on Github.")
 
         delta_weight = valid_weights[0] * target.get_delta_weight(valid_adapters[0])
         for adapter, weight in zip(valid_adapters[1:], valid_weights[1:]):
@@ -163,9 +152,7 @@ class MoLEBaseLayer:
             delta_weight = delta_weight.T
 
         # based on https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py#L114-L131
-        U, S, Vh = torch.linalg.svd(
-            delta_weight, full_matrices=full_matrices, driver=driver
-        )
+        U, S, Vh = torch.linalg.svd(delta_weight, full_matrices=full_matrices, driver=driver)
         U = U[:, :new_rank]
         S = S[:new_rank]
         U = U @ torch.diag(S)

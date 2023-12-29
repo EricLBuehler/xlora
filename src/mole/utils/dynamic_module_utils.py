@@ -36,7 +36,6 @@ from . import (
     logging,
 )
 
-
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
@@ -92,13 +91,9 @@ def get_relative_imports(module_file: Union[str, os.PathLike]) -> List[str]:
         content = f.read()
 
     # Imports of the form `import .xxx`
-    relative_imports = re.findall(
-        r"^\s*import\s+\.(\S+)\s*$", content, flags=re.MULTILINE
-    )
+    relative_imports = re.findall(r"^\s*import\s+\.(\S+)\s*$", content, flags=re.MULTILINE)
     # Imports of the form `from .xxx import yyy`
-    relative_imports += re.findall(
-        r"^\s*from\s+\.(\S+)\s+import", content, flags=re.MULTILINE
-    )
+    relative_imports += re.findall(r"^\s*from\s+\.(\S+)\s+import", content, flags=re.MULTILINE)
     # Unique-ify
     return list(set(relative_imports))
 
@@ -127,9 +122,7 @@ def get_relative_import_files(module_file: Union[str, os.PathLike]) -> List[str]
 
         module_path = Path(module_file).parent
         new_import_files = [str(module_path / m) for m in new_imports]
-        new_import_files = [
-            f for f in new_import_files if f not in all_relative_imports
-        ]
+        new_import_files = [f for f in new_import_files if f not in all_relative_imports]
         files_to_check = [f"{f}.py" for f in new_import_files]
 
         no_change = len(new_import_files) == 0
@@ -152,9 +145,7 @@ def get_imports(filename: Union[str, os.PathLike]) -> List[str]:
         content = f.read()
 
     # filter out try/except block so in custom code we can have try/except imports
-    content = re.sub(
-        r"\s*try\s*:\s*.*?\s*except\s*.*?:", "", content, flags=re.MULTILINE | re.DOTALL
-    )
+    content = re.sub(r"\s*try\s*:\s*.*?\s*except\s*.*?:", "", content, flags=re.MULTILINE | re.DOTALL)
 
     # Imports of the form `import xxx`
     imports = re.findall(r"^\s*import\s+(\S+)\s*$", content, flags=re.MULTILINE)
@@ -193,9 +184,7 @@ def check_imports(filename: Union[str, os.PathLike]) -> List[str]:
     return get_relative_imports(filename)
 
 
-def get_class_in_module(
-    class_name: str, module_path: Union[str, os.PathLike]
-) -> typing.Type:
+def get_class_in_module(class_name: str, module_path: Union[str, os.PathLike]) -> typing.Type:
     """
     Import a module on the cache directory for modules and extract a class from it.
 
@@ -280,9 +269,7 @@ def get_cached_module_file(
             FutureWarning,
         )
         if token is not None:
-            raise ValueError(
-                "`token` and `use_auth_token` are both specified. Please set only the argument `token`."
-            )
+            raise ValueError("`token` and `use_auth_token` are both specified. Please set only the argument `token`.")
         token = use_auth_token
 
     if is_offline_mode() and not local_files_only:
@@ -324,9 +311,7 @@ def get_cached_module_file(
             new_files.append(module_file)
 
     except EnvironmentError:
-        logger.error(
-            f"Could not locate the {module_file} inside {pretrained_model_name_or_path}."
-        )
+        logger.error(f"Could not locate the {module_file} inside {pretrained_model_name_or_path}.")
         raise
 
     # Check we have all the requirements in our environment
@@ -346,9 +331,7 @@ def get_cached_module_file(
             importlib.invalidate_caches()
         for module_needed in modules_needed:
             module_needed = f"{module_needed}.py"
-            module_needed_file = os.path.join(
-                pretrained_model_name_or_path, module_needed
-            )
+            module_needed_file = os.path.join(pretrained_model_name_or_path, module_needed)
             if not (submodule_path / module_needed).exists() or not filecmp.cmp(
                 module_needed_file, str(submodule_path / module_needed)
             ):
@@ -492,9 +475,7 @@ def get_class_from_dynamic_module(
             FutureWarning,
         )
         if token is not None:
-            raise ValueError(
-                "`token` and `use_auth_token` are both specified. Please set only the argument `token`."
-            )
+            raise ValueError("`token` and `use_auth_token` are both specified. Please set only the argument `token`.")
         token = use_auth_token
 
     # Catch the name of the repo if it's specified in `class_reference`
@@ -522,9 +503,7 @@ def get_class_from_dynamic_module(
     return get_class_in_module(class_name, final_module.replace(".py", ""))
 
 
-def custom_object_save(
-    obj: Any, folder: Union[str, os.PathLike], config: Optional[Dict] = None
-) -> List[str]:
+def custom_object_save(obj: Any, folder: Union[str, os.PathLike], config: Optional[Dict] = None) -> List[str]:
     """
     Save the modeling files corresponding to a custom model/configuration/tokenizer etc. in a given folder. Optionally
     adds the proper fields in a config.
@@ -561,9 +540,7 @@ def custom_object_save(
                     slow_tokenizer = getattr(obj, "slow_tokenizer_class")
                     slow_tok_module_name = slow_tokenizer.__module__
                     last_slow_tok_module = slow_tok_module_name.split(".")[-1]
-                    slow_tokenizer_class = (
-                        f"{last_slow_tok_module}.{slow_tokenizer.__name__}"
-                    )
+                    slow_tokenizer_class = f"{last_slow_tok_module}.{slow_tokenizer.__name__}"
             else:
                 # Slow tokenizer: no way to have the fast class
                 slow_tokenizer_class = f"{last_module}.{obj.__class__.__name__}"
@@ -612,9 +589,7 @@ def _raise_timeout_error(signum, frame):
 TIME_OUT_REMOTE_CODE = 15
 
 
-def resolve_trust_remote_code(
-    trust_remote_code, model_name, has_local_code, has_remote_code
-):
+def resolve_trust_remote_code(trust_remote_code, model_name, has_local_code, has_remote_code):
     if trust_remote_code is None:
         if has_local_code:
             trust_remote_code = False

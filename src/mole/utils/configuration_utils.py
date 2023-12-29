@@ -23,13 +23,13 @@ import re
 import warnings
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from dynamic_module_utils import custom_object_save
 from packaging import version
 
-from . import __version__
-from dynamic_module_utils import custom_object_save
 from . import (
     CONFIG_NAME,
     PushToHubMixin,
+    __version__,
     add_model_info_to_auto_map,
     cached_file,
     copy_func,
@@ -39,7 +39,6 @@ from . import (
     is_torch_available,
     logging,
 )
-
 
 logger = logging.get_logger(__name__)
 
@@ -269,16 +268,10 @@ class PretrainedConfig(PushToHubMixin):
         self.return_dict = kwargs.pop("return_dict", True)
         self.output_hidden_states = kwargs.pop("output_hidden_states", False)
         self.output_attentions = kwargs.pop("output_attentions", False)
-        self.torchscript = kwargs.pop(
-            "torchscript", False
-        )  # Only used by PyTorch models
-        self.torch_dtype = kwargs.pop(
-            "torch_dtype", None
-        )  # Only used by PyTorch models
+        self.torchscript = kwargs.pop("torchscript", False)  # Only used by PyTorch models
+        self.torch_dtype = kwargs.pop("torch_dtype", None)  # Only used by PyTorch models
         self.use_bfloat16 = kwargs.pop("use_bfloat16", False)
-        self.tf_legacy_loss = kwargs.pop(
-            "tf_legacy_loss", False
-        )  # Only used by TensorFlow models
+        self.tf_legacy_loss = kwargs.pop("tf_legacy_loss", False)  # Only used by TensorFlow models
         self.pruned_heads = kwargs.pop("pruned_heads", {})
         self.tie_word_embeddings = kwargs.pop(
             "tie_word_embeddings", True
@@ -287,9 +280,7 @@ class PretrainedConfig(PushToHubMixin):
         # Is decoder is used in encoder-decoder models to differentiate encoder from decoder
         self.is_encoder_decoder = kwargs.pop("is_encoder_decoder", False)
         self.is_decoder = kwargs.pop("is_decoder", False)
-        self.cross_attention_hidden_size = kwargs.pop(
-            "cross_attention_hidden_size", None
-        )
+        self.cross_attention_hidden_size = kwargs.pop("cross_attention_hidden_size", None)
         self.add_cross_attention = kwargs.pop("add_cross_attention", False)
         self.tie_encoder_decoder = kwargs.pop("tie_encoder_decoder", False)
 
@@ -308,9 +299,7 @@ class PretrainedConfig(PushToHubMixin):
         self.repetition_penalty = kwargs.pop("repetition_penalty", 1.0)
         self.length_penalty = kwargs.pop("length_penalty", 1.0)
         self.no_repeat_ngram_size = kwargs.pop("no_repeat_ngram_size", 0)
-        self.encoder_no_repeat_ngram_size = kwargs.pop(
-            "encoder_no_repeat_ngram_size", 0
-        )
+        self.encoder_no_repeat_ngram_size = kwargs.pop("encoder_no_repeat_ngram_size", 0)
         self.bad_words_ids = kwargs.pop("bad_words_ids", None)
         self.num_return_sequences = kwargs.pop("num_return_sequences", 1)
         self.chunk_size_feed_forward = kwargs.pop("chunk_size_feed_forward", 0)
@@ -319,9 +308,7 @@ class PretrainedConfig(PushToHubMixin):
         self.forced_bos_token_id = kwargs.pop("forced_bos_token_id", None)
         self.forced_eos_token_id = kwargs.pop("forced_eos_token_id", None)
         self.remove_invalid_values = kwargs.pop("remove_invalid_values", False)
-        self.exponential_decay_length_penalty = kwargs.pop(
-            "exponential_decay_length_penalty", None
-        )
+        self.exponential_decay_length_penalty = kwargs.pop("exponential_decay_length_penalty", None)
         self.suppress_tokens = kwargs.pop("suppress_tokens", None)
         self.begin_suppress_tokens = kwargs.pop("begin_suppress_tokens", None)
 
@@ -374,10 +361,7 @@ class PretrainedConfig(PushToHubMixin):
             "single_label_classification",
             "multi_label_classification",
         )
-        if (
-            self.problem_type is not None
-            and self.problem_type not in allowed_problem_types
-        ):
+        if self.problem_type is not None and self.problem_type not in allowed_problem_types:
             raise ValueError(
                 f"The config parameter `problem_type` was not understood: received {self.problem_type} "
                 "but only 'regression', 'single_label_classification' and 'multi_label_classification' are valid."
@@ -423,9 +407,7 @@ class PretrainedConfig(PushToHubMixin):
 
     @name_or_path.setter
     def name_or_path(self, value):
-        self._name_or_path = str(
-            value
-        )  # Make sure that name_or_path is a string (for JSON encoding)
+        self._name_or_path = str(value)  # Make sure that name_or_path is a string (for JSON encoding)
 
     @property
     def use_return_dict(self) -> bool:
@@ -444,11 +426,7 @@ class PretrainedConfig(PushToHubMixin):
 
     @num_labels.setter
     def num_labels(self, num_labels: int):
-        if (
-            not hasattr(self, "id2label")
-            or self.id2label is None
-            or len(self.id2label) != num_labels
-        ):
+        if not hasattr(self, "id2label") or self.id2label is None or len(self.id2label) != num_labels:
             self.id2label = {i: f"LABEL_{i}" for i in range(num_labels)}
             self.label2id = dict(zip(self.id2label.values(), self.id2label.keys()))
 
@@ -491,9 +469,7 @@ class PretrainedConfig(PushToHubMixin):
         self._set_token_in_kwargs(kwargs)
 
         if os.path.isfile(save_directory):
-            raise AssertionError(
-                f"Provided path ({save_directory}) should be a directory, not a file"
-            )
+            raise AssertionError(f"Provided path ({save_directory}) should be a directory, not a file")
 
         os.makedirs(save_directory, exist_ok=True)
 
@@ -644,14 +620,8 @@ class PretrainedConfig(PushToHubMixin):
 
         cls._set_token_in_kwargs(kwargs, token)
 
-        config_dict, kwargs = cls.get_config_dict(
-            pretrained_model_name_or_path, **kwargs
-        )
-        if (
-            "model_type" in config_dict
-            and hasattr(cls, "model_type")
-            and config_dict["model_type"] != cls.model_type
-        ):
+        config_dict, kwargs = cls.get_config_dict(pretrained_model_name_or_path, **kwargs)
+        if "model_type" in config_dict and hasattr(cls, "model_type") and config_dict["model_type"] != cls.model_type:
             logger.warning(
                 f"You are using a model of type {config_dict['model_type']} to instantiate a model of type "
                 f"{cls.model_type}. This is not supported for all configurations of models and can yield errors."
@@ -679,17 +649,13 @@ class PretrainedConfig(PushToHubMixin):
 
         original_kwargs = copy.deepcopy(kwargs)
         # Get config dict associated with the base config file
-        config_dict, kwargs = cls._get_config_dict(
-            pretrained_model_name_or_path, **kwargs
-        )
+        config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
         if "_commit_hash" in config_dict:
             original_kwargs["_commit_hash"] = config_dict["_commit_hash"]
 
         # That config file may point us toward another config file to use.
         if "configuration_files" in config_dict:
-            configuration_file = get_configuration_file(
-                config_dict["configuration_files"]
-            )
+            configuration_file = get_configuration_file(config_dict["configuration_files"])
             config_dict, kwargs = cls._get_config_dict(
                 pretrained_model_name_or_path,
                 _configuration_file=configuration_file,
@@ -780,9 +746,7 @@ class PretrainedConfig(PushToHubMixin):
         if is_local:
             logger.info(f"loading configuration file {resolved_config_file}")
         else:
-            logger.info(
-                f"loading configuration file {configuration_file} from cache at {resolved_config_file}"
-            )
+            logger.info(f"loading configuration file {configuration_file} from cache at {resolved_config_file}")
 
         if "auto_map" in config_dict and not is_local:
             config_dict["auto_map"] = add_model_info_to_auto_map(
@@ -820,9 +784,7 @@ class PretrainedConfig(PushToHubMixin):
         config = cls(**config_dict)
 
         if hasattr(config, "pruned_heads"):
-            config.pruned_heads = {
-                int(key): value for key, value in config.pruned_heads.items()
-            }
+            config.pruned_heads = {int(key): value for key, value in config.pruned_heads.items()}
 
         # Update config with kwargs if needed
         if "num_labels" in kwargs and "id2label" in kwargs:
@@ -839,9 +801,7 @@ class PretrainedConfig(PushToHubMixin):
             if hasattr(config, key):
                 current_attr = getattr(config, key)
                 # To authorize passing a custom subconfig as kwarg in models that have nested configs.
-                if isinstance(current_attr, PretrainedConfig) and isinstance(
-                    value, dict
-                ):
+                if isinstance(current_attr, PretrainedConfig) and isinstance(value, dict):
                     value = current_attr.__class__(**value)
                 setattr(config, key, value)
                 if key != "torch_dtype":
@@ -897,9 +857,7 @@ class PretrainedConfig(PushToHubMixin):
         default_config_dict = PretrainedConfig().to_dict()
 
         # get class specific config dict
-        class_config_dict = (
-            self.__class__().to_dict() if not self.is_composition else {}
-        )
+        class_config_dict = self.__class__().to_dict() if not self.is_composition else {}
 
         serializable_config_dict = {}
 
@@ -911,9 +869,7 @@ class PretrainedConfig(PushToHubMixin):
                 and isinstance(class_config_dict[key], dict)
             ):
                 # For nested configs we need to clean the diff recursively
-                diff = recursive_diff_dict(
-                    value, class_config_dict[key], config_obj=getattr(self, key, None)
-                )
+                diff = recursive_diff_dict(value, class_config_dict[key], config_obj=getattr(self, key, None))
                 if "model_type" in value:
                     # Needs to be set even if it's not in the diff
                     diff["model_type"] = value["model_type"]
@@ -1004,9 +960,7 @@ class PretrainedConfig(PushToHubMixin):
             config_dict = self.to_dict()
         return json.dumps(config_dict, indent=2, sort_keys=True) + "\n"
 
-    def to_json_file(
-        self, json_file_path: Union[str, os.PathLike], use_diff: bool = True
-    ):
+    def to_json_file(self, json_file_path: Union[str, os.PathLike], use_diff: bool = True):
         """
         Save this instance to a JSON file.
 
@@ -1074,9 +1028,7 @@ class PretrainedConfig(PushToHubMixin):
         converts torch.dtype to a string of just the type. For example, `torch.float32` get converted into *"float32"*
         string, which can then be stored in the json format.
         """
-        if d.get("torch_dtype", None) is not None and not isinstance(
-            d["torch_dtype"], str
-        ):
+        if d.get("torch_dtype", None) is not None and not isinstance(d["torch_dtype"], str):
             d["torch_dtype"] = str(d["torch_dtype"]).split(".")[1]
         for value in d.values():
             if isinstance(value, dict):
@@ -1149,20 +1101,11 @@ def recursive_diff_dict(dict_a, dict_b, config_obj=None):
     default = config_obj.__class__().to_dict() if config_obj is not None else {}
     for key, value in dict_a.items():
         obj_value = getattr(config_obj, str(key), None)
-        if (
-            isinstance(obj_value, PretrainedConfig)
-            and key in dict_b
-            and isinstance(dict_b[key], dict)
-        ):
+        if isinstance(obj_value, PretrainedConfig) and key in dict_b and isinstance(dict_b[key], dict):
             diff_value = recursive_diff_dict(value, dict_b[key], config_obj=obj_value)
             if len(diff_value) > 0:
                 diff[key] = diff_value
-        elif (
-            key not in dict_b
-            or value != dict_b[key]
-            or key not in default
-            or value != default[key]
-        ):
+        elif key not in dict_b or value != dict_b[key] or key not in default or value != default[key]:
             diff[key] = value
     return diff
 

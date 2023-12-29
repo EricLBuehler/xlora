@@ -75,9 +75,7 @@ class AttentionMaskConverter:
         bias to upper right hand triangular matrix (causal mask).
         """
         if not self.is_causal:
-            raise ValueError(
-                f"Please use `to_causal_4d` only if {self.__class__} has `is_causal` set to True."
-            )
+            raise ValueError(f"Please use `to_causal_4d` only if {self.__class__} has `is_causal` set to True.")
 
         # If shape is not cached, create a new causal mask and cache it
         input_shape = (batch_size, query_length)
@@ -129,18 +127,14 @@ class AttentionMaskConverter:
                 sliding_window=self.sliding_window,
             )
         elif self.sliding_window is not None:
-            raise NotImplementedError(
-                "Sliding window is currently only implemented for causal masking"
-            )
+            raise NotImplementedError("Sliding window is currently only implemented for causal masking")
 
         # [bsz, seq_len] -> [bsz, 1, tgt_seq_len, src_seq_len]
-        expanded_attn_mask = self._expand_mask(
-            attention_mask_2d, dtype, tgt_len=input_shape[-1]
-        ).to(attention_mask_2d.device)
+        expanded_attn_mask = self._expand_mask(attention_mask_2d, dtype, tgt_len=input_shape[-1]).to(
+            attention_mask_2d.device
+        )
         if causal_4d_mask is not None:
-            expanded_attn_mask = causal_4d_mask.masked_fill(
-                expanded_attn_mask.bool(), torch.finfo(dtype).min
-            )
+            expanded_attn_mask = causal_4d_mask.masked_fill(expanded_attn_mask.bool(), torch.finfo(dtype).min)
 
         # expanded_attn_mask + causal_4d_mask can cause some overflow
         expanded_4d_mask = expanded_attn_mask
@@ -168,9 +162,7 @@ class AttentionMaskConverter:
         if past_key_values_length > 0:
             mask = torch.cat(
                 [
-                    torch.zeros(
-                        tgt_len, past_key_values_length, dtype=dtype, device=device
-                    ),
+                    torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device),
                     mask,
                 ],
                 dim=-1,
@@ -180,34 +172,24 @@ class AttentionMaskConverter:
         if sliding_window is not None:
             diagonal = past_key_values_length - sliding_window + 1
 
-            context_mask = 1 - torch.triu(
-                torch.ones_like(mask, dtype=torch.int), diagonal=diagonal
-            )
+            context_mask = 1 - torch.triu(torch.ones_like(mask, dtype=torch.int), diagonal=diagonal)
             mask.masked_fill_(context_mask.bool(), torch.finfo(dtype).min)
 
-        return mask[None, None, :, :].expand(
-            bsz, 1, tgt_len, tgt_len + past_key_values_length
-        )
+        return mask[None, None, :, :].expand(bsz, 1, tgt_len, tgt_len + past_key_values_length)
 
     @staticmethod
-    def _expand_mask(
-        mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None
-    ):
+    def _expand_mask(mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None):
         """
         Expands attention_mask from `[bsz, seq_len]` to `[bsz, 1, tgt_seq_len, src_seq_len]`.
         """
         bsz, src_len = mask.size()
         tgt_len = tgt_len if tgt_len is not None else src_len
 
-        expanded_mask = (
-            mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
-        )
+        expanded_mask = mask[:, None, None, :].expand(bsz, 1, tgt_len, src_len).to(dtype)
 
         inverted_mask = 1.0 - expanded_mask
 
-        return inverted_mask.masked_fill(
-            inverted_mask.to(torch.bool), torch.finfo(dtype).min
-        )
+        return inverted_mask.masked_fill(inverted_mask.to(torch.bool), torch.finfo(dtype).min)
 
     @staticmethod
     def _unmask_unattended(
@@ -324,9 +306,7 @@ def _prepare_4d_causal_attention_mask(
         sliding_window (`int`, *optional*):
             If the model uses windowed attention, a sliding window should be passed.
     """
-    attn_mask_converter = AttentionMaskConverter(
-        is_causal=True, sliding_window=sliding_window
-    )
+    attn_mask_converter = AttentionMaskConverter(is_causal=True, sliding_window=sliding_window)
 
     key_value_length = input_shape[-1] + past_key_values_length
 
@@ -377,9 +357,7 @@ def _prepare_4d_causal_attention_mask_for_sdpa(
     `key_value_length == query_length`, and rely instead on SDPA `is_causal` argument to use causal/non-causal masks,
     allowing to dispatch to the flash attention kernel (that can otherwise not be used if a custom `attn_mask` is passed).
     """
-    attn_mask_converter = AttentionMaskConverter(
-        is_causal=True, sliding_window=sliding_window
-    )
+    attn_mask_converter = AttentionMaskConverter(is_causal=True, sliding_window=sliding_window)
 
     key_value_length = input_shape[-1] + past_key_values_length
     batch_size, query_length = input_shape
@@ -455,9 +433,7 @@ def _prepare_4d_causal_attention_mask_for_sdpa(
     return expanded_4d_mask
 
 
-def _prepare_4d_attention_mask(
-    mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None
-):
+def _prepare_4d_attention_mask(mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None):
     """
     Creates a non-causal 4D mask of shape `(batch_size, 1, query_length, key_value_length)` from a 2D mask of shape
     `(batch_size, key_value_length)`
@@ -473,9 +449,7 @@ def _prepare_4d_attention_mask(
     return AttentionMaskConverter._expand_mask(mask=mask, dtype=dtype, tgt_len=tgt_len)
 
 
-def _prepare_4d_attention_mask_for_sdpa(
-    mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None
-):
+def _prepare_4d_attention_mask_for_sdpa(mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] = None):
     """
     Creates a non-causal 4D mask of shape `(batch_size, 1, query_length, key_value_length)` from a 2D mask of shape
     `(batch_size, key_value_length)`
@@ -508,13 +482,9 @@ def _prepare_4d_attention_mask_for_sdpa(
             # Unfortunately, for query_length > 1 and key_value_length != query_length, we can not generally ignore the attention mask, as SDPA causal mask generation
             # may be wrong. We will set is_causal=False in SDPA and rely on Transformers attention_mask instead, hence not setting it to None here.
             # Reference: https://github.com/pytorch/pytorch/issues/108108
-            return AttentionMaskConverter._expand_mask(
-                mask=mask, dtype=dtype, tgt_len=tgt_len
-            )
+            return AttentionMaskConverter._expand_mask(mask=mask, dtype=dtype, tgt_len=tgt_len)
     else:
-        return AttentionMaskConverter._expand_mask(
-            mask=mask, dtype=dtype, tgt_len=tgt_len
-        )
+        return AttentionMaskConverter._expand_mask(mask=mask, dtype=dtype, tgt_len=tgt_len)
 
 
 def _create_4d_causal_attention_mask(
@@ -537,9 +507,7 @@ def _create_4d_causal_attention_mask(
         sliding_window (`int`, *optional*):
             If the model uses windowed attention, a sliding window should be passed.
     """
-    attn_mask_converter = AttentionMaskConverter(
-        is_causal=True, sliding_window=sliding_window
-    )
+    attn_mask_converter = AttentionMaskConverter(is_causal=True, sliding_window=sliding_window)
 
     key_value_length = past_key_values_length + input_shape[-1]
     attention_mask = attn_mask_converter.to_causal_4d(
