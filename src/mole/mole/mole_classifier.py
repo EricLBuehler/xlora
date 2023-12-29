@@ -25,6 +25,8 @@ class MoLEClassifierConfig(PretrainedConfig):
 
 
     Args:
+        n_classes (`int`):
+            Number of LoRA experts.
         vocab_size (`int`, *optional*, defaults to 32000):
             Vocabulary size of the Mistral model. Defines the number of different tokens that can be represented by the
             `inputs_ids` passed when calling [`MistralModel`]
@@ -55,6 +57,7 @@ class MoLEClassifierConfig(PretrainedConfig):
 
     def __init__(
         self,
+        n_classes,
         vocab_size=32000,
         hidden_size=4096,
         rms_norm_eps=1e-6,
@@ -66,6 +69,8 @@ class MoLEClassifierConfig(PretrainedConfig):
         sliding_window=4096,
         **kwargs,
     ):
+        self.n_classes = n_classes
+
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.sliding_window = sliding_window
@@ -87,9 +92,8 @@ class MoLEClassifier(MistralPreTrainedModel):
     A classifier to select LoRA layers for MoLE. It uses a single Mistral decoder layer to generate the LoRA alpha values.
     """
 
-    def __init__(self, config: MoLEClassifierConfig, n_classes: int):
+    def __init__(self, config: MoLEClassifierConfig):
         super().__init__(config)
-        self.n_classes = n_classes
 
         self.padding_idx = config.pad_token_id
         self.vocab_size = config.vocab_size
@@ -101,7 +105,7 @@ class MoLEClassifier(MistralPreTrainedModel):
 
         self.gradient_checkpointing = False
 
-        self.score = nn.Linear(config.hidden_size, n_classes, bias=False)
+        self.score = nn.Linear(config.hidden_size, config.n_classes, bias=False)
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -118,7 +122,7 @@ class MoLEClassifier(MistralPreTrainedModel):
         _return_dict: Optional[bool] = None,
     ) -> torch.Tensor:
         """
-        Using the input, predict `self.n_classes` LoRA alpha values.
+        Using the input, predict `n_classes` LoRA alpha values.
         """
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (

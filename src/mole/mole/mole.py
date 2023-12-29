@@ -19,9 +19,36 @@ def convert_layers_to_mole(
     svd_full_matrices: Optional[bool] = True,
     svd_driver: Optional[str] = None,
 ):
+    modules = list(base.modules())
+    for module in modules:
+        if isinstance(module, lora.LoraLayer):
+            new_layer = MoLELayer(
+                adapters=adapters,
+                target=module,
+                peft_config=peft_config,
+                combination_type=combination_type,
+                svd_rank=svd_rank,
+                svd_clamp=svd_clamp,
+                svd_full_matrices=svd_full_matrices,
+                svd_driver=svd_driver,
+            )
+            module.forward = new_layer.forward
+
+
+def add_mole_to_model(
+    model: nn.Module,
+    mole_config: MoLEClassifierConfig,
+    adapters: List[str],
+    peft_config: Dict[str, PeftConfig],
+    combination_type: str = "svd",
+    svd_rank: Optional[bool] = None,
+    svd_clamp: Optional[float] = None,
+    svd_full_matrices: Optional[bool] = True,
+    svd_driver: Optional[str] = None,
+):
     """
     This method converts all LoRA adapters to MoLE layers, and it is the intended entrypoint
-    for MoLE. All LoRA adapters will be frozen.
+    for use of MoLE. All LoRA adapters will be frozen, and the MoLEClassifier is initialized.
 
     When using the `cat` combination_type you should be aware that rank of the resulting adapter will be equal to
     the sum of all adapters ranks. So it's possible that the mixed adapter may become too big and result in OOM
@@ -51,25 +78,11 @@ def convert_layers_to_mole(
             one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
             documentation. Defaults to None.
     """
+    convert_layers_to_mole(
+        model, adapters, peft_config, combination_type, svd_rank, svd_clamp, svd_full_matrices, svd_driver
+    )
 
-    modules = list(base.modules())
-    for module in modules:
-        if isinstance(module, lora.LoraLayer):
-            new_layer = MoLELayer(
-                adapters=adapters,
-                target=module,
-                peft_config=peft_config,
-                combination_type=combination_type,
-                svd_rank=svd_rank,
-                svd_clamp=svd_clamp,
-                svd_full_matrices=svd_full_matrices,
-                svd_driver=svd_driver,
-            )
-            module.forward = new_layer.forward
-
-
-def add_mole_to_model(model: nn.Module, mole_config: MoLEClassifierConfig, n_classes: int):
-    mole_classifier = MoLEClassifier(mole_config, n_classes)
+    mole_classifier = MoLEClassifier(mole_config)
 
     def hook(module, *args, **kwargs) -> None:
         mole_output = mole_classifier.forward(
