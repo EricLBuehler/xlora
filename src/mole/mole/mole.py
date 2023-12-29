@@ -3,6 +3,8 @@ from typing import Dict, List, Optional
 import torch.nn as nn
 from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig
+from mole.mole import mole_state
+from mole.mole.mole_classifier import MoLEClassifierConfig, MoleClassifier
 
 from mole.mole_insertion_layers import MoLELayer
 
@@ -66,6 +68,15 @@ def convert_layers_to_mole(
             module.forward = new_layer.forward
 
 
-def add_mole_to_model(model: nn.Module):
+def add_mole_to_model(model: nn.Module, mole_config: MoLEClassifierConfig, n_classes: int):
+    mole_classifier = MoleClassifier(mole_config, n_classes)
+
     def hook(module, *args, **kwargs) -> None:
-        pass
+        mole_output = mole_classifier.forward(
+            *args,
+            **kwargs,
+        )
+        mole_scalings = list(mole_output)
+        mole_state.set_scalings(mole_scalings)
+
+    model.register_forward_pre_hook(hook)
