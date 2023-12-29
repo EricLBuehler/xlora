@@ -224,6 +224,8 @@ class MoLELayer(MoLEBaseLayer):
         assert hasattr(target, "forward")
         is_bound = hasattr(target.forward, "__self__")
         assert is_bound
+        is_callable = hasattr(target.forward, "__call__")
+        assert is_callable
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
