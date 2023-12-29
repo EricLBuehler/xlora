@@ -3,9 +3,9 @@ from typing import Dict, List, Optional
 import torch.nn as nn
 from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig
-from mole.mole import mole_state
-from mole.mole.mole_classifier import MoLEClassifierConfig, MoLEClassifier
 
+from mole.mole import mole_state
+from mole.mole.mole_classifier import MoLEClassifier, MoLEClassifierConfig
 from mole.mole_insertion_layers import MoLELayer
 
 
