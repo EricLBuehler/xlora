@@ -1,0 +1,9 @@
+[tool.ruff]
+ignore = ["C901", "E501", "E741", "W605"]
+select = ["C", "E", "F", "I", "W"]
+line-length = 119
+
+[tool.ruff.extend-per-file-ignores]
+"src/mole/__init__.py" = ["E401", "I001"]
+"src/mole/mistral/__init__.py" = ["E401"]
+"src/mole/mole/__init__.py" = ["E401"]

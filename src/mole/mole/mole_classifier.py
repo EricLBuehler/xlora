@@ -1,10 +1,11 @@
 import logging
-from typing import Optional, List
-import torch.nn as nn
-import torch
-from configuration_mistral import MistralConfig
+from typing import List, Optional
 
+import torch
+import torch.nn as nn
 from mistral import MistralDecoderLayer, MistralPreTrainedModel, MistralRMSNorm
+
+from ..mistral.configuration_mistral import MistralConfig
 
 logger = logging.get_logger(__name__)
 
@@ -21,9 +22,7 @@ class MoleClassifier(MistralPreTrainedModel):
         self.padding_idx = config.pad_token_id
         self.vocab_size = config.vocab_size
 
-        self.embed_tokens = nn.Embedding(
-            config.vocab_size, config.hidden_size, self.padding_idx
-        )
+        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
         self.layers = nn.ModuleList([MistralDecoderLayer(config, 0)])
         self._attn_implementation = config._attn_implementation
         self.norm = MistralRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -95,17 +94,13 @@ class MoleClassifier(MistralPreTrainedModel):
         else:
             if input_ids is not None:
                 # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
-                sequence_lengths = (
-                    torch.eq(input_ids, self.config.pad_token_id).int().argmax(-1) - 1
-                )
+                sequence_lengths = torch.eq(input_ids, self.config.pad_token_id).int().argmax(-1) - 1
                 sequence_lengths = sequence_lengths % input_ids.shape[-1]
                 sequence_lengths = sequence_lengths.to(logits.device)
             else:
                 sequence_lengths = -1
 
         # Get it for the last token
-        pooled_logits: torch.Tensor = logits[
-            torch.arange(batch_size, device=logits.device), sequence_lengths
-        ]
+        pooled_logits: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
 
         return pooled_logits

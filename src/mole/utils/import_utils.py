@@ -33,14 +33,11 @@ from packaging import version
 
 from . import logging
 
-
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
 # TODO: This doesn't work for all packages (`bs4`, `faiss`, etc.) Talk to Sylvain to see how to do with it better.
-def _is_package_available(
-    pkg_name: str, return_version: bool = False
-) -> Union[Tuple[bool, str], bool]:
+def _is_package_available(pkg_name: str, return_version: bool = False) -> Union[Tuple[bool, str], bool]:
     # Check we're not importing a "pkg_name" directory somewhere but the actual library by trying to grab the version
     package_exists = importlib.util.find_spec(pkg_name) is not None
     package_version = "N/A"
@@ -73,9 +70,7 @@ ACCELERATE_MIN_VERSION = "0.21.0"
 FSDP_MIN_VERSION = "1.12.0"
 
 
-_accelerate_available, _accelerate_version = _is_package_available(
-    "accelerate", return_version=True
-)
+_accelerate_available, _accelerate_version = _is_package_available("accelerate", return_version=True)
 _apex_available = _is_package_available("apex")
 _bitsandbytes_available = _is_package_available("bitsandbytes")
 # `importlib.metadata.version` doesn't work with `bs4` but `beautifulsoup4`. For `importlib.util.find_spec`, reversed.
@@ -98,9 +93,7 @@ except importlib.metadata.PackageNotFoundError:
     except importlib.metadata.PackageNotFoundError:
         _faiss_available = False
 _ftfy_available = _is_package_available("ftfy")
-_ipex_available, _ipex_version = _is_package_available(
-    "intel_extension_for_pytorch", return_version=True
-)
+_ipex_available, _ipex_version = _is_package_available("intel_extension_for_pytorch", return_version=True)
 _jieba_available = _is_package_available("jieba")
 _jinja_available = _is_package_available("jinja2")
 _kenlm_available = _is_package_available("kenlm")
@@ -153,9 +146,7 @@ _torchvision_available = _is_package_available("torchvision")
 _torch_version = "N/A"
 _torch_available = False
 if USE_TORCH in ENV_VARS_TRUE_AND_AUTO_VALUES and USE_TF not in ENV_VARS_TRUE_VALUES:
-    _torch_available, _torch_version = _is_package_available(
-        "torch", return_version=True
-    )
+    _torch_available, _torch_version = _is_package_available("torch", return_version=True)
 else:
     logger.info("Disabling PyTorch because USE_TF is set")
     _torch_available = False
@@ -166,10 +157,7 @@ _tf_available = False
 if FORCE_TF_AVAILABLE in ENV_VARS_TRUE_VALUES:
     _tf_available = True
 else:
-    if (
-        USE_TF in ENV_VARS_TRUE_AND_AUTO_VALUES
-        and USE_TORCH not in ENV_VARS_TRUE_VALUES
-    ):
+    if USE_TF in ENV_VARS_TRUE_AND_AUTO_VALUES and USE_TORCH not in ENV_VARS_TRUE_VALUES:
         # Note: _is_package_available("tensorflow") fails for tensorflow-cpu. Please test any changes to the line below
         # with tensorflow-cpu to make sure it still works!
         _tf_available = importlib.util.find_spec("tensorflow") is not None
@@ -241,9 +229,7 @@ if USE_JAX in ENV_VARS_TRUE_AND_AUTO_VALUES:
     if _flax_available:
         _jax_available, _jax_version = _is_package_available("jax", return_version=True)
         if _jax_available:
-            logger.info(
-                f"JAX version {_jax_version}, Flax version {_flax_version} available."
-            )
+            logger.info(f"JAX version {_jax_version}, Flax version {_flax_version} available.")
         else:
             _flax_available = _jax_available = False
             _jax_version = _flax_version = "N/A"
@@ -411,9 +397,7 @@ def is_torch_tf32_available():
         return False
     if int(torch.version.cuda.split(".")[0]) < 11:
         return False
-    if version.parse(version.parse(torch.__version__).base_version) < version.parse(
-        "1.7"
-    ):
+    if version.parse(version.parse(torch.__version__).base_version) < version.parse("1.7"):
         return False
 
     return True
@@ -586,11 +570,7 @@ def is_ninja_available():
 
 def is_ipex_available():
     def get_major_and_minor_from_version(full_version):
-        return (
-            str(version.parse(full_version).major)
-            + "."
-            + str(version.parse(full_version).minor)
-        )
+        return str(version.parse(full_version).major) + "." + str(version.parse(full_version).minor)
 
     if not is_torch_available() or not _ipex_available:
         return False
@@ -650,14 +630,10 @@ def is_flash_attn_2_available():
         return False
 
     if torch.version.cuda:
-        return version.parse(importlib.metadata.version("flash_attn")) >= version.parse(
-            "2.1.0"
-        )
+        return version.parse(importlib.metadata.version("flash_attn")) >= version.parse("2.1.0")
     elif torch.version.hip:
         # TODO: Bump the requirement to 2.1.0 once released in https://github.com/ROCmSoftwarePlatform/flash-attention
-        return version.parse(importlib.metadata.version("flash_attn")) >= version.parse(
-            "2.0.4"
-        )
+        return version.parse(importlib.metadata.version("flash_attn")) >= version.parse("2.0.4")
     else:
         return False
 
@@ -666,9 +642,7 @@ def is_flash_attn_greater_or_equal_2_10():
     if not _is_package_available("flash_attn"):
         return False
 
-    return version.parse(importlib.metadata.version("flash_attn")) >= version.parse(
-        "2.1.0"
-    )
+    return version.parse(importlib.metadata.version("flash_attn")) >= version.parse("2.1.0")
 
 
 def is_flash_attn_available():
@@ -711,16 +685,12 @@ def is_protobuf_available():
 
 def is_accelerate_available(min_version: str = ACCELERATE_MIN_VERSION):
     if min_version is not None:
-        return _accelerate_available and version.parse(
-            _accelerate_version
-        ) >= version.parse(min_version)
+        return _accelerate_available and version.parse(_accelerate_version) >= version.parse(min_version)
     return _accelerate_available
 
 
 def is_fsdp_available(min_version: str = FSDP_MIN_VERSION):
-    return is_torch_available() and version.parse(_torch_version) >= version.parse(
-        min_version
-    )
+    return is_torch_available() and version.parse(_torch_version) >= version.parse(min_version)
 
 
 def is_optimum_available():
@@ -793,10 +763,7 @@ def is_in_notebook():
             raise ImportError("console")
         if "VSCODE_PID" in os.environ:
             raise ImportError("vscode")
-        if (
-            "DATABRICKS_RUNTIME_VERSION" in os.environ
-            and os.environ["DATABRICKS_RUNTIME_VERSION"] < "11.0"
-        ):
+        if "DATABRICKS_RUNTIME_VERSION" in os.environ and os.environ["DATABRICKS_RUNTIME_VERSION"] < "11.0":
             # Databricks Runtime 11.0 and above uses IPython kernel by default so it should be compatible with Jupyter notebook
             # https://docs.microsoft.com/en-us/azure/databricks/notebooks/ipython-kernel
             raise ImportError("databricks")
@@ -824,9 +791,7 @@ def is_sagemaker_dp_enabled():
     try:
         # Parse it and check the field "sagemaker_distributed_dataparallel_enabled".
         sagemaker_params = json.loads(sagemaker_params)
-        if not sagemaker_params.get(
-            "sagemaker_distributed_dataparallel_enabled", False
-        ):
+        if not sagemaker_params.get("sagemaker_distributed_dataparallel_enabled", False):
             return False
     except json.JSONDecodeError:
         return False
@@ -917,9 +882,7 @@ def is_sudachi_available():
 
 
 def is_jumanpp_available():
-    return (importlib.util.find_spec("rhoknp") is not None) and (
-        shutil.which("jumanpp") is not None
-    )
+    return (importlib.util.find_spec("rhoknp") is not None) and (shutil.which("jumanpp") is not None)
 
 
 def is_cython_available():
@@ -1312,21 +1275,11 @@ def requires_backends(obj, backends):
     name = obj.__name__ if hasattr(obj, "__name__") else obj.__class__.__name__
 
     # Raise an error for users who might not realize that classes without "TF" are torch-only
-    if (
-        "torch" in backends
-        and "tf" not in backends
-        and not is_torch_available()
-        and is_tf_available()
-    ):
+    if "torch" in backends and "tf" not in backends and not is_torch_available() and is_tf_available():
         raise ImportError(PYTORCH_IMPORT_ERROR_WITH_TF.format(name))
 
     # Raise the inverse error for PyTorch users trying to load TF classes
-    if (
-        "tf" in backends
-        and "torch" not in backends
-        and is_torch_available()
-        and not is_tf_available()
-    ):
+    if "tf" in backends and "torch" not in backends and is_torch_available() and not is_tf_available():
         raise ImportError(TF_IMPORT_ERROR_WITH_PYTORCH.format(name))
 
     checks = (BACKENDS_MAPPING[backend] for backend in backends)
@@ -1396,9 +1349,7 @@ class _LazyModule(ModuleType):
 
     # Very heavily inspired by optuna.integration._IntegrationModule
     # https://github.com/optuna/optuna/blob/master/optuna/integration/__init__.py
-    def __init__(
-        self, name, module_file, import_structure, module_spec=None, extra_objects=None
-    ):
+    def __init__(self, name, module_file, import_structure, module_spec=None, extra_objects=None):
         super().__init__(name)
         self._modules = set(import_structure.keys())
         self._class_to_module = {}
@@ -1406,9 +1357,7 @@ class _LazyModule(ModuleType):
             for value in values:
                 self._class_to_module[value] = key
         # Needed for autocompletion in an IDE
-        self.__all__ = list(import_structure.keys()) + list(
-            chain(*import_structure.values())
-        )
+        self.__all__ = list(import_structure.keys()) + list(chain(*import_structure.values()))
         self.__file__ = module_file
         self.__spec__ = module_spec
         self.__path__ = [os.path.dirname(module_file)]
@@ -1469,9 +1418,7 @@ def direct_transformers_import(path: str, file="__init__.py") -> ModuleType:
     """
     name = "transformers"
     location = os.path.join(path, file)
-    spec = importlib.util.spec_from_file_location(
-        name, location, submodule_search_locations=[path]
-    )
+    spec = importlib.util.spec_from_file_location(name, location, submodule_search_locations=[path])
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module = sys.modules[name]

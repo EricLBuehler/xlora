@@ -2,7 +2,6 @@ from typing import Optional
 
 from torch import Tensor
 
-
 _scalings: Optional[Tensor] = None
 
 
