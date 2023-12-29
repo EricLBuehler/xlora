@@ -3,14 +3,15 @@ from typing import List, Optional
 
 import torch
 import torch.nn as nn
+from transformers.configuration_utils import PretrainedConfig
 
 from mole.utils.cache_utils import Cache, DynamicCache
+
 from ..mistral import MistralDecoderLayer, MistralPreTrainedModel, MistralRMSNorm
 from ..utils.modeling_attn_mask_utils import (
     _prepare_4d_causal_attention_mask,
     _prepare_4d_causal_attention_mask_for_sdpa,
 )
-from transformers.configuration_utils import PretrainedConfig
 
 logger = logging.get_logger(__name__)
 
