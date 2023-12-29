@@ -3,9 +3,9 @@ from typing import List, Optional
 
 import torch
 import torch.nn as nn
-from mistral import MistralDecoderLayer, MistralPreTrainedModel, MistralRMSNorm
+from ..mistral import MistralDecoderLayer, MistralPreTrainedModel, MistralRMSNorm
 
-from ..mistral.configuration_mistral import MistralConfig
+from transformers import MistralConfig
 
 logger = logging.get_logger(__name__)
 

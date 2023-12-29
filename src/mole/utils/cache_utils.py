@@ -1,5 +1,3 @@
-# Credit to Huggingface Transformers, https://github.com/huggingface/transformers/blob/main/src/transformers/cache_utils.py
-
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
@@ -286,9 +284,7 @@ class SinkCache(Cache):
         else:
             # Shifting cache
             keys_to_keep = self.key_cache[layer_idx][
-                :,
-                :,
-                -self.window_length + self.num_sink_tokens + key_states.shape[-2] :,
+                :, :, -self.window_length + self.num_sink_tokens + key_states.shape[-2] :
             ]
 
             # On RoPE models, we need to recompute the Key rotation as the tokens are shifted
@@ -311,9 +307,7 @@ class SinkCache(Cache):
 
             sink_values = self.value_cache[layer_idx][:, :, : self.num_sink_tokens]
             values_to_keep = self.value_cache[layer_idx][
-                :,
-                :,
-                -self.window_length + self.num_sink_tokens + value_states.shape[-2] :,
+                :, :, -self.window_length + self.num_sink_tokens + value_states.shape[-2] :
             ]
             self.value_cache[layer_idx] = torch.cat([sink_values, values_to_keep, value_states], dim=-2)
 
