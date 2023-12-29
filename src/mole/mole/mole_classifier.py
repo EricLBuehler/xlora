@@ -81,7 +81,7 @@ class MoLEClassifierConfig(PretrainedConfig):
         )
 
 
-class MoleClassifier(MistralPreTrainedModel):
+class MoLEClassifier(MistralPreTrainedModel):
     """
     A classifier to select LoRA layers for MoLE. It uses a single Mistral decoder layer to generate the LoRA alpha values.
     """
