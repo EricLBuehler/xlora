@@ -1,2 +1,2 @@
-import mole
-import mistral
+from . import mole
+from . import mistral
