@@ -27,7 +27,7 @@ import torch
 import torch.nn.functional as F
 import torch.utils.checkpoint
 from torch import nn
-from transformers import MistralConfig
+from transformers import MistralConfig, PreTrainedModel
 from transformers.activations import ACT2FN
 from transformers.utils import logging
 from transformers.utils.import_utils import (
@@ -785,3 +785,25 @@ class MistralDecoderLayer(nn.Module):
             outputs += (present_key_value,)
 
         return outputs
+
+
+class MistralPreTrainedModel(PreTrainedModel):
+    config_class = MistralConfig
+    base_model_prefix = "model"
+    supports_gradient_checkpointing = True
+    _no_split_modules = ["MistralDecoderLayer"]
+    _skip_keys_device_placement = "past_key_values"
+    _supports_flash_attn_2 = True
+    _supports_sdpa = True
+    _supports_cache_class = True
+
+    def _init_weights(self, module):
+        std = self.config.initializer_range
+        if isinstance(module, nn.Linear):
+            module.weight.data.normal_(mean=0.0, std=std)
+            if module.bias is not None:
+                module.bias.data.zero_()
+        elif isinstance(module, nn.Embedding):
+            module.weight.data.normal_(mean=0.0, std=std)
+            if module.padding_idx is not None:
+                module.weight.data[module.padding_idx].zero_()

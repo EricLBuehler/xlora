@@ -1,10 +1,10 @@
-import logging
 from typing import List, Optional
 
 import torch
 import torch.nn as nn
 from transformers.configuration_utils import PretrainedConfig
 
+import mole.utils.logging as logging
 from mole.utils.cache_utils import Cache, DynamicCache
 
 from ..mistral import MistralDecoderLayer, MistralPreTrainedModel, MistralRMSNorm
