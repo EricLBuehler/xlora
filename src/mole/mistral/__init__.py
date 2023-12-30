@@ -1,1 +1,1 @@
-from mistral import MistralDecoderLayer, MistralPreTrainedModel, MistralRMSNorm
+from .mistral import MistralDecoderLayer, MistralPreTrainedModel, MistralRMSNorm
