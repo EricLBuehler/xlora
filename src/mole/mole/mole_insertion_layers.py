@@ -168,15 +168,6 @@ class MoLEBaseLayer:
             Vh = Vh.reshape(target_lora_A.data.shape)
         return Vh, U
 
-    @classmethod
-    def freeze_adapter(cls, target: lora.LoraLayer):
-        for name in lora.LoraLayer.adapter_layer_names:
-            if hasattr(target, name):
-                adapter_layer = getattr(target, name)
-                assert isinstance(adapter_layer, nn.ModuleDict) or isinstance(adapter_layer, nn.ParameterDict)
-                for _, value in adapter_layer.items():
-                    value.requires_grad_(False)
-
 
 class MoLELayer(MoLEBaseLayer):
     """
@@ -197,8 +188,6 @@ class MoLELayer(MoLEBaseLayer):
         svd_driver: Optional[str] = None,
         top_k_lora: Optional[int] = None,
     ) -> None:
-        self.freeze_adapter(target)
-
         self.adapters = adapters
         self.target = target
         self.peft_config = peft_config
