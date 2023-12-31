@@ -21,7 +21,7 @@ class MoLEClassifier(MistralPreTrainedModel):
     A classifier to select LoRA layers for MoLE. It uses a single Mistral decoder layer to generate the LoRA alpha values.
     """
 
-    def __init__(self, config: MoLEConfig):
+    def __init__(self, config: MoLEConfig, n_classes: int):
         super().__init__(config)
 
         self.padding_idx = config.pad_token_id
@@ -34,7 +34,7 @@ class MoLEClassifier(MistralPreTrainedModel):
 
         self.gradient_checkpointing = False
 
-        self.score = nn.Linear(config.hidden_size, config.n_classes, bias=False)
+        self.score = nn.Linear(config.hidden_size, n_classes, bias=False)
         # Initialize weights and apply final processing
         self.post_init()
 

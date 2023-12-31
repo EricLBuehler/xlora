@@ -19,8 +19,6 @@ class MoLEConfig(PretrainedConfig):
 
 
     Args:
-        n_classes (`int`):
-            Number of LoRA experts.
         top_k_lora (`int`, *optional*, defaults to None):
             Sparesely select the top_k LoRA experts instead of the default dense method.
         hidden_size (`int`, *optional*, defaults to 4096):
@@ -72,7 +70,6 @@ class MoLEConfig(PretrainedConfig):
 
     def __init__(
         self,
-        n_classes,
         top_k_lora=None,
         vocab_size=32000,
         hidden_size=4096,
@@ -94,7 +91,6 @@ class MoLEConfig(PretrainedConfig):
         attention_dropout=0.0,
         **kwargs,
     ):
-        self.n_classes = n_classes
         self.top_k_lora = top_k_lora
 
         self.vocab_size = vocab_size
@@ -174,10 +170,10 @@ def add_mole_to_model(
     errors.
 
     Args:
-        base (`Module`):
+        model (`Module`):
             The model to recursively loop over to find and convert all LoRA adapters.
         adapters (`list`):
-            List of adapter names to be merged.
+            List of adapter names to use as LoRA experts.
         peft_config: (`dict`):
             PeftConfigs for each adapter in the LoraLayer.
         combination_type (`str`):
@@ -209,7 +205,8 @@ def add_mole_to_model(
         top_k_lora=mole_config.top_k_lora,
     )
 
-    mole_classifier = MoLEClassifier(mole_config)
+    n_classes = len(adapters)
+    mole_classifier = MoLEClassifier(mole_config, n_classes)
 
     def hook(module, *args, **kwargs) -> None:
         mole_output = mole_classifier.forward(
