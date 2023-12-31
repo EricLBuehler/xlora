@@ -44,7 +44,6 @@ def add_mole_to_model(
     model: PreTrainedModel,
     mole_config: MoLEConfig,
     adapters: Dict[str, str],
-    peft_config: Dict[str, PeftConfig],
     combination_type: str = "svd",
     svd_rank: Optional[bool] = None,
     svd_clamp: Optional[float] = None,
@@ -64,8 +63,6 @@ def add_mole_to_model(
             The model to add the LoRA adapters to.
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
-        peft_config: (`dict`):
-            PeftConfigs for each adapter in the LoraLayer.
         combination_type (`str`):
             Type of merging. Can be one of [`svd`, `linear`, `cat`]. When using the `cat` combination_type you
             should be aware that rank of the resulting adapter will be equal to the sum of all adapters ranks. So
@@ -91,6 +88,7 @@ def add_mole_to_model(
     for adapter_name, model_id in adapters_items:
         model.load_adapter(model_id, adapter_name)
 
+    peft_config = model.peft_config
     adapters = list(adapters.keys())
 
     convert_layers_to_mole(
