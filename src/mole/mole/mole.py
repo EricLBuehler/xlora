@@ -1,6 +1,7 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import torch.nn as nn
+from peft.mixed_model import PeftMixedModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig
 from transformers.configuration_utils import PretrainedConfig
@@ -207,6 +208,7 @@ def add_mole_to_model(
 
     n_classes = len(adapters)
     mole_classifier = MoLEClassifier(mole_config, n_classes)
+    mole_state.set_mole_classifier(mole_classifier)
 
     def hook(module, *args, **kwargs) -> None:
         mole_output = mole_classifier.forward(
@@ -217,3 +219,30 @@ def add_mole_to_model(
         mole_state.set_scalings(mole_scalings)
 
     model.register_forward_pre_hook(hook)
+
+
+def get_nb_trainable_parameters(model: PeftMixedModel) -> Tuple[int, int]:
+    r"""
+    Returns the number of trainable parameters and number of all parameters in the model.
+    """
+    model_trainable_params, model_all_param = model.get_nb_trainable_parameters()
+
+    mole_classifier = mole_state.get_mole_classifier()
+    mole_trainable_params, mole_all_param = mole_classifier.get_nb_trainable_parameters()
+
+    trainable_params, all_param = (model_trainable_params + mole_trainable_params), (model_all_param + mole_all_param)
+
+    return trainable_params, all_param
+
+
+def print_trainable_parameters(model: PeftMixedModel):
+    """
+    Prints the number of trainable parameters in the model, including of the MoLE classifier.
+    """
+    trainable_params, all_param = get_nb_trainable_parameters(model)
+
+    print(
+        f"trainable params: {trainable_params:,d} || "
+        f"all params: {all_param:,d} || "
+        f"trainable%: {100 * trainable_params / all_param:.4f}"
+    )
