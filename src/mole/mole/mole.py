@@ -1,10 +1,10 @@
 from typing import Dict, List, Optional, Tuple
 
 import torch
-import torch.nn as nn
 from peft.mixed_model import PeftMixedModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig
+from transformers import PreTrainedModel
 
 from mole.mole import mole_state
 from mole.mole.mole_classifier import MoLEClassifier
@@ -41,7 +41,7 @@ class MoLEConfig:
 
 
 def convert_layers_to_mole(
-    base: nn.Module,
+    base: PeftMixedModel,
     adapters: List[str],
     peft_config: Dict[str, PeftConfig],
     combination_type: str = "svd",
@@ -69,9 +69,9 @@ def convert_layers_to_mole(
 
 
 def add_mole_to_model(
-    model: nn.Module,
+    model: PreTrainedModel,
     mole_config: MoLEConfig,
-    adapters: List[str],
+    adapters: Dict[str, str],
     peft_config: Dict[str, PeftConfig],
     combination_type: str = "svd",
     svd_rank: Optional[bool] = None,
@@ -88,10 +88,10 @@ def add_mole_to_model(
     errors.
 
     Args:
-        model (`Module`):
-            The model to recursively loop over to find and convert all LoRA adapters.
-        adapters (`list`):
-            List of adapter names to use as LoRA experts.
+        model (`PreTrainedModel`):
+            The model to add the LoRA adapters to.
+        adapters (`dict`):
+            Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
         peft_config: (`dict`):
             PeftConfigs for each adapter in the LoraLayer.
         combination_type (`str`):
@@ -111,6 +111,16 @@ def add_mole_to_model(
             one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
             documentation. Defaults to None.
     """
+
+    adapters_items = list(adapters.items())
+    first_item = adapters_items[0]
+    adapters_items = adapters_items[1:]
+    model = PeftMixedModel.from_pretrained(model, first_item[1], first_item[0], False)
+    for adapter_name, model_id in adapters_items:
+        model.load_adapter(model_id, adapter_name)
+
+    adapters = list(adapters.keys())
+
     convert_layers_to_mole(
         model,
         adapters,

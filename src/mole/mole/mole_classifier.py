@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+from peft.mixed_model import PeftMixedModel
 from transformers.modeling_outputs import BaseModelOutputWithPast
 
 import mole.utils.logging as logging
@@ -15,7 +16,7 @@ class MoLEClassifier:
     A classifier to select LoRA layers for MoLE. It runs the base model with LoRA adapter scalings of 0.
     """
 
-    def __init__(self, model: nn.Module, config: MoLEConfig, n_classes: int):
+    def __init__(self, model: PeftMixedModel, config: MoLEConfig, n_classes: int):
         self.model = model
         self.n_classes = n_classes
         self.config = config
