@@ -2,6 +2,8 @@ from typing import Optional
 
 from torch import Tensor
 
+from mole.mole.mole_classifier import MoLEClassifier
+
 _scalings: Optional[Tensor] = None
 
 
@@ -19,3 +21,21 @@ def set_scalings(value: Tensor) -> None:
     """
     assert value.ndim == 2
     _scalings = value
+
+
+_mole_classifier: Optional[MoLEClassifier] = None
+
+
+def get_mole_classifier() -> MoLEClassifier:
+    """
+    Reads the MoLEClassifier.
+    """
+    assert _mole_classifier is not None
+    return _mole_classifier
+
+
+def set_mole_classifier(value: MoLEClassifier) -> None:
+    """
+    Sets the MoLEClassifier.
+    """
+    _mole_classifier = value
