@@ -12,7 +12,7 @@ logger = logging.get_logger(__name__)
 
 class MoLEClassifier:
     """
-    A classifier to select LoRA layers for MoLE. It uses a single Mistral decoder layer to generate the LoRA alpha values.
+    A classifier to select LoRA layers for MoLE. It runs the base model with LoRA adapter scalings of 0.
     """
 
     def __init__(self, model: nn.Module, config: MoLEConfig, n_classes: int):
