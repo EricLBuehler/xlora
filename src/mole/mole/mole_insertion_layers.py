@@ -173,7 +173,7 @@ class MoLEBaseLayer:
         for name in lora.LoraLayer.adapter_layer_names:
             if hasattr(target, name):
                 adapter_layer = getattr(target, name)
-                assert isinstance(adapter_layer, nn.ModuleDict)
+                assert isinstance(adapter_layer, nn.ModuleDict) or isinstance(adapter_layer, nn.ParameterDict)
                 for _, value in adapter_layer.items():
                     value.requires_grad_(False)
 
