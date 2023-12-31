@@ -10,4 +10,4 @@ gate the LoRA experts in a dense fashion. This method has several advantages:
 - Easy-to-use API: `add_mole_to_model`
 
 ## Installation
-Until a pip release is uploaded, `git clone` this repositiory and run `pip install -e .`.
+Pending a pip release, `git clone` this repository and run `pip install -e .`.
