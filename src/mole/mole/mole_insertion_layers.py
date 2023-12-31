@@ -195,12 +195,14 @@ class MoLELayer(MoLEBaseLayer):
         svd_clamp: Optional[float] = None,
         svd_full_matrices: Optional[bool] = True,
         svd_driver: Optional[str] = None,
+        top_k_lora: Optional[int] = None,
     ) -> None:
         self.freeze_adapter(target)
 
         self.adapters = adapters
         self.target = target
         self.peft_config = peft_config
+        self.top_k_lora = top_k_lora
 
         self.combination_type = combination_type
         self.svd_rank = svd_rank
@@ -221,23 +223,43 @@ class MoLELayer(MoLEBaseLayer):
         """
         scalings = mole_state.get_scalings()
         outputs = []
-        for batch_scalings in scalings:
-            self.add_weighted_adapter(
-                target=self.target,
-                adapters=self.adapters,
-                weights=list(batch_scalings),
-                adapter_name=MOLE_ADAPTER_NAME,
-                peft_config=self.peft_config,
-                combination_type=self.combination_type,
-                svd_rank=self.svd_rank,
-                svd_clamp=self.svd_clamp,
-                svd_full_matrices=self.svd_full_matrices,
-                svd_driver=self.svd_driver,
-            )
-            self.target.set_adapter(MOLE_ADAPTER_NAME)
 
-            output = self.target.forward(x, *args, **kwargs)
-            output = output.unsqueeze(0)
-            outputs.append(output)
+        if self.top_k_lora is None:
+            for batch_scalings in scalings:
+                self.add_weighted_adapter(
+                    target=self.target,
+                    adapters=self.adapters,
+                    weights=list(batch_scalings),
+                    adapter_name=MOLE_ADAPTER_NAME,
+                    peft_config=self.peft_config,
+                    combination_type=self.combination_type,
+                    svd_rank=self.svd_rank,
+                    svd_clamp=self.svd_clamp,
+                    svd_full_matrices=self.svd_full_matrices,
+                    svd_driver=self.svd_driver,
+                )
+        else:
+            for batch_scalings in scalings:
+                (topk_scalings, indices) = torch.topk(input=batch_scalings, k=self.top_k_lora)
+                indices = list(indices)
+                adapters = [self.adapters[i] for i in indices]
+                self.add_weighted_adapter(
+                    target=self.target,
+                    adapters=adapters,
+                    weights=list(topk_scalings),
+                    adapter_name=MOLE_ADAPTER_NAME,
+                    peft_config=self.peft_config,
+                    combination_type=self.combination_type,
+                    svd_rank=self.svd_rank,
+                    svd_clamp=self.svd_clamp,
+                    svd_full_matrices=self.svd_full_matrices,
+                    svd_driver=self.svd_driver,
+                )
+
+        self.target.set_adapter(MOLE_ADAPTER_NAME)
+
+        output = self.target.forward(x, *args, **kwargs)
+        output = output.unsqueeze(0)
+        outputs.append(output)
 
         return torch.cat(tensors=outputs, dim=0)
