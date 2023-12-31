@@ -6,7 +6,7 @@ from peft.mixed_model import PeftMixedModel
 from transformers.modeling_outputs import BaseModelOutputWithPast
 
 import mole.utils.logging as logging
-from mole.mole.mole import MoLEConfig
+from mole.mole.mole_config import MoLEConfig
 
 logger = logging.get_logger(__name__)
 
