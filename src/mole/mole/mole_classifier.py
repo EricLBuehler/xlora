@@ -23,7 +23,20 @@ class MoLEClassifier(nn.Module):
         self.n_classes = n_classes
         self.config = config
 
-        self.score = nn.Linear(config.hidden_size, n_classes, bias=False)
+        self.inner: List[nn.Linear] = []
+        if self.config.mole_depth == 1:
+            self.inner.append(nn.Linear(config.hidden_size, n_classes, bias=False))
+        elif self.config.mole_depth == 2:
+            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False))
+            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False))
+        else:
+            assert self.config.mole_depth > 0
+            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False))
+
+            for _ in range(config.mole_depth - 2):
+                self.inner.append(nn.Linear(config.mole_size, config.mole_size, bias=False))
+
+            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False))
 
     def forward(
         self,
@@ -55,7 +68,9 @@ class MoLEClassifier(nn.Module):
         )
         hidden_states = result[0]
 
-        logits = self.score(hidden_states)
+        logits = hidden_states
+        for layer in self.inner:
+            logits = layer.forward(logits)
 
         if self.config.pad_token_id is None:
             sequence_lengths = -1
