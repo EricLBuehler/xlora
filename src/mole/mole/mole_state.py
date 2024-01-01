@@ -69,6 +69,7 @@ _mole_classifier: Optional[MoLEClassifier] = None
 
 
 def get_mole_classifier() -> MoLEClassifier:
+    global _mole_classifier
     """
     Reads the MoLEClassifier.
     """
@@ -77,6 +78,7 @@ def get_mole_classifier() -> MoLEClassifier:
 
 
 def set_mole_classifier(value: MoLEClassifier) -> None:
+    global _mole_classifier
     """
     Sets the MoLEClassifier.
     """
