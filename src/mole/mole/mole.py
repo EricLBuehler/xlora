@@ -147,3 +147,14 @@ def print_trainable_parameters(model: PeftMixedModel):
         f"all params: {all_param:,d} || "
         f"trainable%: {100 * trainable_params / all_param:.4f}"
     )
+
+
+def set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int):
+    """
+    Sets the scaling states to a Tensor. The scaling states will have a lifetime of n accesses. Following
+    this, the value of the scalings will be reset to the previous value. If the original value had a lifetime,
+    only the value which it would have if it were read at assignment-time will be preserved.
+
+    A tensor with 2 dim is expected: (batch_size, num_classes)
+    """
+    mole_state.set_scalings_lifetime(value, n_accesses_lifetime)
