@@ -23,7 +23,7 @@ class MoLEClassifier(nn.Module):
         self.n_classes = n_classes
         self.config = config
 
-        self.inner: List[nn.Linear] = []
+        self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.mole_depth == 1:
             self.inner.append(nn.Linear(config.hidden_size, n_classes, bias=False))
         elif self.config.mole_depth == 2:
