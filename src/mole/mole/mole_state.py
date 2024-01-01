@@ -43,6 +43,7 @@ def get_scalings() -> Tensor:
 
 
 def set_scalings(value: Tensor) -> None:
+    global _scalings
     """
     Sets the scaling states to a Tensor.
 
