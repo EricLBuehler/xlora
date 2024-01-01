@@ -49,7 +49,7 @@ def add_mole_to_model(
     svd_clamp: Optional[float] = None,
     svd_full_matrices: Optional[bool] = True,
     svd_driver: Optional[str] = None,
-):
+) -> PeftMixedModel:
     """
     This method converts all LoRA adapters to MoLE layers, and it is the intended entrypoint
     for use of MoLE. All LoRA adapters will be frozen, and the MoLEClassifier is initialized.
@@ -79,6 +79,9 @@ def add_mole_to_model(
             Name of the cuSOLVER method to be used. This keyword argument only works when merging on CUDA. Can be
             one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
             documentation. Defaults to None.
+    Returns:
+        model (`PeftMixedModel`):
+            The new model.
     """
 
     adapters_items = list(adapters.items())
