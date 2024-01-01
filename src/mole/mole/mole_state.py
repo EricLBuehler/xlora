@@ -1,6 +1,7 @@
-from typing import Optional, override
+from typing import Optional
 
 from torch import Tensor
+from typing_extensions import override
 
 from mole.mole.mole_classifier import MoLEClassifier
 
