@@ -18,7 +18,7 @@ class MoLEClassifier(nn.Module):
 
     def __init__(self, model: PeftMixedModel, config: MoLEConfig, n_classes: int):
         super().__init__()
-        
+
         self.model = model
         self.n_classes = n_classes
         self.config = config

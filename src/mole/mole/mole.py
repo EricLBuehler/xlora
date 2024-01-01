@@ -60,7 +60,7 @@ def add_mole_to_model(
 
     Args:
         model (`PreTrainedModel`):
-            The model to add the LoRA adapters to.
+            The model to add the LoRA adapters to. It may be modified in place.
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
         combination_type (`str`):
@@ -123,6 +123,10 @@ def add_mole_to_model(
         mole_state.set_scalings(mole_scalings)
 
     model.register_forward_pre_hook(hook)
+
+    for param in model.base_model.parameters():
+        param.requires_grad = False
+
     return model
 
 
