@@ -11,12 +11,14 @@ from mole.mole.mole_config import MoLEConfig
 logger = logging.get_logger(__name__)
 
 
-class MoLEClassifier:
+class MoLEClassifier(nn.Module):
     """
     A classifier to select LoRA layers for MoLE. It runs the base model with LoRA adapter scalings of 0.
     """
 
     def __init__(self, model: PeftMixedModel, config: MoLEConfig, n_classes: int):
+        super().__init__()
+        
         self.model = model
         self.n_classes = n_classes
         self.config = config
