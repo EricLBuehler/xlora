@@ -123,6 +123,7 @@ def add_mole_to_model(
         mole_state.set_scalings(mole_scalings)
 
     model.register_forward_pre_hook(hook)
+    return model
 
 
 def get_nb_trainable_parameters(model: PeftMixedModel) -> Tuple[int, int]:
