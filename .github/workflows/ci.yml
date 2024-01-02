@@ -12,3 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: chartboost/ruff-action@v1
+
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install -e .
+      - run: python -m pytest -s -v ./tests
