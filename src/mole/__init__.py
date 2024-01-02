@@ -1,4 +1,3 @@
-from . import mole_state
 from .mole import (
     add_mole_to_model,
     get_nb_trainable_parameters,
