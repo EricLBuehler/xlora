@@ -111,8 +111,9 @@ def add_mole_to_model(
     mole_state.set_mole_classifier(mole_classifier)
 
     def hook(module, *args, **kwargs) -> None:
-        if "_mole_classifier_inhibitor" in kwargs and kwargs["_mole_classifier_inhibitor"][0]:
-            batch_size = kwargs["_mole_classifier_inhibitor"][1]
+        if "_mole_classifier_inhibitor_flag" in kwargs:
+            assert isinstance(kwargs["_mole_classifier_inhibitor_flag"], int)
+            batch_size = kwargs["_mole_classifier_inhibitor_flag"]
             mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
             return
 

@@ -64,7 +64,7 @@ class MoLEClassifier(nn.Module):
             output_attentions,
             output_hidden_states,
             return_dict,
-            _mole_classifier_inhibitor=(True, batch_size),
+            _mole_classifier_inhibitor_flag=batch_size,
         )
         hidden_states = result[0]
 
