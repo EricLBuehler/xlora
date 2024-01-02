@@ -5,8 +5,8 @@ MoLE works by learning the alpha scaling values for LoRA adapters, which are fro
 gate the LoRA experts in a dense fashion. Optionally, the top-k LoRA experts are selected in a sparse fashion.
 
 ## Advantages and features
-- Dense gating of experts allows mixing
-- Because the MoLE layer is the only trainable layer, fine-tuning has few trainable parameters
+- Effective: Dense gating of experts allows effective mixing
+- Efficient fine-tuning: low trainable parameter count.
 - Easy-to-use API: `add_mole_to_model`
 
 See the [examples](examples) folder for some examples of how to get started with MoLE.
