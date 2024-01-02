@@ -6,10 +6,10 @@ from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig
 from transformers import PreTrainedModel
 
-from mole.mole import mole_state
-from mole.mole.mole_classifier import MoLEClassifier
-from mole.mole.mole_config import MoLEConfig
-from mole.mole.mole_insertion_layers import MoLELayer
+from . import mole_state
+from .mole_classifier import MoLEClassifier
+from .mole_config import MoLEConfig
+from .mole_insertion_layers import MoLELayer
 
 
 def convert_layers_to_mole(

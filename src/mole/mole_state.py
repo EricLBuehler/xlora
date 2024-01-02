@@ -3,7 +3,7 @@ from typing import Optional
 from torch import Tensor
 from typing_extensions import override
 
-from mole.mole.mole_classifier import MoLEClassifier
+from .mole_classifier import MoLEClassifier
 
 
 class _MoLEScalings:
