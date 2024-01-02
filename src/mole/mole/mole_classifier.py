@@ -68,10 +68,6 @@ class MoLEClassifier(nn.Module):
         )
         hidden_states = result[0]
 
-        # Select the last token
-        hidden_states: torch.Tensor = hidden_states[:, -1, :]
-        hidden_states = hidden_states.squeeze(dim=1)
-
         logits = hidden_states
         for layer in self.inner:
             logits = layer.forward(logits)
