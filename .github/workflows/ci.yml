@@ -16,5 +16,6 @@ jobs:
   pytest:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - run: pip install -e .
       - run: python -m pytest -s -v ./tests
