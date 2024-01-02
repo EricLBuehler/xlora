@@ -16,5 +16,5 @@ jobs:
   pytest:
     runs-on: ubuntu-latest
     steps:
-      - run: pip install -e .
-      - run: python -m pytest -s -v ./tests
+      - run: pip install -e /home/runner/work/mole/
+      - run: python -m pytest -s -v /home/runner/work/mole/tests
