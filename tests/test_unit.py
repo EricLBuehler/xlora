@@ -14,6 +14,7 @@ def test_items():
         "__path__",
         "__spec__",
         "add_mole_to_model",
+        "from_pretrained",
         "get_nb_trainable_parameters",
         "mole",
         "mole_classifier",
