@@ -5,6 +5,8 @@ MoLE works by learning the alpha scaling values for LoRA adapters, which are fro
 gate the LoRA experts in a dense fashion. Optionally, the top-k LoRA experts may be selected in a sparse fashion based on the 
 output of the MoLE classifier.
 
+See the [docs](docs/INDEX.md).
+
 <img alt="MoLE architecture" src="res/architecture.svg">
 
 ## Advantages and features
