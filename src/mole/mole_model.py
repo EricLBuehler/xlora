@@ -13,6 +13,10 @@ from . import mole_state
 
 
 class MoLEModel(nn.Module):
+    """
+    This class is the intended way to interact with a model that has been converted to MoLE.
+    """
+
     def __init__(self, model: PeftMixedModel, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
