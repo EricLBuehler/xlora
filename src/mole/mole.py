@@ -1,10 +1,15 @@
+import json
+import os
 from typing import Dict, List, Optional, Tuple
 
+import safetensors
 import torch
 from peft.mixed_model import PeftMixedModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig
 from transformers import PreTrainedModel
+
+from mole.mole_model import MoLEModel
 
 from . import mole_state
 from .mole_classifier import MoLEClassifier
@@ -49,7 +54,7 @@ def add_mole_to_model(
     svd_clamp: Optional[float] = None,
     svd_full_matrices: Optional[bool] = True,
     svd_driver: Optional[str] = None,
-) -> PeftMixedModel:
+) -> MoLEModel:
     """
     This method converts all LoRA adapters to MoLE layers, and it is the intended entrypoint
     for use of MoLE. All LoRA adapters will be frozen, and the MoLEClassifier is initialized.
@@ -128,7 +133,33 @@ def add_mole_to_model(
     for param in model.base_model.parameters():
         param.requires_grad = False
 
-    return model
+    return MoLEModel(model)
+
+
+def from_pretrained(load_directory: str, from_safetensors: bool):
+    """
+    Loads a pretrained classifier from the specified folder. This is the counterpart to `MoLEModel.save_pretrained`.
+
+    Args:
+        load_directory (`str`):
+            The directory to load the classifier weights from.
+        from_safetensors (`bool`):
+            Whether to load the classifier weights from a .pt or .safetensors file.
+    """
+
+    classifier = mole_state.get_mole_classifier()
+    with open(os.path.join(load_directory, "mole_classifier_config.json"), "w") as f:
+        conf = json.load(f)
+        assert classifier.n_classes == conf["n_classes"]
+
+    if from_safetensors:
+        state_dict = safetensors.torch.load_file(
+            os.path.join(load_directory, "mole_classifier.safetensors"),
+            device={k: v.device for k, v in classifier.state_dict()},
+        )
+    else:
+        state_dict = torch.load(os.path.join(load_directory, "mole_classifier.pt"))
+    classifier.load_state_dict(state_dict)
 
 
 def get_nb_trainable_parameters(model: PeftMixedModel) -> Tuple[int, int]:
