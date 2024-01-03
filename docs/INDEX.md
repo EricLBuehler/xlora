@@ -7,3 +7,6 @@ Saving, loading, and initialization functions
 
 ## [Utilities](UTILS.md)
 Utility functions.
+
+## [`MoLEModel`](MOLE_MODEL.md)
+Functions for the `MoLEModel`.
