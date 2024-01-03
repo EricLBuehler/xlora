@@ -1,7 +1,7 @@
 import collections
 import json
 import os
-from typing import Optional
+from typing import Optional, Union
 
 import peft
 import safetensors
@@ -83,3 +83,36 @@ class MoLEModel(nn.Module):
         Forward pass of the model.
         """
         return self.model(*args, **kwargs)
+
+    def cuda(self, device: Optional[Union[int, torch.device]] = None):
+        """Moves all model and MoLE classifier parameters and buffers to the GPU."""
+        self.model = self.model.cuda(device=device)
+        classifier = mole_state.get_mole_classifier()
+        classifier = classifier.cuda(device=device)
+        mole_state.set_mole_classifier(classifier)
+
+    def ipu(self, device: Optional[Union[int, torch.device]] = None):
+        """Moves all model and MoLE classifier parameters and buffers to the IPU."""
+        self.model = self.model.ipu(device=device)
+        classifier = mole_state.get_mole_classifier()
+        classifier = classifier.ipu(device=device)
+        mole_state.set_mole_classifier(classifier)
+
+    def xpu(self, device: Optional[Union[int, torch.device]] = None):
+        """Moves all model and MoLE classifier parameters and buffers to the XPU."""
+        self.model = self.model.xpu(device=device)
+        classifier = mole_state.get_mole_classifier()
+        classifier = classifier.xpu(device=device)
+        mole_state.set_mole_classifier(classifier)
+
+    def cpu(self):
+        """Moves all model and MoLE classifier parameters and buffers to the XPU. Modifies the models in place."""
+        self.model.cpu()
+        classifier = mole_state.get_mole_classifier()
+        classifier.cpu()
+
+    def type(self, dst_type: Union[torch.dtype, str]):
+        """Casts all parameters and buffers of the model and MoLE classifier to `dst_type`. Modifies the models in place."""
+        self.model.type(dst_type=dst_type)
+        classifier = mole_state.get_mole_classifier()
+        classifier.type(dst_type=dst_type)
