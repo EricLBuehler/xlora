@@ -22,7 +22,6 @@ class MoLEModel(nn.Module):
         save_directory: str,
         safe_serialization: Optional[bool] = True,
         is_main_process: bool = True,
-        **kwargs,
     ) -> None:
         r"""
         This function saves the classifier weights to a directory.
