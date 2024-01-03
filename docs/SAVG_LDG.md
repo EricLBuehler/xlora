@@ -91,7 +91,7 @@ def from_pretrained(
 
 `from_pretrained` initializes the base model like `add_mole_to_model`, and then loads the classifier from specified weights files.
 
-Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `MoLEModel.save_pretrained`.
+Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to [`MoLEModel.save_pretrained`](MOLE_MODEL.md#molemodelsave_pretrained).
 
 This method is very similar to `add_mole_to_model`: it converts all LoRA adapters to MoLE layers, and it is one of
 the intended entrypoints for use of MoLE. All LoRA adapters will be frozen, and the MoLEClassifier is initialized.

@@ -1,7 +1,7 @@
 import collections
 import json
 import os
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import peft
 import safetensors
@@ -29,7 +29,7 @@ class MoLEModel(nn.Module):
         is_main_process: bool = True,
     ) -> None:
         r"""
-        This function saves the classifier weights to a directory. It is the counerpart to `load_pretrained`.
+        This function saves the classifier weights to a directory. It is the counerpart to `from_pretrained`.
 
         Args:
             save_directory (`str`):
@@ -110,7 +110,7 @@ class MoLEModel(nn.Module):
         mole_state.set_mole_classifier(classifier)
 
     def cpu(self):
-        """Moves all model and MoLE classifier parameters and buffers to the XPU. Modifies the models in place."""
+        """Moves all model and MoLE classifier parameters and buffers to the CPU. Modifies the models in place."""
         self.model.cpu()
         classifier = mole_state.get_mole_classifier()
         classifier.cpu()
@@ -132,3 +132,31 @@ class MoLEModel(nn.Module):
         self.model.train(mode=mode)
         classifier = mole_state.get_mole_classifier()
         classifier.train(mode=mode)
+
+    def get_nb_trainable_parameters(self) -> Tuple[int, int]:
+        """
+        Returns the number of trainable parameters and number of all parameters in the model.
+        """
+        model_trainable_params, model_all_param = self.model.get_nb_trainable_parameters()
+
+        mole_classifier = mole_state.get_mole_classifier()
+        mole_trainable_params, mole_all_param = mole_classifier.get_nb_trainable_parameters()
+
+        trainable_params, all_param = (
+            (model_trainable_params + mole_trainable_params),
+            (model_all_param + mole_all_param),
+        )
+
+        return trainable_params, all_param
+
+    def print_trainable_parameters(self):
+        """
+        Prints the number of trainable parameters in the model, including of the MoLE classifier.
+        """
+        trainable_params, all_param = self.get_nb_trainable_parameters()
+
+        print(
+            f"trainable params: {trainable_params:,d} || "
+            f"all params: {all_param:,d} || "
+            f"trainable%: {100 * trainable_params / all_param:.4f}"
+        )
