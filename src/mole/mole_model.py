@@ -120,3 +120,15 @@ class MoLEModel(nn.Module):
         self.model.type(dst_type=dst_type)
         classifier = mole_state.get_mole_classifier()
         classifier.type(dst_type=dst_type)
+
+    def eval(self):
+        """Sets the model and MoLE classifier in evaluation mode."""
+        self.model.eval()
+        classifier = mole_state.get_mole_classifier()
+        classifier.eval()
+
+    def train(self, mode: Optional[bool] = True):
+        """Sets the model and MoLE classifier in training mode if `mode=True`, evaluation mode if `mode=False`."""
+        self.model.train(mode=mode)
+        classifier = mole_state.get_mole_classifier()
+        classifier.train(mode=mode)
