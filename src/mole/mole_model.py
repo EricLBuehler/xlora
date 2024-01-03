@@ -1,4 +1,5 @@
 import collections
+import json
 import os
 from typing import Optional
 
@@ -24,7 +25,7 @@ class MoLEModel(nn.Module):
         is_main_process: bool = True,
     ) -> None:
         r"""
-        This function saves the classifier weights to a directory.
+        This function saves the classifier weights to a directory. It is the counerpart to `load_pretrained`.
 
         Args:
             save_directory (`str`):
@@ -40,6 +41,11 @@ class MoLEModel(nn.Module):
             raise ValueError(f"Provided path ({save_directory}) should be a directory, not a file")
 
         classifier = mole_state.get_mole_classifier()
+
+        conf = {"n_classes": classifier.n_classes}
+        with open(os.path.join(save_directory, "mole_classifier_config.json"), "w") as f:
+            json.dump(conf, f)
+
         state_dict = classifier.state_dict()
         if safe_serialization:
             # https://github.com/huggingface/peft/blob/main/src/peft/peft_model.py#L223
@@ -70,7 +76,7 @@ class MoLEModel(nn.Module):
                     state_dict, os.path.join(save_directory, "mole_classifier.safetensors"), metadata={"format": "pt"}
                 )
         elif is_main_process:
-            torch.save(state_dict, os.path.join(save_directory, "mole_classifier.safetensors"))
+            torch.save(state_dict, os.path.join(save_directory, "mole_classifier.pt"))
 
     def forward(self, *args, **kwargs):
         """
