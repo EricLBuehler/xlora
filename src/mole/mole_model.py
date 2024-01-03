@@ -160,3 +160,18 @@ class MoLEModel(nn.Module):
             f"all params: {all_param:,d} || "
             f"trainable%: {100 * trainable_params / all_param:.4f}"
         )
+
+    def __getattr__(self, name: str):
+        if hasattr(self, name):
+            return getattr(self, name)
+        return getattr(self.model, name)
+
+    def __setattr__(self, name: str, value) -> None:
+        if hasattr(self, name):
+            return setattr(self, name, value)
+        return setattr(self.model, name, value)
+
+    def __delattr__(self, name: str):
+        if hasattr(self, name):
+            return delattr(self, name)
+        return delattr(self.model, name)
