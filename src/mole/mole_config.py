@@ -8,6 +8,8 @@ class MoLEConfig:
     Args:
         hidden_size (`int`):
             Dimension of the hidden representations for the base model.
+        enable_softmax (`bool`, *optional*, defaults to `True`):
+            Enable softmax application for the MoLE classifier.
         top_k_lora (`int`, *optional*, defaults to None):
             Sparsely select the top_k LoRA experts instead of the default dense method.
         mole_depth (`int`, *optional*, defaults to 1):
@@ -24,16 +26,15 @@ class MoLEConfig:
     def __init__(
         self,
         hidden_size: int,
+        enable_softmax: Optional[bool] = True,
         top_k_lora: Optional[int] = None,
         mole_depth: Optional[int] = 1,
         mole_size: Optional[int] = 32,
         pad_token_id: Optional[int] = None,
     ):
+        self.enable_softmax = enable_softmax
         self.top_k_lora = top_k_lora
-
         self.hidden_size = hidden_size
-
         self.pad_token_id = pad_token_id
-
         self.mole_depth = mole_depth
         self.mole_size = mole_size

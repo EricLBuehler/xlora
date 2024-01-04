@@ -83,6 +83,9 @@ class MoLEClassifier(nn.Module):
         # Get it for the last token
         pooled_logits: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
 
+        if self.config.enable_softmax:
+            pooled_logits = pooled_logits.softmax(dim=-1)
+
         return pooled_logits
 
     def get_nb_trainable_parameters(self):
