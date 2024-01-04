@@ -15,12 +15,11 @@ def test_items():
         "__spec__",
         "add_mole_to_model",
         "from_pretrained",
-        "get_nb_trainable_parameters",
         "mole",
         "mole_classifier",
         "mole_config",
         "mole_insertion_layers",
+        "mole_model",
         "mole_state",
-        "print_trainable_parameters",
         "set_scalings_with_lifetime",
     ]
