@@ -163,15 +163,17 @@ class MoLEModel(nn.Module):
 
     def __getattr__(self, name: str):
         if hasattr(self, name):
-            return getattr(self, name)
+            return self.__dict__[name]
         return getattr(self.model, name)
 
     def __setattr__(self, name: str, value) -> None:
         if hasattr(self, name):
-            return setattr(self, name, value)
+            self.__dict__[name] = value
+            return
         return setattr(self.model, name, value)
 
-    def __delattr__(self, name: str):
+    def __delattr__(self, name: str) -> None:
         if hasattr(self, name):
-            return delattr(self, name)
+            del self.__dict__[name]
+            return
         return delattr(self.model, name)
