@@ -150,6 +150,7 @@ def from_pretrained(
     from_safetensors: bool,
     model: PreTrainedModel,
     mole_config: MoLEConfig,
+    verbose: bool,
     adapters: Dict[str, str],
     combination_type: str = "svd",
     svd_rank: Optional[bool] = None,
@@ -174,6 +175,8 @@ def from_pretrained(
             Whether to load the classifier weights from a .pt or .safetensors file.
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place.
+        verbose (`bool`):
+            Display tqdm, total swapping count.
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
         combination_type (`str`):
@@ -198,7 +201,7 @@ def from_pretrained(
     """
 
     model = add_mole_to_model(
-        model, mole_config, adapters, combination_type, svd_rank, svd_clamp, svd_full_matrices, svd_driver
+        model, mole_config, adapters, verbose, combination_type, svd_rank, svd_clamp, svd_full_matrices, svd_driver
     )
 
     classifier = mole_state.get_mole_classifier()
