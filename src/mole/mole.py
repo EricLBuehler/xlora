@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 import safetensors
 import torch
+import tqdm
 from peft.mixed_model import PeftMixedModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig
@@ -21,6 +22,7 @@ def convert_layers_to_mole(
     base: PeftMixedModel,
     adapters: List[str],
     peft_config: Dict[str, PeftConfig],
+    verbose: bool,
     combination_type: str = "svd",
     svd_rank: Optional[bool] = None,
     svd_clamp: Optional[float] = None,
@@ -29,7 +31,8 @@ def convert_layers_to_mole(
     top_k_lora: Optional[int] = None,
 ):
     modules = list(base.modules())
-    for module in modules:
+    total_swapped = 0
+    for module in tqdm.tqdm(modules):
         if isinstance(module, lora.LoraLayer):
             new_layer = MoLELayer(
                 adapters=adapters,
@@ -43,12 +46,15 @@ def convert_layers_to_mole(
                 top_k_lora=top_k_lora,
             )
             module.forward = new_layer.forward
+            total_swapped += 1
+    print(f"Swapped {total_swapped} layers.")
 
 
 def add_mole_to_model(
     model: PreTrainedModel,
     mole_config: MoLEConfig,
     adapters: Dict[str, str],
+    verbose: bool,
     combination_type: str = "svd",
     svd_rank: Optional[bool] = None,
     svd_clamp: Optional[float] = None,
@@ -66,6 +72,8 @@ def add_mole_to_model(
     Args:
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place.
+        verbose (`bool`):
+            Display tqdm, total swapping count.
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
         combination_type (`str`):
@@ -102,6 +110,7 @@ def add_mole_to_model(
     convert_layers_to_mole(
         model,
         adapters,
+        verbose,
         peft_config,
         combination_type,
         svd_rank,
