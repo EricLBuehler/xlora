@@ -31,8 +31,12 @@ def convert_layers_to_mole(
     top_k_lora: Optional[int] = None,
 ):
     modules = list(base.modules())
+    if not verbose:
+        iterable = modules
+    else:
+        iterable = tqdm.tqdm(modules)
     total_swapped = 0
-    for module in tqdm.tqdm(modules):
+    for module in iterable:
         if isinstance(module, lora.LoraLayer):
             new_layer = MoLELayer(
                 adapters=adapters,
@@ -47,7 +51,8 @@ def convert_layers_to_mole(
             )
             module.forward = new_layer.forward
             total_swapped += 1
-    print(f"Swapped {total_swapped} layers.")
+    if verbose:
+        print(f"Swapped {total_swapped} layers.")
 
 
 def add_mole_to_model(
