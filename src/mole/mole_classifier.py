@@ -2,9 +2,10 @@ from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+from peft.mixed_model import PeftMixedModel
 from transformers.modeling_outputs import BaseModelOutputWithPast
 
-from mole.mole_model import MoLEModel
+from mole import mole_state
 
 from .mole_config import MoLEConfig
 
@@ -14,7 +15,7 @@ class MoLEClassifier(nn.Module):
     A classifier to select LoRA layers for MoLE. It runs the base model with LoRA adapter scalings of 0.
     """
 
-    def __init__(self, model: MoLEModel, config: MoLEConfig, n_classes: int):
+    def __init__(self, model: PeftMixedModel, config: MoLEConfig, n_classes: int):
         super().__init__()
 
         self.model = model
@@ -52,6 +53,11 @@ class MoLEClassifier(nn.Module):
         Using the input, predict `n_classes` LoRA alpha values.
         """
         batch_size = input_ids.shape[0]
+
+        # Set the scalings to all 0 for this pass. We have a PeftMixedModel, so the _calculate_weights function will not be called
+        # and we have no threat of recursion.
+        mole_state.set_scalings(torch.zeros(batch_size, self.n_classes))
+
         result: Union[Tuple, BaseModelOutputWithPast] = self.model.forward(
             input_ids,
             attention_mask,
@@ -62,7 +68,6 @@ class MoLEClassifier(nn.Module):
             output_attentions,
             output_hidden_states,
             return_dict,
-            _mole_classifier_inhibitor_flag=batch_size,
         )
         hidden_states = result[0]
 
