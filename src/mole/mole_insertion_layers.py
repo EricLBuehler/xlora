@@ -5,7 +5,7 @@ import peft
 import torch
 import torch.nn as nn
 from peft.tuners import lora
-from peft.tuners.tuners_utils import PeftConfig
+from peft.tuners.tuners_utils import PeftConfig  # type: ignore
 from torch import Tensor
 
 from mole import mole_state
@@ -23,7 +23,7 @@ class MoLEBaseLayer:
         cls,
         target: lora.LoraLayer,
         adapters: List[str],
-        weights: List[float],
+        weights: List[Tensor],
         adapter_name: str,
         peft_config: Dict[str, PeftConfig],
         combination_type: str = "svd",
@@ -39,7 +39,7 @@ class MoLEBaseLayer:
         # if there is only one adapter, we can only use linear merging
         combination_type = "linear" if len(adapters) == 1 else combination_type
 
-        adapters_ranks = [peft_config[adapter].r for adapter in adapters]
+        adapters_ranks = [peft_config[adapter].r for adapter in adapters]  # type: ignore
         if combination_type == "linear":
             # all adapters ranks should be same, new rank is just this value
             if len(set(adapters_ranks)) != 1:
@@ -64,8 +64,10 @@ class MoLEBaseLayer:
         else:
             return
 
-        target_lora_A.data = target_lora_A.data * 0.0
-        target_lora_B.data = target_lora_B.data * 0.0
+        # TODO(EricLBuehler): Is this correct?
+        target_lora_A.data = target_lora_A.data * 0.0  # type: ignore
+        # TODO(EricLBuehler): Is this correct?
+        target_lora_B.data = target_lora_B.data * 0.0  # type: ignore
         if combination_type == "linear":
             for adapter, weight in zip(adapters, weights):
                 if adapter in target.lora_A:
@@ -76,10 +78,13 @@ class MoLEBaseLayer:
                     current_adapter_lora_B = target.lora_embedding_B[adapter]
                 else:
                     continue
-                target_lora_A.data += current_adapter_lora_A.data * math.sqrt(weight) * target.scaling[adapter]
-                target_lora_B.data += current_adapter_lora_B.data * math.sqrt(weight)
+                # TODO(EricLBuehler): Is this correct?
+                target_lora_A.data += current_adapter_lora_A.data * math.sqrt(weight) * target.scaling[adapter]  # type: ignore
+                # TODO(EricLBuehler): Is this correct?
+                target_lora_B.data += current_adapter_lora_B.data * math.sqrt(weight)  # type: ignore
         elif combination_type == "cat":
-            loras_A, loras_B = [], []
+            loras_A: List[Tensor] = []
+            loras_B: List[Tensor] = []
             for adapter, weight in zip(adapters, weights):
                 if adapter in target.lora_A:
                     current_adapter_lora_A = target.lora_A[adapter].weight
@@ -89,15 +94,17 @@ class MoLEBaseLayer:
                     current_adapter_lora_B = target.lora_embedding_B[adapter]
                 else:
                     continue
-                loras_A.append(current_adapter_lora_A.data * weight * target.scaling[adapter])
-                loras_B.append(current_adapter_lora_B.data)
+                # TODO(EricLBuehler): Is this correct?
+                loras_A.append(current_adapter_lora_A.data * weight * target.scaling[adapter])  # type: ignore
+                # TODO(EricLBuehler): Is this correct?
+                loras_B.append(current_adapter_lora_B.data)  # type: ignore
 
             if len(loras_A) == 0:
                 raise ValueError("No matching LoRAs found. Please raise an issue on Github.")
-            loras_A = torch.cat(loras_A, dim=0)
-            loras_B = torch.cat(loras_B, dim=1)
-            target_lora_A.data[: loras_A.shape[0], :] = loras_A
-            target_lora_B.data[:, : loras_B.shape[1]] = loras_B
+            loras_A_cat: Tensor = torch.cat(loras_A, dim=0)
+            loras_B_cat: Tensor = torch.cat(loras_B, dim=1)
+            target_lora_A.data[: loras_A_cat.shape[0], :] = loras_A
+            target_lora_B.data[:, : loras_B_cat.shape[1]] = loras_B
         elif combination_type == "svd":
             (
                 target_lora_A.data,
@@ -118,7 +125,7 @@ class MoLEBaseLayer:
     def svd_weighted_adapter(
         cls,
         adapters: List[str],
-        weights: List[float],
+        weights: List[Tensor],
         new_rank: int,
         target: lora.LoraLayer,
         target_lora_A: Union[Tensor, nn.Module],
@@ -138,9 +145,9 @@ class MoLEBaseLayer:
         if len(valid_adapters) == 0:
             raise ValueError("No matching LoRAs found. Please raise an issue on Github.")
 
-        delta_weight = valid_weights[0] * target.get_delta_weight(valid_adapters[0])
+        delta_weight = valid_weights[0] * target.get_delta_weight(valid_adapters[0])  # type: ignore[attr-defined]
         for adapter, weight in zip(valid_adapters[1:], valid_weights[1:]):
-            delta_weight += weight * target.get_delta_weight(adapter)
+            delta_weight += weight * target.get_delta_weight(adapter)  # type: ignore[attr-defined]
         conv2d = isinstance(target, peft.tuners.lora.layer.Conv2d)
         if conv2d:
             conv2d_1x1 = target.weight.size()[2:4] == (1, 1)
@@ -148,7 +155,7 @@ class MoLEBaseLayer:
                 delta_weight = delta_weight.flatten(start_dim=1)
             else:
                 delta_weight = delta_weight.squeeze()
-        if hasattr(target, "fan_in_fan_out") and target.fan_in_fan_out:
+        if hasattr(target, "fan_in_fan_out") and target.fan_in_fan_out:  # type: ignore[attr-defined]
             delta_weight = delta_weight.T
 
         # based on https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py#L114-L131
@@ -200,9 +207,9 @@ class MoLELayer(MoLEBaseLayer):
         self.svd_driver = svd_driver
 
         assert hasattr(target, "forward")
-        is_bound = hasattr(target.forward, "__self__")
+        is_bound = hasattr(target.forward, "__self__")  # type: ignore[attr-defined]
         assert is_bound
-        is_callable = hasattr(target.forward, "__call__")
+        is_callable = hasattr(target.forward, "__call__")  # type: ignore[attr-defined]
         assert is_callable
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
@@ -247,7 +254,7 @@ class MoLELayer(MoLEBaseLayer):
 
         self.target.set_adapter(MOLE_ADAPTER_NAME)
 
-        output = self.target.forward(x, *args, **kwargs)
+        output = self.target.forward(x, *args, **kwargs)  # type: ignore[attr-defined]
         output = output.unsqueeze(0)
         outputs.append(output)
 
