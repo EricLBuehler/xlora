@@ -142,7 +142,7 @@ def add_mole_to_model(
         )
         mole_state.set_scalings(mole_scalings)
 
-    model.register_forward_pre_hook(hook)
+    model.register_forward_pre_hook(hook, with_kwargs=True)
 
     for param in model.base_model.parameters():
         param.requires_grad = False
