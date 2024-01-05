@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: pip3 install -U pypy
+      - run: pip3 install -U mypy
       - run: python3 -m mypy src/mole/__init__.py
   typos:
     runs-on: ubuntu-latest
