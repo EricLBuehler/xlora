@@ -22,18 +22,34 @@ class MoLEModel(nn.Module):
 
         self.model = model
 
+    @staticmethod
+    def _calculate_weights(*args, **kwargs):
+        mole_classifier = mole_state.get_mole_classifier()
+
+        if "_mole_classifier_inhibitor_flag" in kwargs:
+            assert isinstance(kwargs["_mole_classifier_inhibitor_flag"], int)
+            batch_size = kwargs["_mole_classifier_inhibitor_flag"]
+            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
+            return
+
+        mole_scalings = mole_classifier.forward(
+            *args,
+            **kwargs,
+        )
+        mole_state.set_scalings(mole_scalings)
+
     def forward(self, *args, **kwargs):
         """
         Forward pass of the model.
         """
-        # NOTE(EricLBuehler): Very important that we __call__ the model, otherwise the hook will not be called!
+        self._calculate_weights(*args, **kwargs)
         return self.model(*args, **kwargs)
 
     def generate(self, *args, **kwargs):
         """
         Generate output.
         """
-        # NOTE(EricLBuehler): Very important that this __call__ the model, otherwise the hook will not be called!
+        self._calculate_weights(*args, **kwargs)
         return self.model.generate(*args, **kwargs)
 
     def save_pretrained(

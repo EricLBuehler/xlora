@@ -129,21 +129,6 @@ def add_mole_to_model(
     mole_classifier = MoLEClassifier(model, mole_config, n_classes)
     mole_state.set_mole_classifier(mole_classifier)
 
-    def hook(module, *args, **kwargs) -> None:
-        if "_mole_classifier_inhibitor_flag" in kwargs:
-            assert isinstance(kwargs["_mole_classifier_inhibitor_flag"], int)
-            batch_size = kwargs["_mole_classifier_inhibitor_flag"]
-            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
-            return
-
-        mole_scalings = mole_classifier.forward(
-            *args,
-            **kwargs,
-        )
-        mole_state.set_scalings(mole_scalings)
-
-    model.register_forward_pre_hook(hook, with_kwargs=True)
-
     for param in model.base_model.parameters():
         param.requires_grad = False
 
