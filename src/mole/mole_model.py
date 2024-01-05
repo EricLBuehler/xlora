@@ -165,15 +165,3 @@ class MoLEModel(nn.Module):
         if name in self.__dict__:
             return self.__dict__[name]
         return getattr(self.__dict__["model"], name)
-
-    def __setattr__(self, name: str, value) -> None:
-        if name in self.__dict__:
-            self.__dict__[name] = value
-            return
-        return setattr(self.__dict__["model"], name, value)
-
-    def __delattr__(self, name: str) -> None:
-        if name in self.__dict__:
-            del self.__dict__[name]
-            return
-        return delattr(self.__dict__["model"], name)
