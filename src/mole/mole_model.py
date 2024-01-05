@@ -20,7 +20,7 @@ class MoLEModel(nn.Module):
     def __init__(self, model: PeftMixedModel, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.__dict__["model"] = model
+        self.model = model
 
     def forward(self, *args, **kwargs):
         """
@@ -166,12 +166,3 @@ class MoLEModel(nn.Module):
             f"all params: {all_param:,d} || "
             f"trainable%: {100 * trainable_params / all_param:.4f}"
         )
-
-    def __getattr__(self, name: str):
-        return getattr(self.model, name)
-
-    def __setattr__(self, name: str, value):
-        return setattr(self.model, name, value)
-
-    def __delattr__(self, name: str):
-        return delattr(self.model, name)
