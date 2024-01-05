@@ -162,6 +162,4 @@ class MoLEModel(nn.Module):
         )
 
     def __getattr__(self, name: str):
-        if name in self.__dict__:
-            return self.__dict__[name]
-        return getattr(self.__dict__["model"], name)
+        return getattr(self.model, name)
