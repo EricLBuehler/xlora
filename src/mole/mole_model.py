@@ -26,12 +26,14 @@ class MoLEModel(nn.Module):
         """
         Forward pass of the model.
         """
+        # NOTE(EricLBuehler): Very important that we __call__ the model, otherwise the hook will not be called!
         return self.model(*args, **kwargs)
 
     def generate(self, *args, **kwargs):
         """
         Generate output.
         """
+        # NOTE(EricLBuehler): Very important that this __call__ the model, otherwise the hook will not be called!
         return self.model.generate(*args, **kwargs)
 
     def save_pretrained(
