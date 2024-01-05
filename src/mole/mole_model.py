@@ -26,12 +26,6 @@ class MoLEModel(nn.Module):
     def _calculate_weights(*args, **kwargs):
         mole_classifier = mole_state.get_mole_classifier()
 
-        if "_mole_classifier_inhibitor_flag" in kwargs:
-            assert isinstance(kwargs["_mole_classifier_inhibitor_flag"], int)
-            batch_size = kwargs["_mole_classifier_inhibitor_flag"]
-            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
-            return
-
         mole_scalings = mole_classifier.forward(
             *args,
             **kwargs,
