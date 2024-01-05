@@ -48,6 +48,8 @@ class MoLEClassifier(nn.Module):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
+        *args,
+        **kwargs,
     ) -> torch.Tensor:
         """
         Using the input, predict `n_classes` LoRA alpha values.
