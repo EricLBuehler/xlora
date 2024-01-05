@@ -26,10 +26,10 @@ class MoLEConfig:
     def __init__(
         self,
         hidden_size: int,
-        enable_softmax: Optional[bool] = True,
+        enable_softmax: bool = True,
         top_k_lora: Optional[int] = None,
-        mole_depth: Optional[int] = 1,
-        mole_size: Optional[int] = 32,
+        mole_depth: int = 1,
+        mole_size: int = 32,
         pad_token_id: Optional[int] = None,
     ):
         self.enable_softmax = enable_softmax

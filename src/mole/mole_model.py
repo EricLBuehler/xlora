@@ -1,10 +1,10 @@
 import collections
 import json
 import os
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import peft
-import safetensors
+import safetensors  # type: ignore
 import torch
 import torch.nn as nn
 from peft.mixed_model import PeftMixedModel
@@ -81,7 +81,9 @@ class MoLEModel(nn.Module):
                 # Section copied from: https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_utils.py#L2111-L2134
                 # Safetensors does not allow tensor aliasing.
                 # We're going to remove aliases before saving
-                ptrs = collections.defaultdict(list)
+                ptrs: collections.defaultdict[
+                    Union[Tuple[torch.device, int, int], int], List[str]
+                ] = collections.defaultdict(list)
                 for name, tensor in state_dict.items():
                     # Sometimes in the state_dict we have non-tensor objects.
                     # e.g. in bitsandbytes we have some `str` objects in the state_dict
@@ -100,7 +102,7 @@ class MoLEModel(nn.Module):
                     for shared_tensor_name in names[1:]:
                         state_dict[shared_tensor_name] = state_dict[shared_tensor_name].clone()
 
-                safetensors.torch.save_file(
+                safetensors.torch.save_file(  # type: ignore
                     state_dict, os.path.join(save_directory, "mole_classifier.safetensors"), metadata={"format": "pt"}
                 )
         elif is_main_process:
@@ -145,7 +147,7 @@ class MoLEModel(nn.Module):
         classifier = mole_state.get_mole_classifier()
         classifier.eval()
 
-    def train(self, mode: Optional[bool] = True):
+    def train(self, mode: bool = True):
         """Sets the model and MoLE classifier in training mode if `mode=True`, evaluation mode if `mode=False`."""
         self.model.train(mode=mode)
         classifier = mole_state.get_mole_classifier()
