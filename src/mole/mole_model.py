@@ -20,7 +20,7 @@ class MoLEModel(nn.Module):
     def __init__(self, model: PeftMixedModel, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.model = model
+        self.__dict__["model"] = model
 
     def save_pretrained(
         self,
