@@ -163,3 +163,9 @@ class MoLEModel(nn.Module):
 
     def __getattr__(self, name: str):
         return getattr(self.model, name)
+
+    def __setattr__(self, name: str, value):
+        return setattr(self.model, name, value)
+
+    def __delattr__(self, name: str):
+        return delattr(self.model, name)
