@@ -22,6 +22,18 @@ class MoLEModel(nn.Module):
 
         self.__dict__["model"] = model
 
+    def forward(self, *args, **kwargs):
+        """
+        Forward pass of the model.
+        """
+        return self.model(*args, **kwargs)
+
+    def generate(self, *args, **kwargs):
+        """
+        Generate output.
+        """
+        return self.model.generate(*args, **kwargs)
+
     def save_pretrained(
         self,
         save_directory: str,
@@ -81,12 +93,6 @@ class MoLEModel(nn.Module):
                 )
         elif is_main_process:
             torch.save(state_dict, os.path.join(save_directory, "mole_classifier.pt"))
-
-    def forward(self, *args, **kwargs):
-        """
-        Forward pass of the model.
-        """
-        return self.model(*args, **kwargs)
 
     def cuda(self, device: Optional[Union[int, torch.device]] = None):
         """Moves all model and MoLE classifier parameters and buffers to the GPU."""
