@@ -126,13 +126,16 @@ def add_mole_to_model(
     )
 
     n_classes = len(adapters)
+
+    model = MoLEModel(model)
+
     mole_classifier = MoLEClassifier(model, mole_config, n_classes)
     mole_state.set_mole_classifier(mole_classifier)
 
     for param in model.base_model.parameters():
         param.requires_grad = False
 
-    return MoLEModel(model)
+    return model
 
 
 def from_pretrained(
