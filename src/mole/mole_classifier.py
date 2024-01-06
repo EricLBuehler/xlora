@@ -23,18 +23,18 @@ class MoLEClassifier(nn.Module):
 
         self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.mole_depth == 1:
-            self.inner.append(nn.Linear(config.hidden_size, n_classes, bias=False))
+            self.inner.append(nn.Linear(config.vocab_size, n_classes, bias=False).to(config.device))
         elif self.config.mole_depth == 2:
-            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False))
-            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False))
+            self.inner.append(nn.Linear(config.vocab_size, config.mole_size, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device))
         else:
             assert self.config.mole_depth > 0
-            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False))
+            self.inner.append(nn.Linear(config.vocab_size, config.mole_size, bias=False).to(config.device))
 
             for _ in range(config.mole_depth - 2):
-                self.inner.append(nn.Linear(config.mole_size, config.mole_size, bias=False))
+                self.inner.append(nn.Linear(config.mole_size, config.mole_size, bias=False).to(config.device))
 
-            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False))
+            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device))
 
     def forward(
         self,
