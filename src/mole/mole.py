@@ -41,6 +41,7 @@ def convert_layers_to_mole(
             new_layer = MoLELayer(
                 adapters=adapters,
                 target=module,
+                target_forward=module.forward,
                 peft_config=peft_config,
                 combination_type=combination_type,
                 svd_rank=svd_rank,
