@@ -214,7 +214,6 @@ class MoLELayer(MoLEBaseLayer):
         To use it, a bound method must be created (bound to an instance of the MoLELayer class).
         """
         scalings = mole_state.get_scalings()
-        outputs = []
 
         if self.top_k_lora is None:
             for batch_scalings in scalings:
@@ -251,7 +250,5 @@ class MoLELayer(MoLEBaseLayer):
         self.target.set_adapter(MOLE_ADAPTER_NAME)
 
         output = self.target_forward(x, *args, **kwargs)
-        output = output.unsqueeze(0)
-        outputs.append(output)
 
-        return torch.cat(tensors=outputs, dim=0)
+        return output
