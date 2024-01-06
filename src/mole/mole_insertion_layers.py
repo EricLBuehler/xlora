@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import peft
 import torch
@@ -187,6 +187,7 @@ class MoLELayer(MoLEBaseLayer):
         self,
         adapters: List[str],
         target: lora.LoraLayer,
+        target_forward: Callable[..., Any],
         peft_config: Dict[str, PeftConfig],
         combination_type: str = "svd",
         svd_rank: Optional[bool] = None,
@@ -196,6 +197,7 @@ class MoLELayer(MoLEBaseLayer):
         top_k_lora: Optional[int] = None,
     ) -> None:
         self.adapters = adapters
+        self.target_forward = target_forward
         self.target = target
         self.peft_config = peft_config
         self.top_k_lora = top_k_lora
@@ -205,12 +207,6 @@ class MoLELayer(MoLEBaseLayer):
         self.svd_clamp = svd_clamp
         self.svd_full_matrices = svd_full_matrices
         self.svd_driver = svd_driver
-
-        assert hasattr(target, "forward")
-        is_bound = hasattr(target.forward, "__self__")  # type: ignore[attr-defined]
-        assert is_bound
-        is_callable = hasattr(target.forward, "__call__")  # type: ignore[attr-defined]
-        assert is_callable
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
@@ -254,7 +250,7 @@ class MoLELayer(MoLEBaseLayer):
 
         self.target.set_adapter(MOLE_ADAPTER_NAME)
 
-        output = self.target.forward(x, *args, **kwargs)  # type: ignore[attr-defined]
+        output = self.target_forward(x, *args, **kwargs)  # type: ignore[attr-defined]
         output = output.unsqueeze(0)
         outputs.append(output)
 
