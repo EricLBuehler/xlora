@@ -1,13 +1,17 @@
 from typing import Optional
 
+import torch
+
 
 class MoLEConfig:
     r"""
     This is the configuration class to store the configuration of a [`MoLEClassifier`].
 
     Args:
-        hidden_size (`int`):
-            Dimension of the hidden representations for the base model.
+        vocab_size (`int`):
+            Vocab size of the base model.
+        device (`torch.device`):
+            Device for the MoLE classifier.
         enable_softmax (`bool`, *optional*, defaults to `True`):
             Enable softmax application for the MoLE classifier.
         top_k_lora (`int`, *optional*, defaults to None):
@@ -25,16 +29,18 @@ class MoLEConfig:
 
     def __init__(
         self,
-        hidden_size: int,
+        vocab_size: int,
+        device: torch.device,
         enable_softmax: bool = True,
         top_k_lora: Optional[int] = None,
         mole_depth: int = 1,
         mole_size: int = 32,
         pad_token_id: Optional[int] = None,
     ):
+        self.device = device
         self.enable_softmax = enable_softmax
         self.top_k_lora = top_k_lora
-        self.hidden_size = hidden_size
+        self.vocab_size = vocab_size
         self.pad_token_id = pad_token_id
         self.mole_depth = mole_depth
         self.mole_size = mole_size
