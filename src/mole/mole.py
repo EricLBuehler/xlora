@@ -3,6 +3,7 @@ import os
 import typing
 from typing import Dict, List, Optional
 
+import peft
 import safetensors  # type: ignore
 import torch
 import torch.nn as nn
@@ -15,7 +16,7 @@ from transformers import PreTrainedModel  # type: ignore
 from . import mole_state
 from .mole_classifier import MoLEClassifier
 from .mole_config import MoLEConfig
-from .mole_insertion_layers import MoLELayer
+from .mole_insertion_layers import BaseTunerWrapper, MoLELayer
 
 
 def convert_layers_to_mole(
@@ -103,6 +104,21 @@ def add_mole_to_model(
             The new model.
     """
 
+    def hook(module, *args, **kwargs) -> None:
+        if "_mole_classifier_inhibitor_flag" in kwargs:
+            assert isinstance(kwargs["_mole_classifier_inhibitor_flag"], int)
+            batch_size = kwargs["_mole_classifier_inhibitor_flag"]
+            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
+            return
+
+        mole_scalings = mole_classifier.forward(
+            *args,
+            **kwargs,
+        )
+        mole_state.set_scalings(mole_scalings)
+
+    model.register_forward_pre_hook(hook, with_kwargs=True)
+
     adapters_items = list(adapters.items())
     first_item = adapters_items[0]
     adapters_items = adapters_items[1:]
@@ -112,6 +128,11 @@ def add_mole_to_model(
     )
     for adapter_name, model_id in adapters_items:
         model.load_adapter(model_id, adapter_name)
+
+    assert isinstance(model_peft.base_model, peft.tuners.mixed.MixedModel)
+
+    base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
+    model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
     peft_config = model_peft.peft_config
     adapters_keys: List[str] = list(adapters.keys())
@@ -132,21 +153,6 @@ def add_mole_to_model(
     n_classes = len(adapters)
     mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes)
     mole_state.set_mole_classifier(mole_classifier)
-
-    def hook(module, *args, **kwargs) -> None:
-        if "_mole_classifier_inhibitor_flag" in kwargs:
-            assert isinstance(kwargs["_mole_classifier_inhibitor_flag"], int)
-            batch_size = kwargs["_mole_classifier_inhibitor_flag"]
-            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
-            return
-
-        mole_scalings = mole_classifier.forward(
-            *args,
-            **kwargs,
-        )
-        mole_state.set_scalings(mole_scalings)
-
-    model_peft.register_forward_pre_hook(hook, with_kwargs=True)
 
     for param in model.base_model.parameters():
         param.requires_grad = False
