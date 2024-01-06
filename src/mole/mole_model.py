@@ -1,7 +1,8 @@
 import collections
 import json
 import os
-from typing import List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
+import typing
 
 import peft
 import safetensors  # type: ignore
@@ -180,3 +181,8 @@ class MoLEModel(nn.Module):
             f"all params: {all_param:,d} || "
             f"trainable%: {100 * trainable_params / all_param:.4f}"
         )
+
+    def prepare_inputs_for_generation(
+        self, *args, **kwargs
+    ):
+        return typing.cast(Callable[..., Any], self.model.prepare_inputs_for_generation)(*args, **kwargs)
