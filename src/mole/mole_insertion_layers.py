@@ -250,7 +250,7 @@ class MoLELayer(MoLEBaseLayer):
 
         self.target.set_adapter(MOLE_ADAPTER_NAME)
 
-        output = self.target_forward(x, *args, **kwargs)  # type: ignore[attr-defined]
+        output = self.target_forward(x, *args, **kwargs)
         output = output.unsqueeze(0)
         outputs.append(output)
 
