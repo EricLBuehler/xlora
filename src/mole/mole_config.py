@@ -6,8 +6,8 @@ class MoLEConfig:
     This is the configuration class to store the configuration of a [`MoLEClassifier`].
 
     Args:
-        hidden_size (`int`):
-            Dimension of the hidden representations for the base model.
+        vocab_size (`int`):
+            Vocab size of the base model.
         enable_softmax (`bool`, *optional*, defaults to `True`):
             Enable softmax application for the MoLE classifier.
         top_k_lora (`int`, *optional*, defaults to None):
@@ -25,16 +25,16 @@ class MoLEConfig:
 
     def __init__(
         self,
-        hidden_size: int,
-        enable_softmax: Optional[bool] = True,
+        vocab_size: int,
+        enable_softmax: bool = True,
         top_k_lora: Optional[int] = None,
-        mole_depth: Optional[int] = 1,
-        mole_size: Optional[int] = 32,
+        mole_depth: int = 1,
+        mole_size: int = 32,
         pad_token_id: Optional[int] = None,
     ):
         self.enable_softmax = enable_softmax
         self.top_k_lora = top_k_lora
-        self.hidden_size = hidden_size
+        self.hidden_size = vocab_size
         self.pad_token_id = pad_token_id
         self.mole_depth = mole_depth
         self.mole_size = mole_size

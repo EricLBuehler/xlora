@@ -1,9 +1,10 @@
+import typing
 from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 from peft.mixed_model import PeftMixedModel
-from transformers.modeling_outputs import BaseModelOutputWithPast
+from transformers.modeling_outputs import BaseModelOutputWithPast  # type: ignore
 
 from .mole_config import MoLEConfig
 
@@ -37,7 +38,7 @@ class MoLEClassifier(nn.Module):
 
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
+        input_ids: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
@@ -50,7 +51,11 @@ class MoLEClassifier(nn.Module):
         """
         Using the input, predict `n_classes` LoRA alpha values.
         """
-        batch_size = input_ids.shape[0]
+        if input_ids is not None:
+            batch_size = input_ids.shape[0]
+        else:
+            batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
+
         result: Union[Tuple, BaseModelOutputWithPast] = self.model.forward(
             input_ids,
             attention_mask,
@@ -70,7 +75,7 @@ class MoLEClassifier(nn.Module):
             logits = layer.forward(logits)
 
         if self.config.pad_token_id is None:
-            sequence_lengths = -1
+            sequence_lengths: Union[int, torch.Tensor] = -1
         else:
             if input_ids is not None:
                 # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
@@ -99,7 +104,7 @@ class MoLEClassifier(nn.Module):
             num_params = param.numel()
             # if using DS Zero 3 and the weights are initialized empty
             if num_params == 0 and hasattr(param, "ds_numel"):
-                num_params = param.ds_numel
+                num_params = param.ds_numel  # type: ignore
 
             # Due to the design of 4bit linear layers from bitsandbytes
             # one needs to multiply the number of parameters by 2 to get

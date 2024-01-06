@@ -1,16 +1,16 @@
 import json
 import os
+import typing
 from typing import Dict, List, Optional
 
-import safetensors
+import safetensors  # type: ignore
 import torch
-import tqdm
+import torch.nn as nn
+import tqdm  # type: ignore
 from peft.mixed_model import PeftMixedModel
 from peft.tuners import lora
-from peft.tuners.tuners_utils import PeftConfig
-from transformers import PreTrainedModel
-
-from mole.mole_model import MoLEModel
+from peft.tuners.tuners_utils import PeftConfig  # type: ignore
+from transformers import PreTrainedModel  # type: ignore
 
 from . import mole_state
 from .mole_classifier import MoLEClassifier
@@ -65,7 +65,7 @@ def add_mole_to_model(
     svd_clamp: Optional[float] = None,
     svd_full_matrices: Optional[bool] = True,
     svd_driver: Optional[str] = None,
-) -> MoLEModel:
+) -> PeftMixedModel:
     """
     This method converts all LoRA adapters to MoLE layers, and it is one of the intended entrypoints
     for use of MoLE. All LoRA adapters will be frozen, and the MoLEClassifier is initialized.
@@ -98,25 +98,28 @@ def add_mole_to_model(
             one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
             documentation. Defaults to None.
     Returns:
-        model (`MoLEModel`):
+        model (`PeftMixedModel`):
             The new model.
     """
 
     adapters_items = list(adapters.items())
     first_item = adapters_items[0]
     adapters_items = adapters_items[1:]
-    model = PeftMixedModel.from_pretrained(model, first_item[1], first_item[0], False)
+    model_peft: PeftMixedModel = typing.cast(
+        PeftMixedModel,
+        PeftMixedModel.from_pretrained(typing.cast(nn.Module, model), first_item[1], first_item[0], False),
+    )
     for adapter_name, model_id in adapters_items:
         model.load_adapter(model_id, adapter_name)
 
-    peft_config = model.peft_config
-    adapters = list(adapters.keys())
+    peft_config = model_peft.peft_config
+    adapters_keys: List[str] = list(adapters.keys())
 
     convert_layers_to_mole(
-        model,
-        adapters,
-        verbose,
+        model_peft,
+        adapters_keys,
         peft_config,
+        verbose,
         combination_type,
         svd_rank,
         svd_clamp,
@@ -126,7 +129,7 @@ def add_mole_to_model(
     )
 
     n_classes = len(adapters)
-    mole_classifier = MoLEClassifier(model, mole_config, n_classes)
+    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes)
     mole_state.set_mole_classifier(mole_classifier)
 
     def hook(module, *args, **kwargs) -> None:
@@ -142,12 +145,12 @@ def add_mole_to_model(
         )
         mole_state.set_scalings(mole_scalings)
 
-    model.register_forward_pre_hook(hook, with_kwargs=True)
+    model_peft.register_forward_pre_hook(hook, with_kwargs=True)
 
     for param in model.base_model.parameters():
         param.requires_grad = False
 
-    return MoLEModel(model)
+    return model_peft
 
 
 def from_pretrained(
@@ -162,7 +165,7 @@ def from_pretrained(
     svd_clamp: Optional[float] = None,
     svd_full_matrices: Optional[bool] = True,
     svd_driver: Optional[str] = None,
-) -> MoLEModel:
+) -> PeftMixedModel:
     """
     Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `MoLEModel.save_pretrained`.
 
@@ -201,11 +204,11 @@ def from_pretrained(
             one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
             documentation. Defaults to None.
     Returns:
-        model (`MoLEModel`):
+        model (`PeftMixedModel`):
             The new model.
     """
 
-    model = add_mole_to_model(
+    model_peft = add_mole_to_model(
         model, mole_config, adapters, verbose, combination_type, svd_rank, svd_clamp, svd_full_matrices, svd_driver
     )
 
@@ -215,15 +218,15 @@ def from_pretrained(
         assert classifier.n_classes == conf["n_classes"]
 
     if from_safetensors:
-        state_dict = safetensors.torch.load_file(
+        state_dict = safetensors.torch.load_file(  # type: ignore
             os.path.join(load_directory, "mole_classifier.safetensors"),
-            device={k: v.device for k, v in classifier.state_dict()},
+            device={k: v.device for k, v in classifier.state_dict()},  # type: ignore
         )
     else:
         state_dict = torch.load(os.path.join(load_directory, "mole_classifier.pt"))
     classifier.load_state_dict(state_dict)
 
-    return model
+    return model_peft
 
 
 def set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int):
