@@ -54,7 +54,7 @@ class MoLEClassifier(nn.Module):
         result: Union[Tuple, BaseModelOutputWithPast] = self.model.forward(
             *args,
             input_ids=input_ids,
-            inputs_embeds=input_ids,
+            inputs_embeds=inputs_embeds,
             _mole_classifier_inhibitor_flag=batch_size,
             **kwargs,
         )
