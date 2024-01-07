@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from peft.mixed_model import PeftMixedModel
+from peft.peft_model import PeftModel
 from transformers.modeling_outputs import BaseModelOutputWithPast  # type: ignore
 
 from .mole_config import MoLEConfig
@@ -14,7 +14,7 @@ class MoLEClassifier(nn.Module):
     A classifier to select LoRA layers for MoLE. It runs the base model with LoRA adapter scalings of 0.
     """
 
-    def __init__(self, model: PeftMixedModel, config: MoLEConfig, n_classes: int):
+    def __init__(self, model: PeftModel, config: MoLEConfig, n_classes: int):
         super().__init__()
 
         self.model = model
