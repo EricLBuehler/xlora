@@ -259,4 +259,4 @@ class BaseTunerWrapper:
         self.model = base_model.model
 
     def forward(self, *args, **kwargs):
-        self.model(*args, **kwargs)
+        return self.model(*args, **kwargs)
