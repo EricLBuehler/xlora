@@ -1,5 +1,5 @@
 import typing
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -39,14 +39,9 @@ class MoLEClassifier(nn.Module):
     def forward(
         self,
         input_ids: Optional[torch.LongTensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        position_ids: Optional[torch.LongTensor] = None,
-        past_key_values: Optional[List[torch.FloatTensor]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
-        use_cache: Optional[bool] = None,
-        output_attentions: Optional[bool] = None,
-        output_hidden_states: Optional[bool] = None,
-        return_dict: Optional[bool] = None,
+        *args,
+        **kwargs,
     ) -> torch.Tensor:
         """
         Using the input, predict `n_classes` LoRA alpha values.
@@ -57,16 +52,11 @@ class MoLEClassifier(nn.Module):
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
         result: Union[Tuple, BaseModelOutputWithPast] = self.model.forward(
-            input_ids,
-            attention_mask,
-            position_ids,
-            past_key_values,
-            inputs_embeds,
-            use_cache,
-            output_attentions,
-            output_hidden_states,
-            return_dict,
+            *args,
+            input_ids=input_ids,
+            inputs_embeds=input_ids,
             _mole_classifier_inhibitor_flag=batch_size,
+            **kwargs,
         )
         hidden_states = result[0]
 
