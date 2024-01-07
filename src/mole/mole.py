@@ -106,15 +106,16 @@ def add_mole_to_model(
     """
 
     def hook(module, *args, **kwargs) -> None:
-        if "_mole_classifier_inhibitor_flag" in kwargs:
-            assert isinstance(kwargs["_mole_classifier_inhibitor_flag"], int)
-            batch_size = kwargs["_mole_classifier_inhibitor_flag"]
-            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
-            return
-
         args_real = args[0]
         kwargs_real: dict = args[1]
         kwargs_real.update(kwargs)
+
+        if "_mole_classifier_inhibitor_flag" in kwargs_real:
+            assert isinstance(kwargs_real["_mole_classifier_inhibitor_flag"], int)
+            batch_size = kwargs_real["_mole_classifier_inhibitor_flag"]
+            del kwargs_real["_mole_classifier_inhibitor_flag"]
+            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
+            return
 
         mole_scalings = mole_classifier.forward(
             *args_real,
