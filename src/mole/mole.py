@@ -111,9 +111,13 @@ def add_mole_to_model(
             mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
             return
 
+        args_real = args[0]
+        kwargs_real: dict = args[1]
+        kwargs_real.update(kwargs)
+
         mole_scalings = mole_classifier.forward(
-            *args,
-            **kwargs,
+            *args_real,
+            **kwargs_real,
         )
         mole_state.set_scalings(mole_scalings)
 
