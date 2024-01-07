@@ -252,11 +252,3 @@ class MoLELayer(MoLEBaseLayer):
         output = self.target_forward(x, *args, **kwargs)
 
         return output
-
-
-class BaseTunerWrapper:
-    def __init__(self, base_model: peft.tuners.mixed.MixedModel):
-        self.model = base_model.model
-
-    def forward(self, *args, **kwargs):
-        return self.model(*args, **kwargs)

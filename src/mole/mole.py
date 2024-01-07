@@ -9,7 +9,7 @@ import safetensors  # type: ignore
 import torch
 import torch.nn as nn
 import tqdm  # type: ignore
-from peft.mixed_model import PeftMixedModel
+from peft.peft_model import PeftModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import PeftConfig  # type: ignore
 from transformers import PreTrainedModel  # type: ignore
@@ -17,11 +17,11 @@ from transformers import PreTrainedModel  # type: ignore
 from . import mole_state
 from .mole_classifier import MoLEClassifier
 from .mole_config import MoLEConfig
-from .mole_insertion_layers import BaseTunerWrapper, MoLELayer
+from .mole_insertion import MoLELayer
 
 
 def convert_layers_to_mole(
-    base: PeftMixedModel,
+    base: PeftModel,
     adapters: List[str],
     peft_config: Dict[str, PeftConfig],
     verbose: bool,
@@ -68,7 +68,7 @@ def add_mole_to_model(
     svd_clamp: Optional[float] = None,
     svd_full_matrices: Optional[bool] = True,
     svd_driver: Optional[str] = None,
-) -> PeftMixedModel:
+) -> PeftModel:
     """
     This method converts all LoRA adapters to MoLE layers, and it is one of the intended entrypoints
     for use of MoLE. All LoRA adapters will be frozen, and the MoLEClassifier is initialized.
@@ -101,7 +101,7 @@ def add_mole_to_model(
             one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
             documentation. Defaults to None.
     Returns:
-        model (`PeftMixedModel`):
+        model (`PeftModel`):
             The new model.
     """
 
@@ -128,17 +128,9 @@ def add_mole_to_model(
     adapters_items = list(adapters.items())
     first_item = adapters_items[0]
     adapters_items = adapters_items[1:]
-    model_peft: PeftMixedModel = typing.cast(
-        PeftMixedModel,
-        PeftMixedModel.from_pretrained(typing.cast(nn.Module, model), first_item[1], first_item[0], False),
-    )
+    model_peft = PeftModel.from_pretrained(typing.cast(nn.Module, model), first_item[1], first_item[0], False)
     for adapter_name, model_id in adapters_items:
         model.load_adapter(model_id, adapter_name)
-
-    assert isinstance(model_peft.base_model, peft.tuners.mixed.MixedModel)
-
-    base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
-    model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
     peft_config = model_peft.peft_config
     adapters_keys: List[str] = list(adapters.keys())
@@ -178,7 +170,7 @@ def from_pretrained(
     svd_clamp: Optional[float] = None,
     svd_full_matrices: Optional[bool] = True,
     svd_driver: Optional[str] = None,
-) -> PeftMixedModel:
+) -> PeftModel:
     """
     Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `MoLEModel.save_pretrained`.
 
@@ -217,7 +209,7 @@ def from_pretrained(
             one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
             documentation. Defaults to None.
     Returns:
-        model (`PeftMixedModel`):
+        model (`PeftModel`):
             The new model.
     """
 
@@ -315,7 +307,7 @@ def save_pretrained(
         torch.save(state_dict, os.path.join(save_directory, "mole_classifier.pt"))
 
 
-def get_nb_trainable_parameters(model: PeftMixedModel) -> Tuple[int, int]:
+def get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]:
     """
     Returns the number of trainable parameters and number of all parameters in the model.
     """
@@ -332,7 +324,7 @@ def get_nb_trainable_parameters(model: PeftMixedModel) -> Tuple[int, int]:
     return trainable_params, all_param
 
 
-def print_trainable_parameters(model: PeftMixedModel):
+def print_trainable_parameters(model: PeftModel):
     """
     Prints the number of trainable parameters in the model, including of the MoLE classifier.
     """
