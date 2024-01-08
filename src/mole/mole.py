@@ -17,7 +17,7 @@ from transformers import PreTrainedModel  # type: ignore
 from . import mole_state
 from .mole_classifier import MoLEClassifier
 from .mole_config import MoLEConfig
-from .mole_insertion import MoLELayer
+from .mole_insertion import BaseTunerWrapper, MoLELayer
 
 
 def convert_layers_to_mole(
@@ -131,6 +131,11 @@ def add_mole_to_model(
     model_peft = PeftModel.from_pretrained(typing.cast(nn.Module, model), first_item[1], first_item[0], False)
     for adapter_name, model_id in adapters_items:
         model.load_adapter(model_id, adapter_name)
+
+    assert isinstance(model_peft.base_model, peft.tuners.mixed.MixedModel)
+
+    base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
+    model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
     peft_config = model_peft.peft_config
     adapters_keys: List[str] = list(adapters.keys())
