@@ -4,7 +4,7 @@ from typing import Optional, Tuple, Union
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
-from transformers.modeling_outputs import BaseModelOutputWithPast  # type: ignore
+from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
 
 from .mole_config import MoLEConfig
 
@@ -51,16 +51,18 @@ class MoLEClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
-        result: Union[Tuple, BaseModelOutputWithPast] = self.model.forward(
+        result: Union[Tuple, CausalLMOutputWithPast] = self.model.forward(
             *args,
             input_ids=input_ids,
             inputs_embeds=inputs_embeds,
             _mole_classifier_inhibitor_flag=batch_size,
             **kwargs,
         )
-        hidden_states = result[0]
 
-        logits = hidden_states
+        if isinstance(result, tuple):
+            logits = result[1]
+        else:
+            logits = result.logits
         for layer in self.inner:
             logits = layer.forward(logits)
 
