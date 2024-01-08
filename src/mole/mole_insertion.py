@@ -255,7 +255,7 @@ class MoLELayer(MoLEBaseLayer):
 
 
 class BaseTunerWrapper:
-    def __init__(self, base_model: peft.tuners.mixed.MixedModel):
+    def __init__(self, base_model: peft.tuners.lora.LoraModel):
         self.model = base_model.model
 
     def forward(self, *args, **kwargs):

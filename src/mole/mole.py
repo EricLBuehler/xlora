@@ -132,7 +132,7 @@ def add_mole_to_model(
     for adapter_name, model_id in adapters_items:
         model.load_adapter(model_id, adapter_name)
 
-    assert isinstance(model_peft.base_model, peft.tuners.mixed.MixedModel)
+    assert isinstance(model_peft.base_model, peft.tuners.lora.LoraModel)
 
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
     model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
