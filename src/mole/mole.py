@@ -126,7 +126,7 @@ def add_mole_to_model(
     def after_hook(module, input, output):
         print(f"{output=}")
 
-    model.register_forward_pre_hook(hook, with_kwargs=True)
+    model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
     model.register_forward_hook(after_hook)
 
     adapters_items = list(adapters.items())
