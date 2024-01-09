@@ -160,7 +160,7 @@ def add_mole_to_model(
     mole_state.set_mole_classifier(mole_classifier)
 
     for param in model.base_model.parameters():
-        param.requires_grad = False
+        param.requires_grad_(False)
 
     return model_peft
 
