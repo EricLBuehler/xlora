@@ -132,7 +132,7 @@ def add_mole_to_model(
     adapters_items = list(adapters.items())
     first_item = adapters_items[0]
     adapters_items = adapters_items[1:]
-    model_peft = PeftModel.from_pretrained(typing.cast(nn.Module, model), first_item[1], first_item[0], False)
+    model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], False)
     for adapter_name, model_id in adapters_items:
         model.load_adapter(model_id, adapter_name)
 
