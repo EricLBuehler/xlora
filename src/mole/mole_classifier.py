@@ -51,13 +51,14 @@ class MoLEClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
-        result: Union[Tuple, CausalLMOutputWithPast] = self.model.forward(
-            *args,
-            input_ids=input_ids,
-            inputs_embeds=inputs_embeds,
-            _mole_classifier_inhibitor_flag=batch_size,
-            **kwargs,
-        )
+        with self.model.disable_adapter():
+            result: Union[Tuple, CausalLMOutputWithPast] = self.model.forward(
+                *args,
+                input_ids=input_ids,
+                inputs_embeds=inputs_embeds,
+                _mole_classifier_inhibitor_flag=batch_size,
+                **kwargs,
+            )
 
         if isinstance(result, tuple):
             logits = result[1]

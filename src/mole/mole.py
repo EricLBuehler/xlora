@@ -30,6 +30,7 @@ def convert_layers_to_mole(
     svd_driver: Optional[str] = None,
     top_k_lora: Optional[int] = None,
 ):
+    assert isinstance(base, lora.LoraModel)
     modules = list(base.modules())
     if not verbose:
         iterable = modules
@@ -40,6 +41,7 @@ def convert_layers_to_mole(
         if isinstance(module, lora.LoraLayer):
             new_layer = MoLELayer(
                 adapters=adapters,
+                model=base,
                 target=module,
                 target_forward=module.forward,
                 peft_config=peft_config,
@@ -159,8 +161,9 @@ def add_mole_to_model(
     mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes)
     mole_state.set_mole_classifier(mole_classifier)
 
-    for param in model.base_model.parameters():
-        param.requires_grad_(False)
+    for name, param in model.base_model.named_parameters():
+        if "lora_" in name:
+            param.requires_grad = False
 
     return model_peft
 
