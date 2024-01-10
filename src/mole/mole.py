@@ -123,11 +123,7 @@ def add_mole_to_model(
         )
         mole_state.set_scalings(mole_scalings)
 
-    def after_hook(module, input, output):
-        print(f"{output=}")
-
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
-    model.register_forward_hook(after_hook)
 
     adapters_items = list(adapters.items())
     first_item = adapters_items[0]
