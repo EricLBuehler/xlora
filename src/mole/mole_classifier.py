@@ -52,20 +52,22 @@ class MoLEClassifier(nn.Module):
         self.top_k_lora = top_k_lora
         self.peft_config = peft_config
 
+        dtype = next(model.parameters()).dtype
+
         self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.mole_depth == 1:
-            self.inner.append(nn.Linear(config.hidden_size, n_classes, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, n_classes, bias=False).to(config.device).to(dtype))
         elif self.config.mole_depth == 2:
-            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device))
-            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device).to(dtype))
+            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype))
         else:
             assert self.config.mole_depth > 0
-            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device).to(dtype))
 
             for _ in range(config.mole_depth - 2):
-                self.inner.append(nn.Linear(config.mole_size, config.mole_size, bias=False).to(config.device))
+                self.inner.append(nn.Linear(config.mole_size, config.mole_size, bias=False).to(config.device).to(dtype))
 
-            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype))
 
     def forward(
         self,
