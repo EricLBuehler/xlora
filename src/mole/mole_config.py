@@ -8,8 +8,8 @@ class MoLEConfig:
     This is the configuration class to store the configuration of a [`MoLEClassifier`].
 
     Args:
-        vocab_size (`int`):
-            Vocab size of the base model.
+        hidden_size (`int`):
+            Hidden size of the base model.
         device (`torch.device`):
             Device for the MoLE classifier.
         enable_softmax (`bool`, *optional*, defaults to `True`):
@@ -29,7 +29,7 @@ class MoLEConfig:
 
     def __init__(
         self,
-        vocab_size: int,
+        hidden_size: int,
         device: torch.device,
         enable_softmax: bool = True,
         top_k_lora: Optional[int] = None,
@@ -40,7 +40,7 @@ class MoLEConfig:
         self.device = device
         self.enable_softmax = enable_softmax
         self.top_k_lora = top_k_lora
-        self.vocab_size = vocab_size
+        self.hidden_size = hidden_size
         self.pad_token_id = pad_token_id
         self.mole_depth = mole_depth
         self.mole_size = mole_size
