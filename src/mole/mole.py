@@ -114,7 +114,7 @@ def add_mole_to_model(
     )
 
     n_classes = len(adapters)
-    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes, adapters_keys, peft_config)
+    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes, adapters_keys, peft_config, combination_type)
     mole_state.set_mole_classifier(mole_classifier)
 
     for name, param in model.base_model.named_parameters():
