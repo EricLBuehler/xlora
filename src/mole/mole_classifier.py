@@ -83,11 +83,11 @@ class MoLEClassifier(nn.Module):
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
         with self.model.disable_adapter():
+            kwargs["output_hidden_states"] = True
             result: Union[Tuple, CausalLMOutputWithPast] = self.model.forward(
                 *args,
                 input_ids=input_ids,
                 inputs_embeds=inputs_embeds,
-                output_hidden_states=True,
                 _mole_classifier_inhibitor_flag=batch_size,
                 **kwargs,
             )
