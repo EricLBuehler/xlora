@@ -110,6 +110,8 @@ def add_mole_to_model(
         kwargs_real: dict = args[1]
         kwargs_real.update(kwargs)
 
+        mole_classifier = mole_state.get_mole_classifier()
+
         if "_mole_classifier_inhibitor_flag" in kwargs_real:
             assert isinstance(kwargs_real["_mole_classifier_inhibitor_flag"], int)
             batch_size = kwargs_real["_mole_classifier_inhibitor_flag"]
