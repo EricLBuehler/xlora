@@ -2,8 +2,6 @@ from typing import Optional
 
 import torch
 
-import torch
-
 
 class MoLEConfig:
     r"""
