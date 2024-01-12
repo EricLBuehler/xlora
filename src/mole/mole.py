@@ -30,7 +30,7 @@ def convert_layers_to_mole(
     svd_driver: Optional[str] = None,
     top_k_lora: Optional[int] = None,
 ):
-    assert isinstance(base, lora.LoraModel)
+    assert isinstance(base.base_model, lora.LoraModel)
     modules = list(base.modules())
     if not verbose:
         iterable = modules
@@ -41,7 +41,7 @@ def convert_layers_to_mole(
         if isinstance(module, lora.LoraLayer):
             new_layer = MoLELayer(
                 adapters=adapters,
-                model=base,
+                model=base.base_model,
                 target=module,
                 target_forward=module.forward,
                 peft_config=peft_config,
