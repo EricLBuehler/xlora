@@ -1,12 +1,10 @@
 import typing
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
-from peft.mixed_model import PeftMixedModel
-from transformers.modeling_outputs import BaseModelOutputWithPast  # type: ignore
-
-from mole import mole_state
+from peft.peft_model import PeftModel
+from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
 
 from .mole_config import MoLEConfig
 
@@ -16,70 +14,77 @@ class MoLEClassifier(nn.Module):
     A classifier to select LoRA layers for MoLE. It runs the base model with LoRA adapter scalings of 0.
     """
 
-    def __init__(self, model: PeftMixedModel, config: MoLEConfig, n_classes: int):
+    def __init__(
+        self,
+        model: PeftModel,
+        config: MoLEConfig,
+        n_classes: int,
+    ):
         super().__init__()
 
         self.model = model
         self.n_classes = n_classes
         self.config = config
 
+        dtype = next(model.parameters()).dtype
+
         self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.mole_depth == 1:
-            self.inner.append(nn.Linear(config.vocab_size, n_classes, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, n_classes, bias=False).to(config.device).to(dtype))
         elif self.config.mole_depth == 2:
-            self.inner.append(nn.Linear(config.vocab_size, config.mole_size, bias=False).to(config.device))
-            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device).to(dtype))
+            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype))
         else:
             assert self.config.mole_depth > 0
-            self.inner.append(nn.Linear(config.vocab_size, config.mole_size, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device).to(dtype))
 
             for _ in range(config.mole_depth - 2):
-                self.inner.append(nn.Linear(config.mole_size, config.mole_size, bias=False).to(config.device))
+                self.inner.append(
+                    nn.Linear(config.mole_size, config.mole_size, bias=False).to(config.device).to(dtype)
+                )
 
-            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype))
 
     def forward(
         self,
         input_ids: Optional[torch.LongTensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        position_ids: Optional[torch.LongTensor] = None,
-        past_key_values: Optional[List[torch.FloatTensor]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
-        use_cache: Optional[bool] = None,
-        output_attentions: Optional[bool] = None,
-        output_hidden_states: Optional[bool] = None,
-        return_dict: Optional[bool] = None,
         *args,
         **kwargs,
     ) -> torch.Tensor:
         """
-        Using the input, predict `n_classes` LoRA alpha values.
+        Using the hidden states of the model, predict `n_classes` LoRA alpha values.
         """
         if input_ids is not None:
             batch_size = input_ids.shape[0]
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
-        # Set the scalings to all 0 for this pass. We have a PeftMixedModel, so the _calculate_weights function will not be called
-        # and we have no threat of recursion.
-        mole_state.set_scalings(torch.zeros(batch_size, self.n_classes))
+        with self.model.disable_adapter():
+            kwargs["output_hidden_states"] = True
+            result: Union[Tuple, CausalLMOutputWithPast] = self.model.forward(
+                *args,
+                input_ids=input_ids,
+                inputs_embeds=inputs_embeds,
+                _mole_classifier_inhibitor_flag=batch_size,
+                **kwargs,
+            )
 
-        result: Union[Tuple, BaseModelOutputWithPast] = self.model.forward(
-            input_ids,
-            attention_mask,
-            position_ids,
-            past_key_values,
-            inputs_embeds,
-            use_cache,
-            output_attentions,
-            output_hidden_states,
-            return_dict,
-        )
-        hidden_states = result[0]
+            assert isinstance(result, tuple) or isinstance(result, CausalLMOutputWithPast)
 
-        logits = hidden_states
+        if isinstance(result, tuple):
+            hidden_states = result[3]
+        else:
+            hidden_states = result.hidden_states
+
+        assert hidden_states is not None
+
+        hidden_state = hidden_states[-1]  # Get the last hidden state
+
         for layer in self.inner:
-            logits = layer.forward(logits)
+            hidden_state = layer.forward(hidden_state)
+
+        logits = hidden_state
 
         if self.config.pad_token_id is None:
             sequence_lengths: Union[int, torch.Tensor] = -1
@@ -93,12 +98,12 @@ class MoLEClassifier(nn.Module):
                 sequence_lengths = -1
 
         # Get it for the last token
-        pooled_logits: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
+        scalings: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
 
         if self.config.enable_softmax:
-            pooled_logits = pooled_logits.softmax(dim=-1)
+            scalings = scalings.softmax(dim=-1)
 
-        return pooled_logits
+        return scalings
 
     def get_nb_trainable_parameters(self):
         # https://github.com/huggingface/peft/blob/main/src/peft/mixed_model.py#L156
