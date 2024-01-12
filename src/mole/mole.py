@@ -20,6 +20,7 @@ from .mole_insertion import BaseTunerWrapper, MoLELayer
 def convert_layers_to_mole(
     base: PeftModel,
     verbose: bool,
+    top_k_lora: Optional[int] = None,
 ):
     assert isinstance(base.base_model, lora.LoraModel)
     modules = list(base.modules())
@@ -28,11 +29,17 @@ def convert_layers_to_mole(
     else:
         iterable = tqdm.tqdm(modules)
     total_swapped = 0
+
+    scaling_keys = None
     for module in iterable:
         if isinstance(module, lora.LoraLayer):
+            if not scaling_keys:
+                scaling_keys = list(module.scaling.keys())  # NOTE(EricLBuehler): Python 3.7: dicts are ordered!
             new_layer = MoLELayer(
                 target=module,
                 target_forward=module.forward,
+                scaling_keys=scaling_keys,
+                top_k_lora=top_k_lora,
             )
             module.forward = new_layer.forward
             total_swapped += 1
@@ -45,7 +52,6 @@ def add_mole_to_model(
     mole_config: MoLEConfig,
     adapters: Dict[str, str],
     verbose: bool,
-    combination_type: str = "cat",
 ) -> PeftModel:
     """
     This method converts all LoRA adapters to MoLE layers, and it is one of the intended entrypoints
@@ -62,10 +68,6 @@ def add_mole_to_model(
             Display tqdm, total swapping count.
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
-        combination_type (`str`):
-            Type of merging. Can be one of [`linear`, `cat`]. When using the `cat` combination_type you
-            should be aware that rank of the resulting adapter will be equal to the sum of all adapters ranks. So
-            it's possible that the mixed adapter may become too big and result in OOM errors.
     Returns:
         model (`PeftModel`):
             The new model.
@@ -105,16 +107,14 @@ def add_mole_to_model(
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
     model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
-    peft_config = model_peft.peft_config
-    adapters_keys: List[str] = list(adapters.keys())
-
     convert_layers_to_mole(
         model_peft,
         verbose,
+        mole_config.top_k_lora,
     )
 
     n_classes = len(adapters)
-    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes, adapters_keys, peft_config, combination_type)
+    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes)
     mole_state.set_mole_classifier(mole_classifier)
 
     for name, param in model.base_model.named_parameters():
@@ -131,7 +131,6 @@ def from_pretrained(
     mole_config: MoLEConfig,
     verbose: bool,
     adapters: Dict[str, str],
-    combination_type: str = "cat",
 ) -> PeftModel:
     """
     Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `MoLEModel.save_pretrained`.
@@ -154,16 +153,12 @@ def from_pretrained(
             Display tqdm, total swapping count.
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
-        combination_type (`str`):
-            Type of merging. Can be one of [`linear`, `cat`]. When using the `cat` combination_type you
-            should be aware that rank of the resulting adapter will be equal to the sum of all adapters ranks. So
-            it's possible that the mixed adapter may become too big and result in OOM errors.
     Returns:
         model (`PeftModel`):
             The new model.
     """
 
-    model_peft = add_mole_to_model(model, mole_config, adapters, verbose, combination_type)
+    model_peft = add_mole_to_model(model, mole_config, adapters, verbose)
 
     classifier = mole_state.get_mole_classifier()
     with open(os.path.join(load_directory, "mole_classifier_config.json"), "w") as f:
