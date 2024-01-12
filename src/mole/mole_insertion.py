@@ -8,7 +8,7 @@ import peft
 import torch
 import torch.nn as nn
 from peft.tuners import lora
-from peft.tuners.tuners_utils import PeftConfig  # type: ignore
+from peft.tuners.tuners_utils import BaseTuner, PeftConfig  # type: ignore
 from torch import Tensor
 
 from mole import mole_state
@@ -34,7 +34,7 @@ class MoLEBaseLayer:
     @classmethod
     def add_weighted_adapter(
         cls,
-        model: lora.LoraModel,
+        model: BaseTuner,
         target: lora.LoraLayer,
         adapters: List[str],
         weights: List[Tensor],
@@ -221,7 +221,7 @@ class MoLELayer(MoLEBaseLayer):
     def __init__(
         self,
         adapters: List[str],
-        model: lora.LoraModel,
+        model: BaseTuner,
         target: lora.LoraLayer,
         target_forward: Callable[..., Any],
         peft_config: Dict[str, PeftConfig],
@@ -300,7 +300,7 @@ class MoLELayer(MoLEBaseLayer):
 
 
 class BaseTunerWrapper:
-    def __init__(self, base_model: peft.tuners.lora.LoraModel):
+    def __init__(self, base_model: BaseTuner):
         self.model = base_model.model
 
     def forward(self, *args, **kwargs):
