@@ -4,9 +4,7 @@ from dataclasses import replace
 from functools import reduce
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import peft
 import torch
-import torch.nn as nn
 from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner, PeftConfig  # type: ignore
 from torch import Tensor
@@ -40,11 +38,7 @@ class MoLEBaseLayer:
         weights: List[Tensor],
         adapter_name: str,
         peft_config: Dict[str, lora.LoraConfig],
-        combination_type: str = "svd",
-        svd_rank: Optional[bool] = None,
-        svd_clamp: Optional[float] = None,
-        svd_full_matrices: Optional[bool] = True,
-        svd_driver: Optional[str] = None,
+        combination_type: str = "cat",
     ) -> None:
         for adapter in adapters:
             if adapter not in list(peft_config.keys()):
@@ -63,9 +57,6 @@ class MoLEBaseLayer:
             # adapters ranks may be different, new rank is sum of all ranks
             # be careful, because output adapter rank may be really big if mixing a lot of adapters
             new_rank = sum(adapters_ranks)
-        elif combination_type == "svd":
-            # new rank is the max of all ranks of the adapters if not provided
-            new_rank = svd_rank or max(adapters_ranks)
         else:
             raise ValueError(f"Invalid combination_type: {combination_type}")
 
@@ -143,72 +134,6 @@ class MoLEBaseLayer:
                     loras_B_cat: Tensor = torch.cat(loras_B, dim=1)
                     target_lora_A.data[: loras_A_cat.shape[0], :] = loras_A_cat
                     target_lora_B.data[:, : loras_B_cat.shape[1]] = loras_B_cat
-                elif combination_type == "svd":
-                    target_lora_A.data, target_lora_B.data = cls._svd_weighted_adapter(
-                        adapters,
-                        weights,
-                        new_rank,
-                        target,
-                        target_lora_A,
-                        target_lora_B,
-                        svd_clamp,
-                        full_matrices=svd_full_matrices,
-                        driver=svd_driver,
-                    )
-
-    @classmethod
-    def _svd_weighted_adapter(
-        cls,
-        adapters: List[str],
-        weights: List[Tensor],
-        new_rank: int,
-        target: lora.LoraLayer,
-        target_lora_A: Union[Tensor, nn.Module],
-        target_lora_B: Union[Tensor, nn.Module],
-        clamp: Optional[float] = None,
-        full_matrices: Optional[bool] = True,
-        driver: Optional[str] = None,
-    ):
-        valid_adapters = []
-        valid_weights = []
-        for adapter, weight in zip(adapters, weights):
-            if adapter in target.lora_A or adapter in target.lora_embedding_A:
-                valid_adapters.append(adapter)
-                valid_weights.append(weight)
-
-        # if no valid adapter, nothing to do
-        if len(valid_adapters) == 0:
-            raise ValueError("No matching LoRAs found. Please raise an issue on Github.")
-
-        delta_weight = valid_weights[0] * target.get_delta_weight(valid_adapters[0])  # type: ignore[attr-defined]
-        for adapter, weight in zip(valid_adapters[1:], valid_weights[1:]):
-            delta_weight += weight * target.get_delta_weight(adapter)  # type: ignore[attr-defined]
-        conv2d = isinstance(target, peft.tuners.lora.layer.Conv2d)
-        if conv2d:
-            conv2d_1x1 = target.weight.size()[2:4] == (1, 1)
-            if not conv2d_1x1:
-                delta_weight = delta_weight.flatten(start_dim=1)
-            else:
-                delta_weight = delta_weight.squeeze()
-        if hasattr(target, "fan_in_fan_out") and target.fan_in_fan_out:  # type: ignore[attr-defined]
-            delta_weight = delta_weight.T
-
-        # based on https://github.com/kohya-ss/sd-scripts/blob/main/networks/svd_merge_lora.py#L114-L131
-        U, S, Vh = torch.linalg.svd(delta_weight, full_matrices=full_matrices, driver=driver)
-        U = U[:, :new_rank]
-        S = S[:new_rank]
-        U = U @ torch.diag(S)
-        Vh = Vh[:new_rank, :]
-        if clamp is not None:
-            dist = torch.cat([U.flatten(), Vh.flatten()])
-            hi_val = torch.quantile(dist, clamp)
-            low_val = -hi_val
-            U = U.clamp(low_val, hi_val)
-            Vh = Vh.clamp(low_val, hi_val)
-        if conv2d:
-            U = U.reshape(target_lora_B.data.shape)
-            Vh = Vh.reshape(target_lora_A.data.shape)
-        return Vh, U
 
 
 class MoLELayer(MoLEBaseLayer):
@@ -225,11 +150,7 @@ class MoLELayer(MoLEBaseLayer):
         target: lora.LoraLayer,
         target_forward: Callable[..., Any],
         peft_config: Dict[str, PeftConfig],
-        combination_type: str = "svd",
-        svd_rank: Optional[bool] = None,
-        svd_clamp: Optional[float] = None,
-        svd_full_matrices: Optional[bool] = True,
-        svd_driver: Optional[str] = None,
+        combination_type: str = "cat",
         top_k_lora: Optional[int] = None,
     ) -> None:
         self.adapters = adapters
@@ -240,10 +161,6 @@ class MoLELayer(MoLEBaseLayer):
         self.top_k_lora = top_k_lora
 
         self.combination_type = combination_type
-        self.svd_rank = svd_rank
-        self.svd_clamp = svd_clamp
-        self.svd_full_matrices = svd_full_matrices
-        self.svd_driver = svd_driver
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
@@ -262,10 +179,6 @@ class MoLELayer(MoLEBaseLayer):
                     adapter_name=MOLE_ADAPTER_NAME,
                     peft_config=typing.cast(Dict[str, lora.LoraConfig], self.peft_config),
                     combination_type=self.combination_type,
-                    svd_rank=self.svd_rank,
-                    svd_clamp=self.svd_clamp,
-                    svd_full_matrices=self.svd_full_matrices,
-                    svd_driver=self.svd_driver,
                 )
 
                 self.target.set_adapter(MOLE_ADAPTER_NAME)
@@ -285,10 +198,6 @@ class MoLELayer(MoLEBaseLayer):
                     adapter_name=MOLE_ADAPTER_NAME,
                     peft_config=typing.cast(Dict[str, lora.LoraConfig], self.peft_config),
                     combination_type=self.combination_type,
-                    svd_rank=self.svd_rank,
-                    svd_clamp=self.svd_clamp,
-                    svd_full_matrices=self.svd_full_matrices,
-                    svd_driver=self.svd_driver,
                 )
 
                 self.target.set_adapter(MOLE_ADAPTER_NAME)

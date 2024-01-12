@@ -23,11 +23,7 @@ def convert_layers_to_mole(
     adapters: List[str],
     peft_config: Dict[str, PeftConfig],
     verbose: bool,
-    combination_type: str = "svd",
-    svd_rank: Optional[bool] = None,
-    svd_clamp: Optional[float] = None,
-    svd_full_matrices: Optional[bool] = True,
-    svd_driver: Optional[str] = None,
+    combination_type: str = "cat",
     top_k_lora: Optional[int] = None,
 ):
     assert isinstance(base.base_model, lora.LoraModel)
@@ -46,10 +42,6 @@ def convert_layers_to_mole(
                 target_forward=module.forward,
                 peft_config=peft_config,
                 combination_type=combination_type,
-                svd_rank=svd_rank,
-                svd_clamp=svd_clamp,
-                svd_full_matrices=svd_full_matrices,
-                svd_driver=svd_driver,
                 top_k_lora=top_k_lora,
             )
             module.forward = new_layer.forward
@@ -63,11 +55,7 @@ def add_mole_to_model(
     mole_config: MoLEConfig,
     adapters: Dict[str, str],
     verbose: bool,
-    combination_type: str = "svd",
-    svd_rank: Optional[bool] = None,
-    svd_clamp: Optional[float] = None,
-    svd_full_matrices: Optional[bool] = True,
-    svd_driver: Optional[str] = None,
+    combination_type: str = "cat",
 ) -> PeftModel:
     """
     This method converts all LoRA adapters to MoLE layers, and it is one of the intended entrypoints
@@ -85,21 +73,9 @@ def add_mole_to_model(
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
         combination_type (`str`):
-            Type of merging. Can be one of [`svd`, `linear`, `cat`]. When using the `cat` combination_type you
+            Type of merging. Can be one of [`linear`, `cat`]. When using the `cat` combination_type you
             should be aware that rank of the resulting adapter will be equal to the sum of all adapters ranks. So
             it's possible that the mixed adapter may become too big and result in OOM errors.
-        svd_rank (`int`, *optional*):
-            Rank of output adapter for svd. If None provided, will use max rank of merging adapters.
-        svd_clamp (`float`, *optional*):
-            A quantile threshold for clamping SVD decomposition output. If None is provided, do not perform
-            clamping. Defaults to None.
-        svd_full_matrices (`bool`, *optional*):
-            Controls whether to compute the full or reduced SVD, and consequently, the shape of the returned
-            tensors U and Vh. Defaults to True.
-        svd_driver (`str`, *optional*):
-            Name of the cuSOLVER method to be used. This keyword argument only works when merging on CUDA. Can be
-            one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
-            documentation. Defaults to None.
     Returns:
         model (`PeftModel`):
             The new model.
@@ -148,10 +124,6 @@ def add_mole_to_model(
         peft_config,
         verbose,
         combination_type,
-        svd_rank,
-        svd_clamp,
-        svd_full_matrices,
-        svd_driver,
         top_k_lora=mole_config.top_k_lora,
     )
 
@@ -173,11 +145,7 @@ def from_pretrained(
     mole_config: MoLEConfig,
     verbose: bool,
     adapters: Dict[str, str],
-    combination_type: str = "svd",
-    svd_rank: Optional[bool] = None,
-    svd_clamp: Optional[float] = None,
-    svd_full_matrices: Optional[bool] = True,
-    svd_driver: Optional[str] = None,
+    combination_type: str = "cat",
 ) -> PeftModel:
     """
     Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `MoLEModel.save_pretrained`.
@@ -201,29 +169,15 @@ def from_pretrained(
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
         combination_type (`str`):
-            Type of merging. Can be one of [`svd`, `linear`, `cat`]. When using the `cat` combination_type you
+            Type of merging. Can be one of [`linear`, `cat`]. When using the `cat` combination_type you
             should be aware that rank of the resulting adapter will be equal to the sum of all adapters ranks. So
             it's possible that the mixed adapter may become too big and result in OOM errors.
-        svd_rank (`int`, *optional*):
-            Rank of output adapter for svd. If None provided, will use max rank of merging adapters.
-        svd_clamp (`float`, *optional*):
-            A quantile threshold for clamping SVD decomposition output. If None is provided, do not perform
-            clamping. Defaults to None.
-        svd_full_matrices (`bool`, *optional*):
-            Controls whether to compute the full or reduced SVD, and consequently, the shape of the returned
-            tensors U and Vh. Defaults to True.
-        svd_driver (`str`, *optional*):
-            Name of the cuSOLVER method to be used. This keyword argument only works when merging on CUDA. Can be
-            one of [None, `gesvd`, `gesvdj`, `gesvda`]. For more info please refer to `torch.linalg.svd`
-            documentation. Defaults to None.
     Returns:
         model (`PeftModel`):
             The new model.
     """
 
-    model_peft = add_mole_to_model(
-        model, mole_config, adapters, verbose, combination_type, svd_rank, svd_clamp, svd_full_matrices, svd_driver
-    )
+    model_peft = add_mole_to_model(model, mole_config, adapters, verbose, combination_type)
 
     classifier = mole_state.get_mole_classifier()
     with open(os.path.join(load_directory, "mole_classifier_config.json"), "w") as f:
