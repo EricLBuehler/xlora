@@ -127,12 +127,12 @@ class MoLEClassifier(nn.Module):
         if self.config.enable_softmax:
             scalings = scalings.softmax(dim=-1)
 
-        assert isinstance(self.model, BaseTuner)
+        assert isinstance(self.model.base_model, BaseTuner)
         if self.top_k_lora is None:
             for i, batch_scalings in enumerate(scalings):
                 self.add_weighted_adapter(
                     adapters=self.adapters,
-                    model=self.model,
+                    model=self.model.base_model,
                     weights=list(batch_scalings),
                     adapter_name=_MOLE_ADAPTER_NAME + f"_{i}",
                     peft_config=typing.cast(Dict[str, lora.LoraConfig], self.peft_config),
@@ -145,7 +145,7 @@ class MoLEClassifier(nn.Module):
                 adapters = [self.adapters[i] for i in indices]
                 self.add_weighted_adapter(
                     adapters=adapters,
-                    model=self.model,
+                    model=self.model.base_model,
                     weights=list(topk_scalings),
                     adapter_name=_MOLE_ADAPTER_NAME + f"_{i}",
                     peft_config=typing.cast(Dict[str, lora.LoraConfig], self.peft_config),
