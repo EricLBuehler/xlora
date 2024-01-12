@@ -87,6 +87,7 @@ class MoLEClassifier(nn.Module):
                 *args,
                 input_ids=input_ids,
                 inputs_embeds=inputs_embeds,
+                output_hidden_states=True,
                 _mole_classifier_inhibitor_flag=batch_size,
                 **kwargs,
             )
