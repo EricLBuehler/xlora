@@ -3,4 +3,5 @@ __pycache__
 .vscode
 *.egg-info
 mole-checkpoints
-test.py
+.mypy_cache
+.pytest_cache
