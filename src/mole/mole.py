@@ -9,7 +9,6 @@ import torch
 import tqdm  # type: ignore
 from peft.peft_model import PeftModel
 from peft.tuners import lora
-from peft.tuners.tuners_utils import PeftConfig  # type: ignore
 from transformers import PreTrainedModel  # type: ignore
 
 from . import mole_state
@@ -20,11 +19,7 @@ from .mole_insertion import BaseTunerWrapper, MoLELayer
 
 def convert_layers_to_mole(
     base: PeftModel,
-    adapters: List[str],
-    peft_config: Dict[str, PeftConfig],
     verbose: bool,
-    combination_type: str = "cat",
-    top_k_lora: Optional[int] = None,
 ):
     assert isinstance(base.base_model, lora.LoraModel)
     modules = list(base.modules())
@@ -36,13 +31,8 @@ def convert_layers_to_mole(
     for module in iterable:
         if isinstance(module, lora.LoraLayer):
             new_layer = MoLELayer(
-                adapters=adapters,
-                model=base.base_model,
                 target=module,
                 target_forward=module.forward,
-                peft_config=peft_config,
-                combination_type=combination_type,
-                top_k_lora=top_k_lora,
             )
             module.forward = new_layer.forward
             total_swapped += 1
@@ -120,15 +110,11 @@ def add_mole_to_model(
 
     convert_layers_to_mole(
         model_peft,
-        adapters_keys,
-        peft_config,
         verbose,
-        combination_type,
-        top_k_lora=mole_config.top_k_lora,
     )
 
     n_classes = len(adapters)
-    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes)
+    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes, adapters_keys, peft_config)
     mole_state.set_mole_classifier(mole_classifier)
 
     for name, param in model.base_model.named_parameters():
