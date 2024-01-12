@@ -23,13 +23,13 @@ class MoLEClassifier(nn.Module):
 
         self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.mole_depth == 1:
-            self.inner.append(nn.Linear(config.vocab_size, n_classes, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, n_classes, bias=False).to(config.device))
         elif self.config.mole_depth == 2:
-            self.inner.append(nn.Linear(config.vocab_size, config.mole_size, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device))
             self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device))
         else:
             assert self.config.mole_depth > 0
-            self.inner.append(nn.Linear(config.vocab_size, config.mole_size, bias=False).to(config.device))
+            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device))
 
             for _ in range(config.mole_depth - 2):
                 self.inner.append(nn.Linear(config.mole_size, config.mole_size, bias=False).to(config.device))
@@ -44,7 +44,7 @@ class MoLEClassifier(nn.Module):
         **kwargs,
     ) -> torch.Tensor:
         """
-        Using the input, predict `n_classes` LoRA alpha values.
+        Using the hidden states of the model, predict `n_classes` LoRA alpha values.
         """
         if input_ids is not None:
             batch_size = input_ids.shape[0]
@@ -60,12 +60,21 @@ class MoLEClassifier(nn.Module):
                 **kwargs,
             )
 
+            assert isinstance(result, tuple) or isinstance(result, CausalLMOutputWithPast)
+
         if isinstance(result, tuple):
-            logits = result[1]
+            hidden_states = result[3]
         else:
-            logits = result.logits
+            hidden_states = result.hidden_states
+
+        assert hidden_states is not None
+
+        hidden_state = hidden_states[-1]  # Get the last hidden state
+
         for layer in self.inner:
-            logits = layer.forward(logits)
+            hidden_state = layer.forward(hidden_state)
+
+        logits = hidden_state
 
         if self.config.pad_token_id is None:
             sequence_lengths: Union[int, torch.Tensor] = -1
