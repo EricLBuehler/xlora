@@ -1,2 +1,2 @@
 [files]
-extend-exclude = ["examples/Mistral_*"]
+extend-exclude = ["examples/train.ipynb"]
