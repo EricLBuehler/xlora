@@ -22,6 +22,5 @@ def test_items():
         "mole_insertion",
         "mole_state",
         "print_trainable_parameters",
-        "save_pretrained",
         "set_scalings_with_lifetime",
     ]
