@@ -1,10 +1,12 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Union
 
 import torch
+from peft.peft_model import PeftModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
 
+import mole
 from mole import mole_state
 
 
@@ -70,3 +72,19 @@ class BaseTunerWrapper:
 
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
+
+
+class PeftModelWrapper:
+    def __init__(self, base_model: PeftModel):
+        self.model = base_model
+
+    def save_pretrained(
+        self,
+        save_directory: str,
+        safe_serialization: bool = True,
+        selected_adapters: Optional[List[str]] = None,
+        save_embedding_layers: Union[str, bool] = "auto",
+        is_main_process: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        mole.save_pretrained(save_directory, safe_serialization, is_main_process)
