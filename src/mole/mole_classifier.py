@@ -6,9 +6,26 @@ import torch.nn as nn
 from peft.peft_model import PeftModel
 from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
 
-from mole.mole_state import get_n_predictions_lifetime, set_n_predictions_lifetime  # type: ignore
-
 from .mole_config import MoLEConfig
+
+_n_predictions_lifetime: int = 0
+
+
+def get_n_predictions_lifetime() -> int:
+    global _n_predictions_lifetime
+    """
+    Reads the n predictions lifetime.
+    """
+    assert _n_predictions_lifetime is not None
+    return _n_predictions_lifetime
+
+
+def set_n_predictions_lifetime(value: int) -> None:
+    global _n_predictions_lifetime
+    """
+    Sets the n predictions lifetime.
+    """
+    _n_predictions_lifetime = value
 
 
 class MoLEClassifier(nn.Module):

@@ -10,6 +10,8 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
+from mole import mole_classifier
+
 from . import mole_state
 from .mole_classifier import MoLEClassifier
 from .mole_config import MoLEConfig
@@ -194,6 +196,7 @@ def print_scalings_predictions(n_predictions_lifetime: int):
     """
     Print the scaling states for the next n classifier predictions (i.e. forward, generate passes)
     """
+    mole_classifier.set_n_predictions_lifetime(n_predictions_lifetime)
 
 
 def get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]:

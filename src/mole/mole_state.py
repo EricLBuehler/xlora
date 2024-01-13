@@ -83,23 +83,3 @@ def set_mole_classifier(value: MoLEClassifier) -> None:
     Sets the MoLEClassifier.
     """
     _mole_classifier = value
-
-
-_n_predictions_lifetime: int = 0
-
-
-def get_n_predictions_lifetime() -> int:
-    global _n_predictions_lifetime
-    """
-    Reads the n predictions lifetime.
-    """
-    assert _n_predictions_lifetime is not None
-    return _n_predictions_lifetime
-
-
-def set_n_predictions_lifetime(value: int) -> None:
-    global _n_predictions_lifetime
-    """
-    Sets the n predictions lifetime.
-    """
-    _n_predictions_lifetime = value
