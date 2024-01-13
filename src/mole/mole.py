@@ -14,7 +14,7 @@ from transformers import PreTrainedModel  # type: ignore
 from . import mole_state
 from .mole_classifier import MoLEClassifier
 from .mole_config import MoLEConfig
-from .mole_insertion import BaseTunerWrapper, MoLELayer
+from .mole_insertion import BaseTunerWrapper, MoLELayer, PeftModelWrapper
 
 
 def convert_layers_to_mole(
@@ -106,6 +106,9 @@ def add_mole_to_model(
 
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
     model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
+
+    peft_model_wrapper = PeftModelWrapper(model_peft)
+    model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
 
     convert_layers_to_mole(
         model_peft,
