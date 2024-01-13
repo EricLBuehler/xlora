@@ -42,7 +42,7 @@ class MoLELayer:
 
         outputs: List[Tensor] = []
         if self.top_k_lora is None:
-            for i, (batch_x, batch_scalings) in enumerate(zip(x, mole_state.get_scalings())):
+            for batch_x, batch_scalings in zip(x, mole_state.get_scalings()):
                 self.scale_adapters(self.target, batch_scalings, self.scaling_keys)
 
                 output = self.target_forward(batch_x, *args, **kwargs)
@@ -50,7 +50,7 @@ class MoLELayer:
 
                 self.target.scaling = old_scalings
         else:
-            for i, (batch_x, batch_scalings) in enumerate(zip(x, mole_state.get_scalings())):
+            for batch_x, batch_scalings in zip(x, mole_state.get_scalings()):
                 (topk_scalings, indices) = torch.topk(input=batch_scalings, k=self.top_k_lora)
                 indices = list(indices)
                 adapters = [self.scaling_keys[i] for i in indices]
