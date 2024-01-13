@@ -41,7 +41,8 @@ class MoLEClassifier(nn.Module):
     ):
         super().__init__()
 
-        self.model = model
+        # To avoid registering this with nn.Module
+        self.__dict__["model"] = model
         self.n_classes = n_classes
         self.config = config
 
@@ -79,9 +80,11 @@ class MoLEClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
-        with self.model.disable_adapter():
+        # For type checking
+        model: PeftModel = self.model  # type: ignore
+        with model.disable_adapter():
             kwargs["output_hidden_states"] = True
-            result: Union[Tuple, CausalLMOutputWithPast] = self.model.forward(
+            result: Union[Tuple, CausalLMOutputWithPast] = model.forward(
                 *args,
                 input_ids=input_ids,
                 inputs_embeds=inputs_embeds,
