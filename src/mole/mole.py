@@ -103,6 +103,8 @@ def add_mole_to_model(
     for adapter_name, model_id in adapters_items:
         model_peft.load_adapter(model_id, adapter_name)
 
+    model_peft.base_model.set_adapter(list(adapters.keys()))
+
     assert isinstance(model_peft.base_model, peft.tuners.lora.LoraModel)
 
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
