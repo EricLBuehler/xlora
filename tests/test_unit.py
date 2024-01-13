@@ -19,7 +19,7 @@ def test_items():
         "mole",
         "mole_classifier",
         "mole_config",
-        "mole_insertion_layers",
+        "mole_insertion",
         "mole_state",
         "print_trainable_parameters",
         "save_pretrained",
