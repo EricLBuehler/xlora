@@ -6,6 +6,8 @@ import torch.nn as nn
 from peft.peft_model import PeftModel
 from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
 
+from mole.mole_state import get_n_predictions_lifetime, set_n_predictions_lifetime  # type: ignore
+
 from .mole_config import MoLEConfig
 
 
@@ -102,6 +104,11 @@ class MoLEClassifier(nn.Module):
 
         if self.config.enable_softmax:
             scalings = scalings.softmax(dim=-1)
+
+        n_pred_life = get_n_predictions_lifetime()
+        if n_pred_life > 0:
+            print(f"Scaling predictions: {scalings}")
+            set_n_predictions_lifetime(n_pred_life - 1)
 
         return scalings
 
