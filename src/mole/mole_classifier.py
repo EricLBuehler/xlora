@@ -1,6 +1,7 @@
 import typing
 from typing import Optional, Tuple, Union
 
+import numpy
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
@@ -9,6 +10,9 @@ from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
 from .mole_config import MoLEConfig
 
 _n_predictions_lifetime: int = 0
+_scalings_logging_path: Optional[str] = None
+
+SCALINGS_LOG_FILE_PREFIX: str = "./scalings_log"
 
 
 def get_n_predictions_lifetime() -> int:
@@ -26,6 +30,11 @@ def set_n_predictions_lifetime(value: int) -> None:
     Sets the n predictions lifetime.
     """
     _n_predictions_lifetime = value
+
+
+def set_scalings_logging(value: Optional[str]):
+    global _scalings_logging_path
+    _scalings_logging_path = value
 
 
 class MoLEClassifier(nn.Module):
@@ -47,6 +56,7 @@ class MoLEClassifier(nn.Module):
         self.n_classes = n_classes
         self.n_layers = n_layers
         self.config = config
+        self.log_num = 0
 
         dtype = next(model.parameters()).dtype
 
@@ -148,6 +158,15 @@ class MoLEClassifier(nn.Module):
         if n_pred_life > 0:
             print(f"Scaling predictions: {scalings}")
             set_n_predictions_lifetime(n_pred_life - 1)
+
+        if _scalings_logging_path is not None:
+            path = _scalings_logging_path
+            path = f"{path}{SCALINGS_LOG_FILE_PREFIX}_{self.log_num}"
+
+            self.log_num += 1
+
+            npy = scalings.numpy()
+            numpy.save(path, npy)
 
         return scalings
 
