@@ -48,9 +48,9 @@ def set_scalings(value: Tensor) -> None:
     """
     Sets the scaling states to a Tensor.
 
-    A tensor with 2 dim is expected: (batch_size, num_classes)
+    A tensor with 2 dim is expected: (batch_size, num_layers, num_classes)
     """
-    assert value.ndim == 2
+    assert value.ndim == 3
     _scalings = _MoLEScalings(value)
 
 
@@ -59,9 +59,9 @@ def set_scalings_lifetime(value: Tensor, n_accesses_lifetime: int) -> None:
     """
     Sets the scaling states to a Tensor. The scaling states will have a lifetime of n accesses.
 
-    A tensor with 2 dim is expected: (batch_size, num_classes)
+    A tensor with 2 dim is expected: (batch_size, num_layers, num_classes)
     """
-    assert value.ndim == 2
+    assert value.ndim == 3
     _scalings = _MoLEScalingsWithLifetime(value, _scalings.value, n_accesses_lifetime)  # type: ignore
 
 

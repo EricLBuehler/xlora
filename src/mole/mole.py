@@ -22,7 +22,10 @@ def convert_layers_to_mole(
     base: PeftModel,
     verbose: bool,
     top_k_lora: Optional[int] = None,
-):
+) -> int:
+    """
+    Returns the number of swapped layers.
+    """
     assert isinstance(base.base_model, lora.LoraModel)
     modules = list(base.modules())
     if not verbose:
@@ -32,7 +35,7 @@ def convert_layers_to_mole(
     total_swapped = 0
 
     scaling_keys = None
-    for module in iterable:
+    for layer_number, module in enumerate(iterable):
         if isinstance(module, lora.LoraLayer):
             if not scaling_keys:
                 scaling_keys = list(module.scaling.keys())  # NOTE(EricLBuehler): Python 3.7: dicts are ordered!
@@ -41,11 +44,14 @@ def convert_layers_to_mole(
                 target_forward=module.forward,
                 scaling_keys=scaling_keys,
                 top_k_lora=top_k_lora,
+                layer_number=layer_number,
             )
             module.forward = new_layer.forward
             total_swapped += 1
     if verbose:
         print(f"Swapped {total_swapped} layers.")
+
+    return total_swapped
 
 
 def add_mole_to_model(
@@ -113,14 +119,14 @@ def add_mole_to_model(
     peft_model_wrapper = PeftModelWrapper(model_peft)
     model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
 
-    convert_layers_to_mole(
+    total_swapped = convert_layers_to_mole(
         model_peft,
         verbose,
         mole_config.top_k_lora,
     )
 
     n_classes = len(adapters)
-    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes)
+    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes, total_swapped)
     mole_state.set_mole_classifier(mole_classifier)
 
     for name, param in model.base_model.named_parameters():
