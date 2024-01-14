@@ -1,5 +1,5 @@
 import typing
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy
 import torch
@@ -10,9 +10,7 @@ from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
 from .mole_config import MoLEConfig
 
 _n_predictions_lifetime: int = 0
-_scalings_logging_path: Optional[str] = None
-
-SCALINGS_LOG_FILE_PREFIX: str = "./scalings_log"
+_scalings_logging: bool = False
 
 
 def get_n_predictions_lifetime() -> int:
@@ -32,9 +30,9 @@ def set_n_predictions_lifetime(value: int) -> None:
     _n_predictions_lifetime = value
 
 
-def set_scalings_logging(value: Optional[str]):
-    global _scalings_logging_path
-    _scalings_logging_path = value
+def set_scalings_logging(value: bool):
+    global _scalings_logging
+    _scalings_logging = value
 
 
 class MoLEClassifier(nn.Module):
@@ -56,7 +54,7 @@ class MoLEClassifier(nn.Module):
         self.n_classes = n_classes
         self.n_layers = n_layers
         self.config = config
-        self.log_num = 0
+        self.log_scalings: List[torch.Tensor] = []
 
         dtype = next(model.parameters()).dtype
 
@@ -159,14 +157,8 @@ class MoLEClassifier(nn.Module):
             print(f"Scaling predictions: {scalings}")
             set_n_predictions_lifetime(n_pred_life - 1)
 
-        if _scalings_logging_path is not None:
-            path = _scalings_logging_path
-            path = f"{path}{SCALINGS_LOG_FILE_PREFIX}_{self.log_num}"
-
-            self.log_num += 1
-
-            npy = scalings.numpy()
-            numpy.save(path, npy)
+        if _scalings_logging:
+            self.log_scalings.append(scalings.unsqueeze(0))
 
         return scalings
 
@@ -194,3 +186,14 @@ class MoLEClassifier(nn.Module):
                 trainable_params += num_params
 
         return trainable_params, all_param
+
+    def flush_log_scalings(self, path: str):
+        if not _scalings_logging:
+            raise Exception("Scalings logging is disabled!")
+
+        if len(self.log_scalings) == 0:
+            raise ValueError("No log scalings to flush.")
+
+        result = torch.cat(self.log_scalings, dim=0)
+        npy = result.numpy()
+        numpy.save(path, npy)
