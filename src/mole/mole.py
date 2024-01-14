@@ -91,7 +91,7 @@ def add_mole_to_model(
             assert isinstance(kwargs_real["_mole_classifier_inhibitor_flag"], int)
             batch_size = kwargs_real["_mole_classifier_inhibitor_flag"]
             del kwargs_real["_mole_classifier_inhibitor_flag"]
-            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_classes))
+            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_layers, mole_classifier.n_classes))
             return
 
         mole_scalings = mole_classifier.forward(
