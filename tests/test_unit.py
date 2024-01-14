@@ -14,6 +14,8 @@ def test_items():
         "__path__",
         "__spec__",
         "add_mole_to_model",
+        "disable_scalings_logging",
+        "enable_scalings_logging",
         "from_pretrained",
         "get_nb_trainable_parameters",
         "mole",

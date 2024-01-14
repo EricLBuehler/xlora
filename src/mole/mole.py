@@ -207,6 +207,20 @@ def print_scalings_predictions(n_predictions_lifetime: int):
     mole_classifier.set_n_predictions_lifetime(n_predictions_lifetime)
 
 
+def enable_scalings_logging(path: str):
+    """
+    Enable scalings logging to the specified path. Each time the classifier runs, it will write to the path in a Numpy `.npy` format. The specified path is used as a prefix.
+    """
+    mole_classifier.set_scalings_logging(path)
+
+
+def disable_scalings_logging():
+    """
+    Disable scalings logging.
+    """
+    mole_classifier.set_scalings_logging(None)
+
+
 def get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]:
     """
     Returns the number of trainable parameters and number of all parameters in the model.
