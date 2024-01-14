@@ -38,22 +38,30 @@ class MoLEClassifier(nn.Module):
         model: PeftModel,
         config: MoLEConfig,
         n_classes: int,
+        n_layers: int,
     ):
         super().__init__()
 
         # To avoid registering this with nn.Module
         self.__dict__["model"] = model
         self.n_classes = n_classes
+        self.n_layers = n_layers
         self.config = config
 
         dtype = next(model.parameters()).dtype
 
         self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.mole_depth == 1:
-            self.inner.append(nn.Linear(config.hidden_size, n_classes, bias=False).to(config.device).to(dtype))
+            if config.layerwise_scalings:
+                self.last = nn.Linear(config.hidden_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
+            else:
+                self.last = nn.Linear(config.hidden_size, n_classes, bias=False).to(config.device).to(dtype)
         elif self.config.mole_depth == 2:
             self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device).to(dtype))
-            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype))
+            if config.layerwise_scalings:
+                self.last = nn.Linear(config.mole_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
+            else:
+                self.last = nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype)
         else:
             assert self.config.mole_depth > 0
             self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device).to(dtype))
@@ -63,7 +71,10 @@ class MoLEClassifier(nn.Module):
                     nn.Linear(config.mole_size, config.mole_size, bias=False).to(config.device).to(dtype)
                 )
 
-            self.inner.append(nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype))
+            if config.layerwise_scalings:
+                self.last = nn.Linear(config.mole_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
+            else:
+                self.last = nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype)
 
     def forward(
         self,
@@ -106,7 +117,10 @@ class MoLEClassifier(nn.Module):
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
 
-        logits = hidden_state
+        logits = self.last.forward(hidden_state)
+        if not self.config.layerwise_scalings:
+            logits = logits.repeat(1, self.n_layers)
+        logits = logits.reshape(batch_size, self.n_layers, self.n_classes)
 
         if self.config.pad_token_id is None:
             sequence_lengths: Union[int, torch.Tensor] = -1

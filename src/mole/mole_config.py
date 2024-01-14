@@ -14,6 +14,8 @@ class MoLEConfig:
             Device for the MoLE classifier.
         enable_softmax (`bool`, *optional*, defaults to `True`):
             Enable softmax application for the MoLE classifier.
+        layerwise_scalings (`bool`, *optional*, defaults to `False`):
+            Generate scalings for each layer.
         top_k_lora (`int`, *optional*, defaults to None):
             Sparsely select the top_k LoRA experts instead of the default dense method.
         mole_depth (`int`, *optional*, defaults to 1):
@@ -32,6 +34,7 @@ class MoLEConfig:
         hidden_size: int,
         device: torch.device,
         enable_softmax: bool = True,
+        layerwise_scalings: bool = False,
         top_k_lora: Optional[int] = None,
         mole_depth: int = 1,
         mole_size: int = 32,
@@ -44,3 +47,4 @@ class MoLEConfig:
         self.pad_token_id = pad_token_id
         self.mole_depth = mole_depth
         self.mole_size = mole_size
+        self.layerwise_scalings = layerwise_scalings
