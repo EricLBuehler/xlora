@@ -91,6 +91,11 @@ class MoLEClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
+        if input_ids is not None:
+            seq_len = input_ids.shape[1]
+        else:
+            seq_len = typing.cast(torch.FloatTensor, inputs_embeds).shape[1]
+
         # For type checking
         model: PeftModel = self.model  # type: ignore
         with model.disable_adapter():
@@ -120,7 +125,7 @@ class MoLEClassifier(nn.Module):
         logits = self.last.forward(hidden_state)
         if not self.config.layerwise_scalings:
             logits = logits.repeat(1, self.n_layers)
-        logits = logits.reshape(batch_size, self.n_layers, self.n_classes)
+        logits = logits.reshape(batch_size, seq_len, self.n_layers, self.n_classes)
 
         if self.config.pad_token_id is None:
             sequence_lengths: Union[int, torch.Tensor] = -1
