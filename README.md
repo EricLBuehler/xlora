@@ -5,6 +5,8 @@ xLoRA works by learning the alpha scaling values for LoRA adapters, which are fr
 gate the LoRA experts in a dense fashion. Optionally, the top-k LoRA experts may be selected in a sparse fashion based on the 
 output of the xLoRA classifier.
 
+xLoRA is easily applied to any HuggingFace Transformers model.
+
 ## Advantages and features
 - Effective: Dense gating of experts allows effective mixing
 - Efficient fine-tuning: low trainable parameter count.
