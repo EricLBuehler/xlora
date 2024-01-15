@@ -7,7 +7,7 @@ import torch.nn as nn
 from peft.peft_model import PeftModel
 from transformers.modeling_outputs import ModelOutput  # type: ignore
 
-from .mole_config import MoLEConfig
+from .xlora_config import xLoRAConfig
 
 _n_predictions_lifetime: int = 0
 _scalings_logging: bool = False
@@ -35,15 +35,15 @@ def set_scalings_logging(value: bool):
     _scalings_logging = value
 
 
-class MoLEClassifier(nn.Module):
+class xLoRAClassifier(nn.Module):
     """
-    A classifier to select LoRA layers for MoLE. It runs the base model with LoRA adapter scalings of 0.
+    A classifier to select LoRA layers for xLoRA. It runs the base model with LoRA adapter scalings of 0.
     """
 
     def __init__(
         self,
         model: PeftModel,
-        config: MoLEConfig,
+        config: xLoRAConfig,
         n_classes: int,
         n_layers: int,
     ):
@@ -59,30 +59,30 @@ class MoLEClassifier(nn.Module):
         dtype = next(model.parameters()).dtype
 
         self.inner: nn.ModuleList = nn.ModuleList([])
-        if self.config.mole_depth == 1:
+        if self.config.xlora_depth == 1:
             if config.layerwise_scalings:
                 self.last = nn.Linear(config.hidden_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
             else:
                 self.last = nn.Linear(config.hidden_size, n_classes, bias=False).to(config.device).to(dtype)
-        elif self.config.mole_depth == 2:
-            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device).to(dtype))
+        elif self.config.xlora_depth == 2:
+            self.inner.append(nn.Linear(config.hidden_size, config.xlora_size, bias=False).to(config.device).to(dtype))
             if config.layerwise_scalings:
-                self.last = nn.Linear(config.mole_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
+                self.last = nn.Linear(config.xlora_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
             else:
-                self.last = nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype)
+                self.last = nn.Linear(config.xlora_size, n_classes, bias=False).to(config.device).to(dtype)
         else:
-            assert self.config.mole_depth > 0
-            self.inner.append(nn.Linear(config.hidden_size, config.mole_size, bias=False).to(config.device).to(dtype))
+            assert self.config.xlora_depth > 0
+            self.inner.append(nn.Linear(config.hidden_size, config.xlora_size, bias=False).to(config.device).to(dtype))
 
-            for _ in range(config.mole_depth - 2):
+            for _ in range(config.xlora_depth - 2):
                 self.inner.append(
-                    nn.Linear(config.mole_size, config.mole_size, bias=False).to(config.device).to(dtype)
+                    nn.Linear(config.xlora_size, config.xlora_size, bias=False).to(config.device).to(dtype)
                 )
 
             if config.layerwise_scalings:
-                self.last = nn.Linear(config.mole_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
+                self.last = nn.Linear(config.xlora_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
             else:
-                self.last = nn.Linear(config.mole_size, n_classes, bias=False).to(config.device).to(dtype)
+                self.last = nn.Linear(config.xlora_size, n_classes, bias=False).to(config.device).to(dtype)
 
     def forward(
         self,
@@ -113,7 +113,7 @@ class MoLEClassifier(nn.Module):
                 *args,
                 input_ids=input_ids,
                 inputs_embeds=inputs_embeds,
-                _mole_classifier_inhibitor_flag=batch_size,
+                _xlora_classifier_inhibitor_flag=batch_size,
                 **kwargs,
             )
 

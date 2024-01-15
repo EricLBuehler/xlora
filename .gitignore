@@ -2,6 +2,6 @@
 __pycache__
 .vscode
 *.egg-info
-mole-checkpoints
+xlora-checkpoints
 .mypy_cache
 .pytest_cache
