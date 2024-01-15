@@ -11,14 +11,14 @@ from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
 
-from mole import mole_state
+from xlora import xlora_state
 
 
-class MoLELayer:
+class xLoRALayer:
     """
-    A MoLELayer wraps any LoraLayer and performs the MoLE operation on the LoRA adaptors specified.
-    Its primary API is the forward method, which uses the scalings from mole_state to execute the
-    MoLE algorithm. To avoid a RuntimeException, set the scaling state.
+    A xLoRALayer wraps any LoraLayer and performs the xLoRA operation on the LoRA adaptors specified.
+    Its primary API is the forward method, which uses the scalings from xlora_state to execute the
+    xLoRA algorithm. To avoid a RuntimeException, set the scaling state.
     """
 
     def __init__(
@@ -38,13 +38,13 @@ class MoLELayer:
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
         This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
-        To use it, a bound method must be created (bound to an instance of the MoLELayer class).
+        To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
         """
         old_scalings = self.target.scaling.copy()
 
         outputs: List[Tensor] = []
         if self.top_k_lora is None:
-            for batch_x, batch_scalings in zip(x, mole_state.get_scalings()):
+            for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
                 layer_batch_scalings = batch_scalings[self.layer_number]
 
                 self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
@@ -54,7 +54,7 @@ class MoLELayer:
 
                 self.target.scaling = old_scalings
         else:
-            for batch_x, batch_scalings in zip(x, mole_state.get_scalings()):
+            for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
                 layer_batch_scalings = batch_scalings[self.layer_number]
 
                 (topk_scalings, indices) = torch.topk(input=layer_batch_scalings, k=self.top_k_lora)
@@ -113,10 +113,10 @@ class PeftModelWrapper:
         if os.path.isfile(save_directory):
             raise ValueError(f"Provided path ({save_directory}) should be a directory, not a file")
 
-        classifier = mole_state.get_mole_classifier()
+        classifier = xlora_state.get_xlora_classifier()
 
         conf = {"n_classes": classifier.n_classes}
-        with open(os.path.join(save_directory, "mole_classifier_config.json"), "w") as f:
+        with open(os.path.join(save_directory, "xlora_classifier_config.json"), "w") as f:
             json.dump(conf, f)
 
         state_dict = classifier.state_dict()
@@ -148,7 +148,7 @@ class PeftModelWrapper:
                         state_dict[shared_tensor_name] = state_dict[shared_tensor_name].clone()
 
                 safetensors.torch.save_file(  # type: ignore
-                    state_dict, os.path.join(save_directory, "mole_classifier.safetensors"), metadata={"format": "pt"}
+                    state_dict, os.path.join(save_directory, "xlora_classifier.safetensors"), metadata={"format": "pt"}
                 )
         elif is_main_process:
-            torch.save(state_dict, os.path.join(save_directory, "mole_classifier.pt"))
+            torch.save(state_dict, os.path.join(save_directory, "xlora_classifier.pt"))

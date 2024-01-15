@@ -10,15 +10,13 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
-from mole import mole_classifier
-
-from . import mole_state
-from .mole_classifier import MoLEClassifier
-from .mole_config import MoLEConfig
-from .mole_insertion import BaseTunerWrapper, MoLELayer, PeftModelWrapper
+from . import xlora_classifier, xlora_state
+from .xlora_classifier import xLoRAClassifier
+from .xlora_config import xLoRAConfig
+from .xlora_insertion import BaseTunerWrapper, PeftModelWrapper, xLoRALayer
 
 
-def convert_layers_to_mole(
+def convert_layers_to_xlora(
     base: PeftModel,
     verbose: bool,
     top_k_lora: Optional[int] = None,
@@ -39,7 +37,7 @@ def convert_layers_to_mole(
         if isinstance(module, lora.LoraLayer):
             if not scaling_keys:
                 scaling_keys = list(module.scaling.keys())  # NOTE(EricLBuehler): Python 3.7: dicts are ordered!
-            new_layer = MoLELayer(
+            new_layer = xLoRALayer(
                 target=module,
                 target_forward=module.forward,
                 scaling_keys=scaling_keys,
@@ -54,15 +52,15 @@ def convert_layers_to_mole(
     return total_swapped
 
 
-def add_mole_to_model(
+def add_xlora_to_model(
     model: PreTrainedModel,
-    mole_config: MoLEConfig,
+    xlora_config: xLoRAConfig,
     adapters: Dict[str, str],
     verbose: bool,
 ) -> PeftModel:
     """
-    This method converts all LoRA adapters to MoLE layers, and it is one of the intended entrypoints
-    for use of MoLE. All LoRA adapters will be frozen, and the MoLEClassifier is initialized.
+    This method converts all LoRA adapters to xLoRA layers, and it is one of the intended entrypoints
+    for use of xLoRA. All LoRA adapters will be frozen, and the xLoRAClassifier is initialized.
 
     When using the `cat` combination_type you should be aware that rank of the resulting adapter will be equal to
     the sum of all adapters ranks. So it's possible that the mixed adapter may become too big and result in OOM
@@ -85,20 +83,20 @@ def add_mole_to_model(
         kwargs_real: dict = args[1]
         kwargs_real.update(kwargs)
 
-        mole_classifier = mole_state.get_mole_classifier()
+        xlora_classifier = xlora_state.get_xlora_classifier()
 
-        if "_mole_classifier_inhibitor_flag" in kwargs_real:
-            assert isinstance(kwargs_real["_mole_classifier_inhibitor_flag"], int)
-            batch_size = kwargs_real["_mole_classifier_inhibitor_flag"]
-            del kwargs_real["_mole_classifier_inhibitor_flag"]
-            mole_state.set_scalings(torch.zeros(batch_size, mole_classifier.n_layers, mole_classifier.n_classes))
+        if "_xlora_classifier_inhibitor_flag" in kwargs_real:
+            assert isinstance(kwargs_real["_xlora_classifier_inhibitor_flag"], int)
+            batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
+            del kwargs_real["_xlora_classifier_inhibitor_flag"]
+            xlora_state.set_scalings(torch.zeros(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes))
             return
 
-        mole_scalings = mole_classifier.forward(
+        xlora_scalings = xlora_classifier.forward(
             *args_real,
             **kwargs_real,
         )
-        mole_state.set_scalings(mole_scalings)
+        xlora_state.set_scalings(xlora_scalings)
 
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
 
@@ -119,15 +117,15 @@ def add_mole_to_model(
     peft_model_wrapper = PeftModelWrapper(model_peft)
     model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
 
-    total_swapped = convert_layers_to_mole(
+    total_swapped = convert_layers_to_xlora(
         model_peft,
         verbose,
-        mole_config.top_k_lora,
+        xlora_config.top_k_lora,
     )
 
     n_classes = len(adapters)
-    mole_classifier = MoLEClassifier(model_peft, mole_config, n_classes, total_swapped)
-    mole_state.set_mole_classifier(mole_classifier)
+    xlora_classifier = xLoRAClassifier(model_peft, xlora_config, n_classes, total_swapped)
+    xlora_state.set_xlora_classifier(xlora_classifier)
 
     for name, param in model.base_model.named_parameters():
         if "lora_" in name:
@@ -140,15 +138,15 @@ def from_pretrained(
     load_directory: str,
     from_safetensors: bool,
     model: PreTrainedModel,
-    mole_config: MoLEConfig,
+    xlora_config: xLoRAConfig,
     verbose: bool,
     adapters: Dict[str, str],
 ) -> PeftModel:
     """
-    Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `MoLEModel.save_pretrained`.
+    Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `xLoRAModel.save_pretrained`.
 
-    This method is very similar to `add_mole_to_model`: it converts all LoRA adapters to MoLE layers, and it is one of
-    the intended entrypoints for use of MoLE. All LoRA adapters will be frozen, and the MoLEClassifier is initialized.
+    This method is very similar to `add_xlora_to_model`: it converts all LoRA adapters to xLoRA layers, and it is one of
+    the intended entrypoints for use of xLoRA. All LoRA adapters will be frozen, and the xLoRAClassifier is initialized.
 
     When using the `cat` combination_type you should be aware that rank of the resulting adapter will be equal to
     the sum of all adapters ranks. So it's possible that the mixed adapter may become too big and result in OOM
@@ -170,20 +168,20 @@ def from_pretrained(
             The new model.
     """
 
-    model_peft = add_mole_to_model(model, mole_config, adapters, verbose)
+    model_peft = add_xlora_to_model(model, xlora_config, adapters, verbose)
 
-    classifier = mole_state.get_mole_classifier()
-    with open(os.path.join(load_directory, "mole_classifier_config.json"), "w") as f:
+    classifier = xlora_state.get_xlora_classifier()
+    with open(os.path.join(load_directory, "xlora_classifier_config.json"), "w") as f:
         conf = json.load(f)
         assert classifier.n_classes == conf["n_classes"]
 
     if from_safetensors:
         state_dict = safetensors.torch.load_file(  # type: ignore
-            os.path.join(load_directory, "mole_classifier.safetensors"),
+            os.path.join(load_directory, "xlora_classifier.safetensors"),
             device={k: v.device for k, v in classifier.state_dict()},  # type: ignore
         )
     else:
-        state_dict = torch.load(os.path.join(load_directory, "mole_classifier.pt"))
+        state_dict = torch.load(os.path.join(load_directory, "xlora_classifier.pt"))
     classifier.load_state_dict(state_dict)
 
     return model_peft
@@ -197,35 +195,35 @@ def set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int):
 
     A tensor with 2 dim is expected: (batch_size, num_classes)
     """
-    mole_state.set_scalings_lifetime(value, n_accesses_lifetime)
+    xlora_state.set_scalings_lifetime(value, n_accesses_lifetime)
 
 
 def print_scalings_predictions(n_predictions_lifetime: int):
     """
     Print the scaling states for the next n classifier predictions (i.e. forward, generate passes)
     """
-    mole_classifier.set_n_predictions_lifetime(n_predictions_lifetime)
+    xlora_classifier.set_n_predictions_lifetime(n_predictions_lifetime)
 
 
 def enable_scalings_logging():
     """
     Enable scalings logging.
     """
-    mole_classifier.set_scalings_logging(True)
+    xlora_classifier.set_scalings_logging(True)
 
 
 def disable_scalings_logging():
     """
     Disable scalings logging.
     """
-    mole_classifier.set_scalings_logging(False)
+    xlora_classifier.set_scalings_logging(False)
 
 
 def flush_log_scalings(path: str):
     """
     Write the scalings log to the specified path. Each time the classifier runs, it will write to the path in a Numpy `.npy` format. The specified path is used as a prefix.
     """
-    classfier = mole_state.get_mole_classifier()
+    classfier = xlora_state.get_xlora_classifier()
     classfier.flush_log_scalings(path)
 
 
@@ -235,12 +233,12 @@ def get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]:
     """
     model_trainable_params, model_all_param = model.get_nb_trainable_parameters()
 
-    mole_classifier = mole_state.get_mole_classifier()
-    mole_trainable_params, mole_all_param = mole_classifier.get_nb_trainable_parameters()
+    xlora_classifier = xlora_state.get_xlora_classifier()
+    xlora_trainable_params, xlora_all_param = xlora_classifier.get_nb_trainable_parameters()
 
     trainable_params, all_param = (
-        (model_trainable_params + mole_trainable_params),
-        (model_all_param + mole_all_param),
+        (model_trainable_params + xlora_trainable_params),
+        (model_all_param + xlora_all_param),
     )
 
     return trainable_params, all_param
@@ -248,7 +246,7 @@ def get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]:
 
 def print_trainable_parameters(model: PeftModel):
     """
-    Prints the number of trainable parameters in the model, including of the MoLE classifier.
+    Prints the number of trainable parameters in the model, including of the xLoRA classifier.
     """
     trainable_params, all_param = get_nb_trainable_parameters(model)
 

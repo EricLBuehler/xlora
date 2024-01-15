@@ -3,10 +3,10 @@ from typing import Optional
 from torch import Tensor
 from typing_extensions import override
 
-from .mole_classifier import MoLEClassifier
+from .xlora_classifier import xLoRAClassifier
 
 
-class _MoLEScalings:
+class _xLoRAScalings:
     def __init__(self, inner: Tensor) -> None:
         self.inner = inner
 
@@ -15,7 +15,7 @@ class _MoLEScalings:
         return self.inner
 
 
-class _MoLEScalingsWithLifetime(_MoLEScalings):
+class _xLoRAScalingsWithLifetime(_xLoRAScalings):
     def __init__(self, inner: Tensor, old_scalings: Tensor, n_accesses_lifetime: int) -> None:
         super().__init__(inner)
         self.old_scalings = old_scalings
@@ -32,7 +32,7 @@ class _MoLEScalingsWithLifetime(_MoLEScalings):
         return result
 
 
-_scalings: Optional[_MoLEScalings] = None
+_scalings: Optional[_xLoRAScalings] = None
 
 
 def get_scalings() -> Tensor:
@@ -51,7 +51,7 @@ def set_scalings(value: Tensor) -> None:
     A tensor with 2 dim is expected: (batch_size, num_layers, num_classes)
     """
     assert value.ndim == 3
-    _scalings = _MoLEScalings(value)
+    _scalings = _xLoRAScalings(value)
 
 
 def set_scalings_lifetime(value: Tensor, n_accesses_lifetime: int) -> None:
@@ -62,24 +62,24 @@ def set_scalings_lifetime(value: Tensor, n_accesses_lifetime: int) -> None:
     A tensor with 2 dim is expected: (batch_size, num_layers, num_classes)
     """
     assert value.ndim == 3
-    _scalings = _MoLEScalingsWithLifetime(value, _scalings.value, n_accesses_lifetime)  # type: ignore
+    _scalings = _xLoRAScalingsWithLifetime(value, _scalings.value, n_accesses_lifetime)  # type: ignore
 
 
-_mole_classifier: Optional[MoLEClassifier] = None
+_xlora_classifier: Optional[xLoRAClassifier] = None
 
 
-def get_mole_classifier() -> MoLEClassifier:
-    global _mole_classifier
+def get_xlora_classifier() -> xLoRAClassifier:
+    global _xlora_classifier
     """
-    Reads the MoLEClassifier.
+    Reads the xLoRAClassifier.
     """
-    assert _mole_classifier is not None
-    return _mole_classifier
+    assert _xlora_classifier is not None
+    return _xlora_classifier
 
 
-def set_mole_classifier(value: MoLEClassifier) -> None:
-    global _mole_classifier
+def set_xlora_classifier(value: xLoRAClassifier) -> None:
+    global _xlora_classifier
     """
-    Sets the MoLEClassifier.
+    Sets the xLoRAClassifier.
     """
-    _mole_classifier = value
+    _xlora_classifier = value

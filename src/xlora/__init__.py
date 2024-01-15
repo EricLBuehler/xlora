@@ -1,5 +1,5 @@
-from .mole import (
-    add_mole_to_model,
+from .xlora import (
+    add_xlora_to_model,
     disable_scalings_logging,
     enable_scalings_logging,
     flush_log_scalings,
@@ -9,4 +9,4 @@ from .mole import (
     print_trainable_parameters,
     set_scalings_with_lifetime,
 )
-from .mole_config import MoLEConfig
+from .xlora_config import xLoRAConfig

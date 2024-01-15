@@ -6,9 +6,9 @@ extras = {}
 extras["quality"] = ["ruff>=0.0.241"]
 
 setup(
-    name="mole",
+    name="xlora",
     version=VERSION,
-    description="Mixture of LoRA Experts (MoLE)",
+    description="Mixture of LoRA Experts (xLoRA)",
     license_files=["LICENSE"],
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -16,10 +16,10 @@ setup(
     license="Apache",
     author="Eric Buehler",
     author_email="ericlbuehler@gmail.com",
-    url="https://github.com/EricLBuehler/mole",
+    url="https://github.com/EricLBuehler/xlora",
     package_dir={"": "src"},
     packages=find_packages("src"),
-    package_data={"mole": ["py.typed"]},
+    package_data={"xlora": ["py.typed"]},
     entry_points={},
     python_requires=">=3.8.0",
     install_requires=["peft", "transformers"],
