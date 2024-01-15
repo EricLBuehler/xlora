@@ -1,11 +1,11 @@
 import typing
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 import numpy
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
-from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
+from transformers.modeling_outputs import ModelOutput  # type: ignore
 
 from .mole_config import MoLEConfig
 
@@ -108,7 +108,8 @@ class MoLEClassifier(nn.Module):
         model: PeftModel = self.model  # type: ignore
         with model.disable_adapter():
             kwargs["output_hidden_states"] = True
-            result: Union[Tuple, CausalLMOutputWithPast] = model.forward(
+            kwargs["return_dict"] = True
+            result: ModelOutput = model.forward(
                 *args,
                 input_ids=input_ids,
                 inputs_embeds=inputs_embeds,
@@ -116,12 +117,9 @@ class MoLEClassifier(nn.Module):
                 **kwargs,
             )
 
-            assert isinstance(result, tuple) or isinstance(result, CausalLMOutputWithPast)
-
-        if isinstance(result, tuple):
-            hidden_states = result[3]
-        else:
-            hidden_states = result.hidden_states
+        # ModelOutput is the superclass, really this is a @dataclass instance and must have `.hidden_states`. If it does not,
+        # the model cannot be used.
+        hidden_states: List[torch.FloatTensor] = result.hidden_states  # type:ignore
 
         assert hidden_states is not None
 
