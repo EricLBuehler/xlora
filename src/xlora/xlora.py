@@ -25,15 +25,10 @@ def convert_layers_to_xlora(
     Returns the number of swapped layers.
     """
     assert isinstance(base.base_model, lora.LoraModel)
-    modules = list(base.modules())
-    if not verbose:
-        iterable = modules
-    else:
-        iterable = tqdm.tqdm(modules)
     total_swapped = 0
 
     scaling_keys = None
-    for layer_number, module in enumerate(iterable):
+    for module in base.modules():
         if isinstance(module, lora.LoraLayer):
             if not scaling_keys:
                 scaling_keys = list(module.scaling.keys())  # NOTE(EricLBuehler): Python 3.7: dicts are ordered!
@@ -42,12 +37,12 @@ def convert_layers_to_xlora(
                 target_forward=module.forward,
                 scaling_keys=scaling_keys,
                 top_k_lora=top_k_lora,
-                layer_number=layer_number,
+                layer_number=total_swapped,
             )
             module.forward = new_layer.forward
             total_swapped += 1
     if verbose:
-        print(f"Swapped {total_swapped} layers.")
+        print(f"Swapped {total_swapped} LoRA layers to xLoRA layers (out of {len(list(base.modules()))} modules).")
 
     return total_swapped
 
@@ -104,7 +99,7 @@ def add_xlora_to_model(
     first_item = adapters_items[0]
     adapters_items = adapters_items[1:]
     model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], False)
-    for adapter_name, model_id in adapters_items:
+    for adapter_name, model_id in tqdm.tqdm(adapters_items):
         model_peft.load_adapter(model_id, adapter_name)
 
     model_peft.base_model.set_adapter(list(adapters.keys()))
