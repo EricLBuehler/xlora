@@ -49,7 +49,7 @@ class xLoRALayer:
 
                 self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
 
-                output = self.target_forward(batch_x, *args, **kwargs)
+                output = self.target_forward(batch_x.unsqueeze(0), *args, **kwargs)
                 outputs.append(output)
 
                 self.target.scaling = old_scalings
@@ -63,7 +63,7 @@ class xLoRALayer:
 
                 self.scale_adapters(self.target, topk_scalings, adapters)
 
-                output = self.target_forward(batch_x, *args, **kwargs)
+                output = self.target_forward(batch_x.unsqueeze(0), *args, **kwargs)
                 outputs.append(output)
 
                 self.target.scaling = old_scalings
