@@ -130,7 +130,7 @@ class xLoRAClassifier(nn.Module):
 
         logits = self.last.forward(hidden_state)
         if not self.config.layerwise_scalings:
-            logits = logits.repeat(1, self.n_layers)
+            logits = logits.repeat(1, 1, self.n_layers)
         logits = logits.reshape(batch_size, seq_len, self.n_layers, self.n_classes)
 
         if self.config.pad_token_id is None:
