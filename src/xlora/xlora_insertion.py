@@ -11,7 +11,7 @@ from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
 
-from xlora import xlora_state
+from . import xlora_state
 
 
 class xLoRALayer:
@@ -49,7 +49,7 @@ class xLoRALayer:
 
                 self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
 
-                output = self.target_forward(batch_x.unsqueeze(0), *args, **kwargs)
+                output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                 outputs.append(output)
 
                 self.target.scaling = old_scalings
@@ -63,7 +63,7 @@ class xLoRALayer:
 
                 self.scale_adapters(self.target, topk_scalings, adapters)
 
-                output = self.target_forward(batch_x.unsqueeze(0), *args, **kwargs)
+                output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                 outputs.append(output)
 
                 self.target.scaling = old_scalings

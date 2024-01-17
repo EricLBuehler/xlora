@@ -5,7 +5,7 @@ import numpy
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
-from transformers.modeling_outputs import CausalLMOutputWithPast, ModelOutput  # type: ignore
+from transformers.modeling_outputs import ModelOutput  # type: ignore
 
 from .xlora_config import xLoRAConfig
 
@@ -99,11 +99,6 @@ class xLoRAClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
-        if input_ids is not None:
-            seq_len = input_ids.shape[1]
-        else:
-            seq_len = typing.cast(torch.FloatTensor, inputs_embeds).shape[1]
-
         # For type checking
         model: PeftModel = self.model  # type: ignore
         with model.disable_adapter():
@@ -117,26 +112,12 @@ class xLoRAClassifier(nn.Module):
                 **kwargs,
             )
 
-            assert isinstance(result, tuple) or isinstance(result, CausalLMOutputWithPast)
-
-        if isinstance(result, tuple):
-            hidden_states = result[3]
-        else:
-            hidden_states = result.hidden_states
-
-        assert hidden_states is not None
-
-        hidden_state = hidden_states[-1]  # Get the last hidden state
-
-        """
-        # ModelOutput is the superclass, really this is a @dataclass instance and must have `.hidden_states`. If it does not,
-        # the model cannot be used.
         hidden_states: List[torch.FloatTensor] = result.hidden_states  # type:ignore
 
         assert hidden_states is not None
 
-        hidden_state = hidden_states[-1]  # Get the last hidden state
-        """
+        hidden_state_raw = hidden_states[-1]  # Get the last hidden state
+        hidden_state = hidden_state_raw.detach()
 
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
@@ -144,6 +125,11 @@ class xLoRAClassifier(nn.Module):
         logits = self.last.forward(hidden_state)
         if not self.config.layerwise_scalings:
             logits = logits.repeat(1, 1, self.n_layers)
+        if input_ids is not None:
+            seq_len = input_ids.shape[1]
+        else:
+            seq_len = typing.cast(torch.FloatTensor, inputs_embeds).shape[1]
+
         logits = logits.reshape(batch_size, seq_len, self.n_layers, self.n_classes)
 
         if self.config.pad_token_id is None:
