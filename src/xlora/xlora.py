@@ -223,7 +223,7 @@ def disable_scalings_logging():
 
 def flush_log_scalings(path: str):
     """
-    Write the scalings log to the specified path. Each time the classifier runs, it will write to the path in a Numpy `.npy` format. The specified path is used as a prefix.
+    Write the scalings log (a tensor of shape (num_logged, batch_size, n_layers, n_classes)) to the specified path.
     """
     classfier = xlora_state.get_xlora_classifier()
     classfier.flush_log_scalings(path)
