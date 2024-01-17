@@ -10,7 +10,9 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
-from . import xlora_classifier, xlora_state
+from xlora import xlora_classifier
+
+from . import xlora_state
 from .xlora_classifier import xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import BaseTunerWrapper, PeftModelWrapper, xLoRALayer
@@ -25,10 +27,15 @@ def convert_layers_to_xlora(
     Returns the number of swapped layers.
     """
     assert isinstance(base.base_model, lora.LoraModel)
+    modules = list(base.modules())
+    if not verbose:
+        iterable = modules
+    else:
+        iterable = tqdm.tqdm(modules)
     total_swapped = 0
 
     scaling_keys = None
-    for module in base.modules():
+    for module in iterable:
         if isinstance(module, lora.LoraLayer):
             if not scaling_keys:
                 scaling_keys = list(module.scaling.keys())  # NOTE(EricLBuehler): Python 3.7: dicts are ordered!
@@ -42,7 +49,7 @@ def convert_layers_to_xlora(
             module.forward = new_layer.forward
             total_swapped += 1
     if verbose:
-        print(f"Swapped {total_swapped} LoRA layers to xLoRA layers (out of {len(list(base.modules()))} modules).")
+        print(f"Swapped {total_swapped} layers.")
 
     return total_swapped
 
@@ -99,7 +106,7 @@ def add_xlora_to_model(
     first_item = adapters_items[0]
     adapters_items = adapters_items[1:]
     model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], False)
-    for adapter_name, model_id in tqdm.tqdm(adapters_items):
+    for adapter_name, model_id in adapters_items:
         model_peft.load_adapter(model_id, adapter_name)
 
     model_peft.base_model.set_adapter(list(adapters.keys()))
@@ -188,7 +195,7 @@ def set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int):
     this, the value of the scalings will be reset to the previous value. If the original value had a lifetime,
     only the value which it would have if it were read at assignment-time will be preserved.
 
-    A tensor with 2 dim is expected: (batch_size, num_layers, num_classes)
+    A tensor with 2 dim is expected: (batch_size, num_classes)
     """
     xlora_state.set_scalings_lifetime(value, n_accesses_lifetime)
 
@@ -198,28 +205,6 @@ def print_scalings_predictions(n_predictions_lifetime: int):
     Print the scaling states for the next n classifier predictions (i.e. forward, generate passes)
     """
     xlora_classifier.set_n_predictions_lifetime(n_predictions_lifetime)
-
-
-def enable_scalings_logging():
-    """
-    Enable scalings logging.
-    """
-    xlora_classifier.set_scalings_logging(True)
-
-
-def disable_scalings_logging():
-    """
-    Disable scalings logging.
-    """
-    xlora_classifier.set_scalings_logging(False)
-
-
-def flush_log_scalings(path: str):
-    """
-    Write the scalings log to the specified path. Each time the classifier runs, it will write to the path in a Numpy `.npy` format. The specified path is used as a prefix.
-    """
-    classfier = xlora_state.get_xlora_classifier()
-    classfier.flush_log_scalings(path)
 
 
 def get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]:
