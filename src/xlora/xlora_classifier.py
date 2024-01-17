@@ -113,6 +113,7 @@ class xLoRAClassifier(nn.Module):
         assert hidden_states is not None
 
         hidden_state = hidden_states[-1]  # Get the last hidden state
+        hidden_state = hidden_state.detach()
 
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
