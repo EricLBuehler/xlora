@@ -5,7 +5,7 @@ import numpy
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
-from transformers.modeling_outputs import ModelOutput, CausalLMOutputWithPast  # type: ignore
+from transformers.modeling_outputs import CausalLMOutputWithPast, ModelOutput  # type: ignore
 
 from .xlora_config import xLoRAConfig
 
@@ -116,10 +116,9 @@ class xLoRAClassifier(nn.Module):
                 _xlora_classifier_inhibitor_flag=batch_size,
                 **kwargs,
             )
-            
+
             assert isinstance(result, tuple) or isinstance(result, CausalLMOutputWithPast)
-            #print(type(result))
-        #"""
+
         if isinstance(result, tuple):
             hidden_states = result[3]
         else:
@@ -128,8 +127,7 @@ class xLoRAClassifier(nn.Module):
         assert hidden_states is not None
 
         hidden_state = hidden_states[-1]  # Get the last hidden state
-        #"""
-        
+
         """
         # ModelOutput is the superclass, really this is a @dataclass instance and must have `.hidden_states`. If it does not,
         # the model cannot be used.
@@ -140,7 +138,6 @@ class xLoRAClassifier(nn.Module):
         hidden_state = hidden_states[-1]  # Get the last hidden state
         """
 
-        
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
 
