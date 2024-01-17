@@ -207,6 +207,28 @@ def print_scalings_predictions(n_predictions_lifetime: int):
     xlora_classifier.set_n_predictions_lifetime(n_predictions_lifetime)
 
 
+def enable_scalings_logging():
+    """
+    Enable scalings logging.
+    """
+    xlora_classifier.set_scalings_logging(True)
+
+
+def disable_scalings_logging():
+    """
+    Disable scalings logging.
+    """
+    xlora_classifier.set_scalings_logging(False)
+
+
+def flush_log_scalings(path: str):
+    """
+    Write the scalings log to the specified path. Each time the classifier runs, it will write to the path in a Numpy `.npy` format. The specified path is used as a prefix.
+    """
+    classfier = xlora_state.get_xlora_classifier()
+    classfier.flush_log_scalings(path)
+
+
 def get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]:
     """
     Returns the number of trainable parameters and number of all parameters in the model.
