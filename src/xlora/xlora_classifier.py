@@ -1,16 +1,14 @@
 import typing
-from typing import List, Optional, Union
+from typing import Optional, Tuple, Union
 
-import numpy
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
-from transformers.modeling_outputs import CausalLMOutputWithPast, ModelOutput  # type: ignore
+from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
 
 from .xlora_config import xLoRAConfig
 
 _n_predictions_lifetime: int = 0
-_scalings_logging: bool = False
 
 
 def get_n_predictions_lifetime() -> int:
@@ -28,11 +26,6 @@ def set_n_predictions_lifetime(value: int) -> None:
     Sets the n predictions lifetime.
     """
     _n_predictions_lifetime = value
-
-
-def set_scalings_logging(value: bool):
-    global _scalings_logging
-    _scalings_logging = value
 
 
 class xLoRAClassifier(nn.Module):
@@ -54,7 +47,6 @@ class xLoRAClassifier(nn.Module):
         self.n_classes = n_classes
         self.n_layers = n_layers
         self.config = config
-        self.log_scalings: List[torch.Tensor] = []
 
         dtype = next(model.parameters()).dtype
 
@@ -99,17 +91,11 @@ class xLoRAClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
-        if input_ids is not None:
-            seq_len = input_ids.shape[1]
-        else:
-            seq_len = typing.cast(torch.FloatTensor, inputs_embeds).shape[1]
-
         # For type checking
         model: PeftModel = self.model  # type: ignore
         with model.disable_adapter():
             kwargs["output_hidden_states"] = True
-            kwargs["return_dict"] = True
-            result: ModelOutput = model.forward(
+            result: Union[Tuple, CausalLMOutputWithPast] = model.forward(
                 *args,
                 input_ids=input_ids,
                 inputs_embeds=inputs_embeds,
@@ -128,22 +114,17 @@ class xLoRAClassifier(nn.Module):
 
         hidden_state = hidden_states[-1]  # Get the last hidden state
 
-        """
-        # ModelOutput is the superclass, really this is a @dataclass instance and must have `.hidden_states`. If it does not,
-        # the model cannot be used.
-        hidden_states: List[torch.FloatTensor] = result.hidden_states  # type:ignore
-
-        assert hidden_states is not None
-
-        hidden_state = hidden_states[-1]  # Get the last hidden state
-        """
-
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
 
         logits = self.last.forward(hidden_state)
         if not self.config.layerwise_scalings:
             logits = logits.repeat(1, 1, self.n_layers)
+        if input_ids is not None:
+            seq_len = input_ids.shape[1]
+        else:
+            seq_len = typing.cast(torch.FloatTensor, inputs_embeds).shape[1]
+
         logits = logits.reshape(batch_size, seq_len, self.n_layers, self.n_classes)
 
         if self.config.pad_token_id is None:
@@ -167,9 +148,6 @@ class xLoRAClassifier(nn.Module):
         if n_pred_life > 0:
             print(f"Scaling predictions: {scalings}")
             set_n_predictions_lifetime(n_pred_life - 1)
-
-        if _scalings_logging:
-            self.log_scalings.append(scalings.unsqueeze(0))
 
         return scalings
 
@@ -197,14 +175,3 @@ class xLoRAClassifier(nn.Module):
                 trainable_params += num_params
 
         return trainable_params, all_param
-
-    def flush_log_scalings(self, path: str):
-        if not _scalings_logging:
-            raise Exception("Scalings logging is disabled!")
-
-        if len(self.log_scalings) == 0:
-            raise ValueError("No log scalings to flush.")
-
-        result = torch.cat(self.log_scalings, dim=0)
-        npy = result.numpy()
-        numpy.save(path, npy)
