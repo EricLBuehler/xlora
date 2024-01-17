@@ -44,7 +44,9 @@ def convert_layers_to_xlora(
             module.forward = new_layer.forward
             total_swapped += 1
     if verbose:
-        print(f"Swapped {total_swapped} layers (out of {len(list(base.modules()))} modules).")
+        print(
+            f"LoRA -> xLoRA complete: Swapped {total_swapped} LoRA layers (out of {len(list(base.modules()))} modules)."
+        )
 
     return total_swapped
 
