@@ -1,6 +1,7 @@
 import typing
 from typing import List, Optional, Union
 
+import numpy
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
@@ -9,6 +10,7 @@ from transformers.modeling_outputs import ModelOutput  # type: ignore
 from .xlora_config import xLoRAConfig
 
 _n_predictions_lifetime: int = 0
+_scalings_logging: bool = False
 
 
 def get_n_predictions_lifetime() -> int:
@@ -26,6 +28,11 @@ def set_n_predictions_lifetime(value: int) -> None:
     Sets the n predictions lifetime.
     """
     _n_predictions_lifetime = value
+
+
+def set_scalings_logging(value: bool):
+    global _scalings_logging
+    _scalings_logging = value
 
 
 class xLoRAClassifier(nn.Module):
@@ -47,6 +54,7 @@ class xLoRAClassifier(nn.Module):
         self.n_classes = n_classes
         self.n_layers = n_layers
         self.config = config
+        self.log_scalings: List[torch.Tensor] = []
 
         dtype = next(model.parameters()).dtype
 
@@ -146,6 +154,9 @@ class xLoRAClassifier(nn.Module):
             print(f"Scaling predictions: {scalings}")
             set_n_predictions_lifetime(n_pred_life - 1)
 
+        if _scalings_logging:
+            self.log_scalings.append(scalings.unsqueeze(0))
+
         return scalings
 
     def get_nb_trainable_parameters(self):
@@ -172,3 +183,14 @@ class xLoRAClassifier(nn.Module):
                 trainable_params += num_params
 
         return trainable_params, all_param
+
+    def flush_log_scalings(self, path: str):
+        if not _scalings_logging:
+            raise Exception("Scalings logging is disabled!")
+
+        if len(self.log_scalings) == 0:
+            raise ValueError("No log scalings to flush.")
+
+        result = torch.cat(self.log_scalings, dim=0)
+        npy = result.numpy()
+        numpy.save(path, npy)
