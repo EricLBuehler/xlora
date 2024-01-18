@@ -61,10 +61,6 @@ def add_xlora_to_model(
     This method converts all LoRA adapters to xLoRA layers, and it is one of the intended entrypoints
     for use of xLoRA. All LoRA adapters will be frozen, and the xLoRAClassifier is initialized.
 
-    When using the `cat` combination_type you should be aware that rank of the resulting adapter will be equal to
-    the sum of all adapters ranks. So it's possible that the mixed adapter may become too big and result in OOM
-    errors.
-
     Args:
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place.
@@ -145,10 +141,6 @@ def from_pretrained(
 
     This method is very similar to `add_xlora_to_model`: it converts all LoRA adapters to xLoRA layers, and it is one of
     the intended entrypoints for use of xLoRA. All LoRA adapters will be frozen, and the xLoRAClassifier is initialized.
-
-    When using the `cat` combination_type you should be aware that rank of the resulting adapter will be equal to
-    the sum of all adapters ranks. So it's possible that the mixed adapter may become too big and result in OOM
-    errors.
 
     Args:
         load_directory (`str`):
