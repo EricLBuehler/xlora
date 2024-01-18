@@ -11,7 +11,8 @@ from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
 
-from . import xlora_state
+#from . import xlora_state
+from xlora import xlora_state
 
 
 class xLoRALayer:
@@ -44,12 +45,18 @@ class xLoRALayer:
 
         outputs: List[Tensor] = []
         if self.top_k_lora is None:
-            for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
+            scalings=xlora_state.get_scalings()
+            #print ("scalings.shape: ", scalings.shape)
+            for batch_x, batch_scalings in zip(x, scalings):
+            #for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
                 layer_batch_scalings = batch_scalings[self.layer_number]
 
                 self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
 
-                output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
+                #output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
+                output = self.target_forward(batch_x, *args, **kwargs)#.unsqueeze(dim=0)
+                #output = self.target_forward(batch_x, *args, **kwargs)
+                #print ("output.shape: ", output.shape)
                 outputs.append(output)
 
                 self.target.scaling = old_scalings
@@ -63,12 +70,21 @@ class xLoRALayer:
 
                 self.scale_adapters(self.target, topk_scalings, adapters)
 
-                output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
+                #output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
+                output = self.target_forward(batch_x, *args, **kwargs)
                 outputs.append(output)
 
                 self.target.scaling = old_scalings
 
-        return torch.cat(outputs, dim=0)
+        result=torch.cat(outputs, dim=0)
+        #print ("result.shape=", result.shape)
+        
+        #result=result.reshape (x.shape[0], xlora_state.get_xlora_classifier().config.n_layers, 
+        #                      xlora_state.get_xlora_classifier().config.n_classes)
+        result=result.reshape (x.shape[0], int(result.shape[0]/x.shape[0]) , result.shape[1])
+    
+        #print ("result.shape=", result.shape)
+        return result
 
     @staticmethod
     def scale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str]):

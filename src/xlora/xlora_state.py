@@ -48,7 +48,7 @@ def set_scalings(value: Tensor) -> None:
     """
     Sets the scaling states to a Tensor.
 
-    A tensor with 2 dim is expected: (batch_size, num_layers, num_classes)
+    A tensor with 3 dim is expected: (batch_size, num_layers, num_classes)
     """
     assert value.ndim == 3
     _scalings = _xLoRAScalings(value)
