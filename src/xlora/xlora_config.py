@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from typing import Optional
 
 import torch
 
 
+@dataclass
 class xLoRAConfig:
     r"""
     This is the configuration class to store the configuration of a [`xLoRAClassifier`].
@@ -31,24 +33,12 @@ class xLoRAConfig:
 
     model_type = "xlora"
 
-    def __init__(
-        self,
-        hidden_size: int,
-        device: torch.device,
-        enable_softmax: bool = True,
-        layerwise_scalings: bool = False,
-        top_k_lora: Optional[int] = None,
-        xlora_depth: int = 1,
-        xlora_size: int = 32,
-        xlora_dropout_p: float = 0.5,
-        pad_token_id: Optional[int] = None,
-    ):
-        self.device = device
-        self.enable_softmax = enable_softmax
-        self.top_k_lora = top_k_lora
-        self.hidden_size = hidden_size
-        self.pad_token_id = pad_token_id
-        self.xlora_depth = xlora_depth
-        self.xlora_size = xlora_size
-        self.xlora_dropout_p = xlora_dropout_p
-        self.layerwise_scalings = layerwise_scalings
+    hidden_size: int
+    device: torch.device
+    enable_softmax: bool = True
+    layerwise_scalings: bool = False
+    top_k_lora: Optional[int] = None
+    xlora_depth: int = 1
+    xlora_size: int = 32
+    xlora_dropout_p: float = 0.5
+    pad_token_id: Optional[int] = None
