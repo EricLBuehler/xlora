@@ -135,9 +135,9 @@ def from_pretrained(
     load_directory: str,
     from_safetensors: bool,
     model: PreTrainedModel,
-    xlora_config: xLoRAConfig,
-    verbose: bool,
     adapters: Dict[str, str],
+    verbose: bool,
+    device: str,
 ) -> PeftModel:
     """
     Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `xLoRAModel.save_pretrained`.
@@ -152,26 +152,28 @@ def from_pretrained(
             Whether to load the classifier weights from a .pt or .safetensors file.
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place.
-        verbose (`bool`):
-            Display tqdm, total swapping count.
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
+        verbose (`bool`):
+            Display tqdm, total swapping count.
+        device (`str`):
+            Device of the model, used to load the classifier.
     Returns:
         model (`PeftModel`):
             The new model.
     """
 
-    model_peft = add_xlora_to_model(model, xlora_config, adapters, verbose)
 
-    classifier = xlora_state.get_xlora_classifier()
-    with open(os.path.join(load_directory, "xlora_classifier_config.json"), "w") as f:
+    with open(os.path.join(load_directory, "xlora_config.json"), "r") as f:
         conf = json.load(f)
-        assert classifier.n_classes == conf["n_classes"]
+        xlora_config = xLoRAConfig(**conf)
 
+    model_peft = add_xlora_to_model(model, xlora_config, adapters, verbose)
+    classifier = xlora_state.get_xlora_classifier()
     if from_safetensors:
         state_dict = safetensors.torch.load_file(  # type: ignore
             os.path.join(load_directory, "xlora_classifier.safetensors"),
-            device={k: v.device for k, v in classifier.state_dict()},  # type: ignore
+            device=device,  # type: ignore
         )
     else:
         state_dict = torch.load(os.path.join(load_directory, "xlora_classifier.pt"))

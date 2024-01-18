@@ -129,7 +129,7 @@ class xLoRAClassifier(nn.Module):
                 """
     
                 kwargs["output_hidden_states"] = True
-                #kwargs["return_dict"] = True
+                kwargs["return_dict"] = True
                 result: ModelOutput = model.forward(
                     *args,
                     input_ids=input_ids,
@@ -147,10 +147,7 @@ class xLoRAClassifier(nn.Module):
                         inst.disabled = False  # Disable it
                 """
 
-        if isinstance(result, tuple):
-            hidden_states = result[3]
-        else:
-            hidden_states = result.hidden_states
+        hidden_states = result.hidden_states
 
         assert hidden_states is not None
 

@@ -131,8 +131,9 @@ class PeftModelWrapper:
 
         classifier = xlora_state.get_xlora_classifier()
 
-        conf = {"n_classes": classifier.n_classes}
-        with open(os.path.join(save_directory, "xlora_classifier_config.json"), "w") as f:
+        conf = classifier.config.__dict__
+        del conf["device"]
+        with open(os.path.join(save_directory, "xlora_config.json"), "w") as f:
             json.dump(conf, f)
 
         state_dict = classifier.state_dict()
