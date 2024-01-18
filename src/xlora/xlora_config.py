@@ -22,6 +22,8 @@ class xLoRAConfig:
             Depth of the xLoRA classifier.
         xlora_size (`int`, *optional*, defaults to 32):
             Hidden size of the xLoRA classifier, irrelevant if `xlora_depth=1`.
+        xlora_dropout_p (`float`, *optional*, defaults to 0.5):
+            Dropout probability of the xLoRA classifier, irrelevant if `xlora_depth=1`.
         pad_token_id (`int`, *optional*):
             The id of the padding token.
 
@@ -38,6 +40,7 @@ class xLoRAConfig:
         top_k_lora: Optional[int] = None,
         xlora_depth: int = 1,
         xlora_size: int = 32,
+        xlora_dropout_p: float = 0.5,
         pad_token_id: Optional[int] = None,
     ):
         self.device = device
@@ -47,4 +50,5 @@ class xLoRAConfig:
         self.pad_token_id = pad_token_id
         self.xlora_depth = xlora_depth
         self.xlora_size = xlora_size
+        self.xlora_dropout_p = xlora_dropout_p
         self.layerwise_scalings = layerwise_scalings
