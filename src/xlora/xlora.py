@@ -99,11 +99,10 @@ def add_xlora_to_model(
 
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
 
-    adapters_items = list(adapters.items())
-    first_item = adapters_items[0]
-    adapters_items = adapters_items[1:]
+    adapters_items = iter(tqdm.tqdm(adapters.items()))
+    first_item = next(adapters_items)
     model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], False)
-    for adapter_name, model_id in tqdm.tqdm(adapters_items):
+    for adapter_name, model_id in adapters_items:
         model_peft.load_adapter(model_id, adapter_name)
 
     model_peft.base_model.set_adapter(list(adapters.keys()))
