@@ -10,7 +10,7 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
-from . import xlora_state, xlora_classifier
+from . import xlora_classifier, xlora_state
 from .xlora_classifier import xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import BaseTunerWrapper, PeftModelWrapper, xLoRALayer
