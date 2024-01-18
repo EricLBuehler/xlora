@@ -84,7 +84,6 @@ def add_xlora_to_model(
             assert isinstance(kwargs_real["_xlora_classifier_inhibitor_flag"], int)
             batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
-            #xlora_state.set_scalings(torch.zeros(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes))
             xlora_state.set_scalings(torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes))
             return
 
@@ -92,16 +91,14 @@ def add_xlora_to_model(
             *args_real,
             **kwargs_real,
         )
-        #print ("xlora_scalings.shape=", xlora_scalings.shape)
         xlora_state.set_scalings(xlora_scalings)
 
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
 
     adapters_items = iter(tqdm.tqdm(adapters.items()))
     first_item = next(adapters_items)
-    #model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0],   False)
-    model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0],    is_trainable=False)
-   
+    model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], is_trainable=False)
+
     for adapter_name, model_id in adapters_items:
         model_peft.load_adapter(model_id, adapter_name, is_trainable=False)
 
@@ -125,12 +122,12 @@ def add_xlora_to_model(
     xlora_classifier = xLoRAClassifier(model_peft, xlora_config, n_classes, total_swapped)
     xlora_state.set_xlora_classifier(xlora_classifier)
 
-    '''
+    """
     for name, param in model.base_model.named_parameters():
         if "lora_" in name:
             param.requires_grad = False
-    '''
-    
+    """
+
     return model_peft
 
 

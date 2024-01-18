@@ -11,7 +11,7 @@ from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
 
-#from . import xlora_state
+# from . import xlora_state
 from xlora import xlora_state
 
 
@@ -41,43 +41,19 @@ class xLoRALayer:
         This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
         To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
         """
-        old_scalings = self.target.scaling.copy()
 
         outputs: List[Tensor] = []
         if self.top_k_lora is None:
-            #classifier=xlora_state.get_xlora_classifier()
-            #classifier.inner.retain_grad()
-            #classifier.last.retain_grad()
-            
-            
-            scalings=xlora_state.get_scalings()
-            
-            #print ("scalings.shape: ", scalings.shape, "x.shape=", x.shape)
-            
-             
+            scalings = xlora_state.get_scalings()
             for batch_x, batch_scalings in zip(x, scalings):
-            #for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
-                #print ("batch_scalings", batch_scalings.shape, "batch_x", batch_x.shape , "\n\n###self.target", self.target, "self.layer_number", self.layer_number,   "self.scaling_keys", self.scaling_keys)
                 layer_batch_scalings = batch_scalings[self.layer_number]
-                #print ("###layer_batch_scalings", layer_batch_scalings.shape)
 
                 self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
-                #print ("batch_x shape and x shape: ", batch_x.shape, x.shape)
+
                 output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
-                #output = self.target_forward(batch_x, *args, **kwargs)#.unsqueeze(dim=0)
-                #output = self.target_forward(batch_x, *args, **kwargs)
-                #print ("output.shape: ", output.shape)
-                #print ("----")
                 outputs.append(output)
 
-                #self.target.scaling = old_scalings
-                _=self.unscale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
-                #if is_scaled==False:
-                #    self.target.scaling = old_scalings
-                    
-                
-
-        
+                self.unscale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
         else:
             for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
                 layer_batch_scalings = batch_scalings[self.layer_number]
@@ -89,49 +65,27 @@ class xLoRALayer:
                 self.scale_adapters(self.target, topk_scalings, adapters)
 
                 output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
-                
-                ### THSI ONE output = self.target_forward(batch_x, *args, **kwargs)
                 outputs.append(output)
-                
 
-                _=self.unscale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
-                #if is_scaled==False:
-                #    self.target.scaling = old_scalings
-                    
-        #self.target.scaling = old_scalings
-        result=torch.cat(outputs, dim=0)
-        #print ("result.shape=", result.shape)
-        
-        #result=result.reshape (x.shape[0], xlora_state.get_xlora_classifier().config.n_layers, 
-        #                      xlora_state.get_xlora_classifier().config.n_classes)
-        #result=result.reshape (x.shape[0], int(result.shape[0]/x.shape[0]) , result.shape[1])
+                self.unscale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
 
-        #result=result.reshape (1, int(result.shape[0]*x.shape[0]) , result.shape[1])
-        #print ("result.shape=", result.shape)
-        
-        #print ("### x.shape", x.shape)
-        #result = self.target_forward(x, *args, **kwargs)
-        #print ("### result.shape=", result.shape)
-
+        result = torch.cat(outputs, dim=0)
         return result
 
     @staticmethod
     def scale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str]):
         for scaling, adapter in zip(scalings, adapters):
             target.scaling[adapter] = target.scaling[adapter] * scaling
+
     @staticmethod
-    def unscale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str],  ):
+    def unscale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str]):
         for scaling, adapter in zip(scalings, adapters):
-            #print (target.scaling[adapter] , scaling)
-            if scaling!=0:
+            if scaling != 0:
                 target.scaling[adapter] = target.scaling[adapter] / scaling
                 return True
             else:
-                 return False
-                
-            #print (target.scaling[adapter]  )
-            #print ("---")
-            
+                return False
+
 
 class BaseTunerWrapper:
     def __init__(self, base_model: BaseTuner):

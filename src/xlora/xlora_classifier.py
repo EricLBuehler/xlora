@@ -1,12 +1,13 @@
 import typing
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
-from transformers.modeling_outputs import ModelOutput  # type: ignore
-from transformers.modeling_outputs import CausalLMOutputWithPast  # type: ignore
+from transformers.modeling_outputs import (
+    CausalLMOutputWithPast,  # type: ignore
+    )
 
 from .xlora_config import xLoRAConfig
 
@@ -113,31 +114,9 @@ class xLoRAClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
-        '''
         # For type checking
         model: PeftModel = self.model  # type: ignore
         with torch.no_grad():
-            with model.disable_adapter():
-                kwargs["output_hidden_states"] = True
-
-                #is commented out in the code on MIT-BX
-                #kwargs["return_dict"] = True
-                
-                result: ModelOutput = model.forward(
-                    *args,
-                    input_ids=input_ids,
-                    inputs_embeds=inputs_embeds,
-                    _xlora_classifier_inhibitor_flag=batch_size,
-                    **kwargs,
-                )
-
-
-        hidden_states: List[torch.FloatTensor] = result.hidden_states  # type:ignore
-        '''
-
-        # For type checking
-        model: PeftModel = self.model  # type: ignore
-        with torch.no_grad(): 
             with model.disable_adapter():
                 kwargs["output_hidden_states"] = True
                 result: Union[Tuple, CausalLMOutputWithPast] = model.forward(
@@ -147,7 +126,7 @@ class xLoRAClassifier(nn.Module):
                     _xlora_classifier_inhibitor_flag=batch_size,
                     **kwargs,
                 )
-    
+
                 assert isinstance(result, tuple) or isinstance(result, CausalLMOutputWithPast)
 
         if isinstance(result, tuple):
@@ -155,62 +134,8 @@ class xLoRAClassifier(nn.Module):
         else:
             hidden_states = result.hidden_states
 
-
         assert hidden_states is not None
-        '''
-        hidden_state_raw = hidden_states[-1]  # Get the last hidden state
-        hidden_state = hidden_state_raw.detach()
 
-        ########################### begin class
-
-        for layer in self.inner:
-            hidden_state = layer.forward(hidden_state)
-
-        logits = self.last.forward(hidden_state)
-        if not self.config.layerwise_scalings:
-            logits = logits.repeat(1, 1, self.n_layers)
-        if input_ids is not None:
-            seq_len = input_ids.shape[1]
-        else:
-            seq_len = typing.cast(torch.FloatTensor, inputs_embeds).shape[1]
-        ########################### end class
-
-        logits = logits.reshape(batch_size, seq_len, self.n_layers, self.n_classes)
-
-        if self.config.pad_token_id is None:
-            sequence_lengths: Union[int, torch.Tensor] = -1
-        else:
-            if input_ids is not None:
-                # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
-                sequence_lengths = torch.eq(input_ids, self.config.pad_token_id).int().argmax(-1) - 1
-                sequence_lengths = sequence_lengths % input_ids.shape[-1]
-                sequence_lengths = sequence_lengths.to(logits.device)
-            else:
-                sequence_lengths = -1
-
-        # Get it for the last token
-        #scalings: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
-        #print ("logits.shape", logits.shape) #logits=[bactch, seq, num_layers, num_classes]
-        #scalings = logits[:, sequence_lengths, :, :]
-        #scalings_old: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
-        scalings: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths, :, :]
-        #print ("scalings.shape", scalings.shape, "scalings_old.shape=", scalings_old.shape)
-        
-
-        if self.config.enable_softmax:
-            scalings = scalings.softmax(dim=-1)
-
-        n_pred_life = get_n_predictions_lifetime()
-        if n_pred_life > 0:
-            print(f"Scaling predictions: {scalings}")
-            set_n_predictions_lifetime(n_pred_life - 1)
-
-        if _scalings_logging:
-            self.log_scalings.append(scalings.unsqueeze(0))
-
-        return scalings
-        '''
-         
         hidden_state = hidden_states[-1]  # Get the last hidden state
 
         for layer in self.inner:
