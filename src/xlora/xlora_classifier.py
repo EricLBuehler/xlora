@@ -126,14 +126,14 @@ class xLoRAClassifier(nn.Module):
                         inst = module.forward.__self__
                         inst.disabled = True  # Disable it
                 """
-    
+
                 kwargs["output_hidden_states"] = True
                 kwargs["return_dict"] = True
                 result: ModelOutput = model.forward(
                     *args,
                     input_ids=input_ids,
                     inputs_embeds=inputs_embeds,
-                    _xlora_classifier_inhibitor_flag=batch_size, #True,
+                    _xlora_classifier_inhibitor_flag=batch_size,  # True,
                     **kwargs,
                 )
 
@@ -146,7 +146,7 @@ class xLoRAClassifier(nn.Module):
                         inst.disabled = False  # Disable it
                 """
 
-        hidden_states = result.hidden_states
+        hidden_states = result.hidden_states  # type: ignore
 
         assert hidden_states is not None
 

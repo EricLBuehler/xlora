@@ -46,12 +46,12 @@ class xLoRALayer:
         if self.top_k_lora is None:
             for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
                 layer_batch_scalings = batch_scalings[self.layer_number]
-                if self.disabled==False:
+                if not self.disabled:
                     self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
                     self.unscale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
-                else: #if disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
+                else:  # if disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
         else:
@@ -62,15 +62,14 @@ class xLoRALayer:
                 indices = list(indices)
                 adapters = [self.scaling_keys[i] for i in indices]
 
-                if self.disabled==False:
-                    self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
+                if not self.disabled:
+                    self.scale_adapters(self.target, topk_scalings, adapters)
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
-                    self.unscale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
-                else: #if disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
+                    self.unscale_adapters(self.target, topk_scalings, adapters)
+                else:  # if disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
-
 
         result = torch.cat(outputs, dim=0)
         return result
@@ -78,9 +77,7 @@ class xLoRALayer:
     @staticmethod
     def scale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str]):
         for scaling, adapter in zip(scalings, adapters):
-            
             target.scaling[adapter] = target.scaling[adapter] * scaling
-            
 
     @staticmethod
     def unscale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str]):

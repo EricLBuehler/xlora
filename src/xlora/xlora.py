@@ -80,11 +80,14 @@ def add_xlora_to_model(
 
         if "_xlora_classifier_inhibitor_flag" in kwargs_real:
             batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
-            
+
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 
-            xlora_state.set_scalings(torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes) / xlora_classifier.n_classes)
-            
+            xlora_state.set_scalings(
+                torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes)
+                / xlora_classifier.n_classes
+            )
+
             return
 
         xlora_scalings = xlora_classifier.forward(
@@ -162,7 +165,6 @@ def from_pretrained(
         model (`PeftModel`):
             The new model.
     """
-
 
     with open(os.path.join(load_directory, "xlora_config.json"), "r") as f:
         conf = json.load(f)
