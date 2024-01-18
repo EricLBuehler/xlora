@@ -67,8 +67,9 @@ class xLoRAClassifier(nn.Module):
         elif self.config.xlora_depth == 2:
             self.inner.append(nn.Linear(config.hidden_size, config.xlora_size, bias=False).to(config.device).to(dtype))
 
-            self.inner.append(nn.ReLU())
-            self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
+            if not config.enable_relu_and_dropout:
+                self.inner.append(nn.ReLU())
+                self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
 
             if config.layerwise_scalings:
                 self.last = nn.Linear(config.xlora_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
@@ -78,16 +79,18 @@ class xLoRAClassifier(nn.Module):
             assert self.config.xlora_depth > 0
             self.inner.append(nn.Linear(config.hidden_size, config.xlora_size, bias=False).to(config.device).to(dtype))
 
-            self.inner.append(nn.ReLU())
-            self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
+            if not config.enable_relu_and_dropout:
+                self.inner.append(nn.ReLU())
+                self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
 
             for _ in range(config.xlora_depth - 2):
                 self.inner.append(
                     nn.Linear(config.xlora_size, config.xlora_size, bias=False).to(config.device).to(dtype)
                 )
 
-                self.inner.append(nn.ReLU())
-                self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
+                if not config.enable_relu_and_dropout:
+                    self.inner.append(nn.ReLU())
+                    self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
 
             if config.layerwise_scalings:
                 self.last = nn.Linear(config.xlora_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
