@@ -84,7 +84,8 @@ def add_xlora_to_model(
             assert isinstance(kwargs_real["_xlora_classifier_inhibitor_flag"], int)
             batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
-            xlora_state.set_scalings(torch.zeros(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes))
+            #xlora_state.set_scalings(torch.zeros(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes))
+            xlora_state.set_scalings(torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes))
             return
 
         xlora_scalings = xlora_classifier.forward(
