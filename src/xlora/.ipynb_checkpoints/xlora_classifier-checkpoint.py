@@ -9,8 +9,9 @@ from transformers.modeling_outputs import (  # type: ignore
     ModelOutput,
 )
 
-from .xlora_config import xLoRAConfig
 from .xlora_insertion import xLoRALayer
+
+from .xlora_config import xLoRAConfig
 
 _n_predictions_lifetime: int = 0
 _scalings_logging: bool = False
