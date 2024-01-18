@@ -84,11 +84,7 @@ class xLoRALayer:
     @staticmethod
     def unscale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str]):
         for scaling, adapter in zip(scalings, adapters):
-            if scaling != 0:
-                target.scaling[adapter] = target.scaling[adapter] / scaling
-                return True
-            else:
-                return False
+            target.scaling[adapter] = target.scaling[adapter] / scaling
 
 
 class BaseTunerWrapper:
