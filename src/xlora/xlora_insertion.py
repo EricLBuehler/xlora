@@ -35,12 +35,16 @@ class xLoRALayer:
         self.scaling_keys = scaling_keys
         self.top_k_lora = top_k_lora
         self.layer_number = layer_number
+        self.disabled = False
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
         This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
         To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
         """
+
+        if self.disabled:
+            return self.target_forward(x, *args, **kwargs)
 
         outputs: List[Tensor] = []
         if self.top_k_lora is None:

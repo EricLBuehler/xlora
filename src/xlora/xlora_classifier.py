@@ -1,13 +1,15 @@
 import typing
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 import numpy
 import torch
 import torch.nn as nn
 from peft.peft_model import PeftModel
-from transformers.modeling_outputs import (
-    CausalLMOutputWithPast,  # type: ignore
-    )
+from transformers.modeling_outputs import (  # type: ignore
+    ModelOutput,
+)
+
+from xlora.xlora_insertion import xLoRALayer
 
 from .xlora_config import xLoRAConfig
 
@@ -117,22 +119,29 @@ class xLoRAClassifier(nn.Module):
         # For type checking
         model: PeftModel = self.model  # type: ignore
         with torch.no_grad():
-            with model.disable_adapter():
-                kwargs["output_hidden_states"] = True
-                result: Union[Tuple, CausalLMOutputWithPast] = model.forward(
-                    *args,
-                    input_ids=input_ids,
-                    inputs_embeds=inputs_embeds,
-                    _xlora_classifier_inhibitor_flag=batch_size,
-                    **kwargs,
-                )
+            # Disable the xLoRALayers
+            for module in model.base_model.modules():
+                if isinstance(module, xLoRALayer):
+                    module.disabled = True  # Disable it
+                    module.target.enable_adapters(False)
 
-                assert isinstance(result, tuple) or isinstance(result, CausalLMOutputWithPast)
+            kwargs["output_hidden_states"] = True
+            kwargs["return_dict"] = True
+            result: ModelOutput = model.forward(
+                *args,
+                input_ids=input_ids,
+                inputs_embeds=inputs_embeds,
+                _xlora_classifier_inhibitor_flag=True,
+                **kwargs,
+            )
 
-        if isinstance(result, tuple):
-            hidden_states = result[3]
-        else:
-            hidden_states = result.hidden_states
+            # Enable the xLoRALayers
+            for module in model.base_model.modules():
+                if isinstance(module, xLoRALayer):
+                    module.disabled = False  # Disable it
+                    module.target.enable_adapters(True)
+
+        hidden_states = result.hidden_states  # type: ignore
 
         assert hidden_states is not None
 
