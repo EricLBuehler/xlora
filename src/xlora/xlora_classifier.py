@@ -105,7 +105,7 @@ class xLoRAClassifier(nn.Module):
         self,
         input_ids: Optional[torch.LongTensor] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
-        attention_mask = None,
+        attention_mask: Optional[torch.Tensor] = None,
         *args,
         **kwargs,
     ) -> torch.Tensor:
@@ -191,18 +191,16 @@ class xLoRAClassifier(nn.Module):
 
         
 
-        if self.config.pad_token_id is None:
-            sequence_lengths: Union[int, torch.Tensor] = -1
+        assert attention_mask is not None
+
+        if input_ids is not None:
+            ## if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
+            # sequence_lengths: Union[int, torch.Tensor] = torch.eq(input_ids, self.config.pad_token_id).int().argmax(-1) - 1
+            sequence_lengths: Union[int, torch.Tensor] = torch.eq(attention_mask, 0).int().argmax(-1) - 1
+            sequence_lengths = sequence_lengths % input_ids.shape[-1]
+            sequence_lengths = sequence_lengths.to(logits.device)  # type: ignore
         else:
-            if input_ids is not None:
-                att_id=0 #first element where attention mask = att_id is the length
-                # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
-                #sequence_lengths = torch.eq(input_ids, self.config.pad_token_id).int().argmax(-1) - 1
-                sequence_lengths = torch.eq(attention_mask, att_id).int().argmax(-1) - 1
-                sequence_lengths = sequence_lengths % input_ids.shape[-1]
-                sequence_lengths = sequence_lengths.to(logits.device)
-            else:
-                sequence_lengths = -1
+            sequence_lengths = -1
 
         #print ("seq_lens ", sequence_lengths)
         #print ("input_ids ", input_ids)

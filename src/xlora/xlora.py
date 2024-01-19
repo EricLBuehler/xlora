@@ -173,7 +173,7 @@ def from_pretrained(
 
     with open(os.path.join(load_directory, "xlora_config.json"), "r") as f:
         conf = json.load(f)
-        #conf["device"] = torch.device("cpu")
+        # conf["device"] = torch.device("cpu")
         conf["device"] = torch.device(device)
         xlora_config = xLoRAConfig(**conf)
 
