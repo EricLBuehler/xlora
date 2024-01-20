@@ -130,6 +130,16 @@ class PeftModelWrapper:
         with open(os.path.join(save_directory, "xlora_config.json"), "w") as f:
             json.dump(conf, f)
 
+        if xlora_state.get_enable_trainable_adapters():
+            self.model.save_pretrained(
+                save_directory=os.path.join(save_directory, "adapters"),
+                safe_serialization=safe_serialization,
+                is_main_process=is_main_process,
+                selected_adapters=selected_adapters,
+                save_embedding_layers=save_embedding_layers,
+                **kwargs,
+            )
+
         state_dict = classifier.state_dict()
         if safe_serialization:
             # https://github.com/huggingface/peft/blob/main/src/peft/peft_model.py#L223

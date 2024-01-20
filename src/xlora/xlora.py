@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import peft
 import safetensors  # type: ignore
@@ -141,12 +141,13 @@ def from_pretrained(
     load_directory: str,
     from_safetensors: bool,
     model: PreTrainedModel,
-    adapters: Dict[str, str],
+    adapters: List[str],
     verbose: bool,
     device: str,
 ) -> PeftModel:
     """
-    Loads a pretrained classifier from the specified folder while initializing the model. This is the counterpart to `xLoRAModel.save_pretrained`.
+    Loads a pretrained classifier and potentially adapters from the specified folder while initializing the model. This is the counterpart to `save_pretrained`.
+    If trainable adapters was enabled, those saved adapters will be loaded.
 
     This method is very similar to `add_xlora_to_model`: it converts all LoRA adapters to xLoRA layers, and it is one of
     the intended entrypoints for use of xLoRA. All LoRA adapters will be frozen, and the xLoRAClassifier is initialized.
@@ -158,8 +159,8 @@ def from_pretrained(
             Whether to load the classifier weights from a .pt or .safetensors file.
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place.
-        adapters (`dict`):
-            Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
+        adapters (`list`):
+            List of adapter names (the keys of the adapters `dict` in `add_xlora_to_model`)
         verbose (`bool`):
             Display tqdm, total swapping count.
         device (`str`):
@@ -179,7 +180,9 @@ def from_pretrained(
 
         xlora_config = xLoRAConfig(**conf)
 
-    model_peft = add_xlora_to_model(model, xlora_config, adapters, verbose)
+    adapters_dict = {name: os.path.join(load_directory, "adapters", name) for name in adapters}
+
+    model_peft = add_xlora_to_model(model, xlora_config, adapters_dict, verbose)
     classifier = xlora_state.get_xlora_classifier()
     if from_safetensors:
         state_dict = safetensors.torch.load_file(  # type: ignore
