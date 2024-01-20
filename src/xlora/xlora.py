@@ -139,11 +139,11 @@ def add_xlora_to_model(
 
 def from_pretrained(
     load_directory: str,
-    from_safetensors: bool,
     model: PreTrainedModel,
     adapters: List[str],
     verbose: bool,
     device: str,
+    from_safetensors: bool = True,
 ) -> PeftModel:
     """
     Loads a pretrained classifier and potentially adapters from the specified folder while initializing the model. This is the counterpart to `save_pretrained`.
@@ -155,8 +155,6 @@ def from_pretrained(
     Args:
         load_directory (`str`):
             The directory to load the classifier weights from.
-        from_safetensors (`bool`):
-            Whether to load the classifier weights from a .pt or .safetensors file.
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place.
         adapters (`list`):
@@ -165,6 +163,8 @@ def from_pretrained(
             Display tqdm, total swapping count.
         device (`str`):
             Device of the model, used to load the classifier.
+        from_safetensors (`bool`, *optional*, defaults to True):
+            Whether to load the classifier weights from a .pt or .safetensors file.
     Returns:
         model (`PeftModel`):
             The new model.
