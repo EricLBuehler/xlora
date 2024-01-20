@@ -126,6 +126,7 @@ class PeftModelWrapper:
 
         conf = classifier.config.__dict__.copy()
         del conf["device"]
+        conf["use_trainable_adapters"] = xlora_state.get_enable_trainable_adapters()
         with open(os.path.join(save_directory, "xlora_config.json"), "w") as f:
             json.dump(conf, f)
 

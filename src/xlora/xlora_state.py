@@ -83,3 +83,16 @@ def set_xlora_classifier(value: xLoRAClassifier) -> None:
     Sets the xLoRAClassifier.
     """
     _xlora_classifier = value
+
+
+_trainable_adapters: bool = False
+
+
+def get_enable_trainable_adapters() -> bool:
+    global _trainable_adapters
+    return _trainable_adapters
+
+
+def set_enable_trainable_adapters(value: bool) -> None:
+    global _trainable_adapters
+    _trainable_adapters = value
