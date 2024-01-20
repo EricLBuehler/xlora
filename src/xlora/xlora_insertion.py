@@ -46,17 +46,12 @@ class xLoRALayer:
         if self.top_k_lora is None:
             for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
                 layer_batch_scalings = batch_scalings[self.layer_number]
-
-                # print (layer_batch_scalings)
                 if not self.disabled:
                     self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
                     self.unscale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
-
-                    # print ("Not disabled")
-
-                else:  # if disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
+                else:  # If disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
         else:
@@ -72,7 +67,7 @@ class xLoRALayer:
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
                     self.unscale_adapters(self.target, topk_scalings, adapters)
-                else:  # if disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
+                else:  # If disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
 

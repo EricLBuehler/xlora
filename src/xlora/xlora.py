@@ -106,7 +106,6 @@ def add_xlora_to_model(
         model_peft.load_adapter(model_id, adapter_name, is_trainable=False)
 
     model_peft.base_model.set_adapter(list(adapters.keys()))
-    # for name, param in model.base_model.named_parameters():
 
     model_peft.base_model.eval()
     for name, param in model_peft.base_model.named_parameters():
@@ -168,7 +167,6 @@ def from_pretrained(
 
     with open(os.path.join(load_directory, "xlora_config.json"), "r") as f:
         conf = json.load(f)
-        # conf["device"] = torch.device("cpu")
         conf["device"] = torch.device(device)
         xlora_config = xLoRAConfig(**conf)
 

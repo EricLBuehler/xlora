@@ -119,9 +119,7 @@ class xLoRAClassifier(nn.Module):
         # For type checking
         model: PeftModel = self.model  # type: ignore
         with torch.no_grad():
-            # model.eval()
-            # Disable the xLoRALayers
-            with model.disable_adapter():  # peft_model.disable_adapter()
+            with model.disable_adapter():
                 # NOTE(EricLBuehler): not implemented
                 """
                 for module in model.base_model.modules():
@@ -136,51 +134,31 @@ class xLoRAClassifier(nn.Module):
                     *args,
                     input_ids=input_ids,
                     inputs_embeds=inputs_embeds,
-                    _xlora_classifier_inhibitor_flag=batch_size,  # True,
+                    _xlora_classifier_inhibitor_flag=batch_size,
                     **kwargs,
                 )
-                # model.train()
 
-            # NOTE(EricLBuehler): not implemented
-            """
-            # Enable the xLoRALayers
-            for module in model.base_model.modules():
-                if isinstance(module.forward.__self__, xLoRALayer):
-                    inst = module.forward.__self__
-                    inst.disabled = False  # Disable it
-            """
-
-        # FROM: https://github.com/huggingface/transformers/blob/main/src/transformers/models/mistral/modeling_mistral.py#L1278
-        # hidden_states = result[0]
-        # [b, length, hidden_size]
-        # print ("Hidden_states from result", hidden_states.shape )
+                # NOTE(EricLBuehler): not implemented
+                """
+                # Enable the xLoRALayers
+                for module in model.base_model.modules():
+                    if isinstance(module.forward.__self__, xLoRALayer):
+                        inst = module.forward.__self__
+                        inst.disabled = False  # Disable it
+                """
 
         hidden_states = result.hidden_states  # type: ignore
 
         assert hidden_states is not None
         hidden_state = hidden_states[-1]  # Get the last hidden state
-        # hidden_state = hidden_states[0]  # Get the last hidden state
-        # hidden_state=result.last_hidden_state
 
-        ##############################################
-        # print ("Hidden_state after -1", hidden_state.shape)
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
 
         logits = self.last.forward(hidden_state)
-        # self.score = nn.Linear(config.hidden_size, self.num_labels, bias=False)
-        # hidden_states = transformer_outputs[0]
-        # logits = self.score(hidden_states)
-        ##################################
-
-        # print ("logits ", logits.shape)
-
-        # print ("Pad token id=", self.config.pad_token_id)
 
         if not self.config.layerwise_scalings:
             logits = logits.repeat(1, 1, self.n_layers)
-
-        # logits = logits.reshape(batch_size, seq_len, self.n_layers, self.n_classes)
 
         assert attention_mask is not None
 
@@ -193,17 +171,10 @@ class xLoRAClassifier(nn.Module):
         else:
             sequence_lengths = -1
 
-        # print ("seq_lens ", sequence_lengths)
-        # print ("input_ids ", input_ids)
-        # print ("attention_mask ", attention_mask)
-
         # Get it for the last token
         scalings: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
 
-        # print ("scalings before reshape", scalings.shape)
-
         scalings = scalings.reshape(batch_size, self.n_layers, self.n_classes)
-        # print ("scalings after reshape", scalings.shape)
 
         if self.config.enable_softmax:
             scalings = scalings.softmax(dim=-1)
