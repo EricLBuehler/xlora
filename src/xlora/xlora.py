@@ -83,12 +83,10 @@ def add_xlora_to_model(
 
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 
-            
             xlora_state.set_scalings(
                 torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes, requires_grad=True)
                 / xlora_classifier.n_classes
             )
-            
 
             return
 
@@ -108,13 +106,13 @@ def add_xlora_to_model(
         model_peft.load_adapter(model_id, adapter_name, is_trainable=False)
 
     model_peft.base_model.set_adapter(list(adapters.keys()))
-    #for name, param in model.base_model.named_parameters():
+    # for name, param in model.base_model.named_parameters():
 
     model_peft.base_model.eval()
     for name, param in model_peft.base_model.named_parameters():
         if "lora_" in name:
             param.requires_grad = False
-    
+
     assert isinstance(model_peft.base_model, peft.tuners.lora.LoraModel)
 
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
@@ -132,9 +130,6 @@ def add_xlora_to_model(
     n_classes = len(adapters)
     xlora_classifier = xLoRAClassifier(model_peft, xlora_config, n_classes, total_swapped)
     xlora_state.set_xlora_classifier(xlora_classifier)
-
-    
-
 
     return model_peft
 
