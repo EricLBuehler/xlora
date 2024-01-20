@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import peft
 import safetensors  # type: ignore
@@ -140,7 +140,7 @@ def add_xlora_to_model(
 def from_pretrained(
     load_directory: str,
     model: PreTrainedModel,
-    adapters: List[str],
+    adapters: Union[List[str], Dict[str, str]],
     verbose: bool,
     device: str,
     from_safetensors: bool = True,
@@ -157,8 +157,9 @@ def from_pretrained(
             The directory to load the classifier weights from.
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place.
-        adapters (`list`):
-            List of adapter names (the keys of the adapters `dict` in `add_xlora_to_model`)
+        adapters (`list` or `dict`):
+            List of adapter names (the keys of the adapters `dict` in `add_xlora_to_model`) OR Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
+            Specify the list if the adapters were trainable.
         verbose (`bool`):
             Display tqdm, total swapping count.
         device (`str`):
@@ -180,7 +181,11 @@ def from_pretrained(
 
         xlora_config = xLoRAConfig(**conf)
 
-    adapters_dict = {name: os.path.join(load_directory, "adapters", name) for name in adapters}
+    if use_trainable_adapters:
+        adapters_dict: Dict[str, str] = {name: os.path.join(load_directory, "adapters", name) for name in adapters}
+    else:
+        assert isinstance(adapters, dict)
+        adapters_dict = adapters
 
     model_peft = add_xlora_to_model(model, xlora_config, adapters_dict, verbose)
     classifier = xlora_state.get_xlora_classifier()
