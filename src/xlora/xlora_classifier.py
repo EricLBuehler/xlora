@@ -157,19 +157,30 @@ class xLoRAClassifier(nn.Module):
 
         logits = self.last.forward(hidden_state)
 
+        ### Repeat to make layerwise scalings if the classifier layer does not
         if not self.config.layerwise_scalings:
             logits = logits.repeat(1, 1, self.n_layers)
 
-        assert attention_mask is not None
-
-        if input_ids is not None:
-            ## if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
-            # sequence_lengths: Union[int, torch.Tensor] = torch.eq(input_ids, self.config.pad_token_id).int().argmax(-1) - 1
-            sequence_lengths: Union[int, torch.Tensor] = torch.eq(attention_mask, 0).int().argmax(-1) - 1
-            sequence_lengths = sequence_lengths % input_ids.shape[-1]
-            sequence_lengths = sequence_lengths.to(logits.device)  # type: ignore
-        else:
-            sequence_lengths = -1
+        ### Calculate the sequence lengths
+        if self.config.stop_token_id is None:  # Calculate via attention mask
+            if input_ids is not None:
+                assert attention_mask is not None, (
+                    "Stop token id was not provided, so sequence length calculation via attention mask was attempted"
+                    + "but the attention mask was not given"
+                )
+                sequence_lengths: Union[int, torch.Tensor] = torch.eq(attention_mask, 0).int().argmax(-1) - 1
+                sequence_lengths = sequence_lengths % input_ids.shape[-1]
+                sequence_lengths = sequence_lengths.to(logits.device)  # type: ignore
+            else:
+                sequence_lengths = -1
+        else:  # Calculate via stop token id
+            if input_ids is not None:
+                # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
+                sequence_lengths = torch.eq(input_ids, self.config.stop_token_id).int().argmax(-1) - 1
+                sequence_lengths = sequence_lengths % input_ids.shape[-1]
+                sequence_lengths = sequence_lengths.to(logits.device)  # type: ignore
+            else:
+                sequence_lengths = -1
 
         # Get it for the last token
         scalings: torch.Tensor = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
@@ -183,6 +194,9 @@ class xLoRAClassifier(nn.Module):
         if n_pred_life > 0:
             print(f"Scaling predictions: {scalings}")
             set_n_predictions_lifetime(n_pred_life - 1)
+
+        if _scalings_logging:
+            self.log_scalings.append(scalings.unsqueeze(0))
 
         return scalings
 

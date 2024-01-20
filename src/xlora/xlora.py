@@ -84,7 +84,9 @@ def add_xlora_to_model(
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 
             xlora_state.set_scalings(
-                torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes, requires_grad=True)
+                torch.ones(
+                    batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes, requires_grad=True
+                )  # TODO(EricLBuehler): is the requires_grad=True necessary?
                 / xlora_classifier.n_classes
             )
 

@@ -28,8 +28,8 @@ class xLoRAConfig:
             Enable ReLU activation and Dropout application of the xLoRA classifier.
         xlora_dropout_p (`float`, *optional*, defaults to 0.5):
             Dropout probability of the xLoRA classifier, irrelevant if `xlora_depth=1` or `enable_relu_and_dropout=True`.
-        pad_token_id (`int`, *optional*):
-            The id of the padding token.
+        stop_token_id (`int`, *optional*):
+            The id of the stop token for the input. If this is None, the sequence length is calculated using the attention mask.
 
     """
 
@@ -44,4 +44,4 @@ class xLoRAConfig:
     xlora_size: int = 2048
     enable_relu_and_dropout: bool = False
     xlora_dropout_p: float = 0.2
-    pad_token_id: Optional[int] = None
+    stop_token_id: Optional[int] = None
