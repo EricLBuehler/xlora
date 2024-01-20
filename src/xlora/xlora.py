@@ -100,17 +100,17 @@ def add_xlora_to_model(
 
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
 
-    trainable_adapters = xlora_state.get_enable_trainable_adapters()
+    use_trainable_adapters = xlora_config.use_trainable_adapters
     adapters_items = iter(tqdm.tqdm(adapters.items()))
     first_item = next(adapters_items)
-    model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], is_trainable=trainable_adapters)
+    model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], is_trainable=use_trainable_adapters)
 
     for adapter_name, model_id in adapters_items:
-        model_peft.load_adapter(model_id, adapter_name, is_trainable=trainable_adapters)
+        model_peft.load_adapter(model_id, adapter_name, is_trainable=use_trainable_adapters)
 
     model_peft.base_model.set_adapter(list(adapters.keys()))
 
-    if not trainable_adapters:
+    if not use_trainable_adapters:
         model_peft.base_model.eval()
         for name, param in model_peft.base_model.named_parameters():
             if "lora_" in name:
@@ -121,7 +121,7 @@ def add_xlora_to_model(
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
     model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
-    peft_model_wrapper = PeftModelWrapper(model_peft, model_peft.save_pretrained)
+    peft_model_wrapper = PeftModelWrapper(model_peft, model_peft.save_pretrained, use_trainable_adapters)
     model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
 
     total_swapped = convert_layers_to_xlora(
@@ -176,8 +176,6 @@ def from_pretrained(
         conf["device"] = torch.device(device)
 
         use_trainable_adapters = conf["use_trainable_adapters"]
-        del conf["use_trainable_adapters"]
-        xlora_state.set_enable_trainable_adapters(use_trainable_adapters)
 
         xlora_config = xLoRAConfig(**conf)
 
@@ -210,20 +208,6 @@ def set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int):
     A tensor with 2 dim is expected: (batch_size, num_classes)
     """
     xlora_state.set_scalings_lifetime(value, n_accesses_lifetime)
-
-
-def enable_trainable_adapters():
-    """
-    Enables trainable adapters. If the model is saved, this state will be saved alongside it and restored upon a call to `from_pretrained`.
-    """
-    xlora_state.set_enable_trainable_adapters(True)
-
-
-def disable_trainable_adapters():
-    """
-    Disables trainable adapters. If the model is saved, this state will be saved alongside it and restored upon a call to `from_pretrained`.
-    """
-    xlora_state.set_enable_trainable_adapters(False)
 
 
 def print_scalings_predictions(n_predictions_lifetime: int):

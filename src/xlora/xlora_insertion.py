@@ -98,9 +98,11 @@ class PeftModelWrapper:
         self,
         base_model: PeftModel,
         base_model_save: Callable[..., None],
+        use_trainable_adapters: bool,
     ):
         self.model = base_model
         self.base_model_save = base_model_save
+        self.use_trainable_adapters = use_trainable_adapters
 
     def save_pretrained(
         self,
@@ -134,11 +136,10 @@ class PeftModelWrapper:
 
         conf = classifier.config.__dict__.copy()
         del conf["device"]
-        conf["use_trainable_adapters"] = xlora_state.get_enable_trainable_adapters()
         with open(os.path.join(save_directory, "xlora_config.json"), "w") as f:
             json.dump(conf, f)
 
-        if xlora_state.get_enable_trainable_adapters():
+        if self.use_trainable_adapters:
             if is_main_process:
                 os.makedirs(os.path.join(save_directory, "adapters"), exist_ok=True)
             self.base_model_save(

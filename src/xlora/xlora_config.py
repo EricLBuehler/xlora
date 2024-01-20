@@ -30,7 +30,8 @@ class xLoRAConfig:
             Dropout probability of the xLoRA classifier, irrelevant if `xlora_depth=1` or `enable_relu_and_dropout=True`.
         stop_token_id (`int`, *optional*):
             The id of the stop token for the input. If this is None, the sequence length is calculated using the attention mask.
-
+        use_trainable_adapters (`bool`, *optional`, defaults to False):
+            Make the adapters trainable.
     """
 
     model_type = "xlora"
@@ -45,3 +46,4 @@ class xLoRAConfig:
     enable_relu_and_dropout: bool = False
     xlora_dropout_p: float = 0.2
     stop_token_id: Optional[int] = None
+    use_trainable_adapters: bool = False
