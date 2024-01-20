@@ -121,8 +121,11 @@ def add_xlora_to_model(
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
     model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
-    peft_model_wrapper = PeftModelWrapper(model_peft, model_peft.save_pretrained, use_trainable_adapters)
+    peft_model_wrapper = PeftModelWrapper(model_peft, model_peft.save_pretrained, xlora_config)
     model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
+
+    assert not hasattr(model_peft, "set_use_trainable_adapters")
+    model_peft.set_use_trainable_adapters = peft_model_wrapper.set_use_trainable_adapters  # type: ignore
 
     total_swapped = convert_layers_to_xlora(
         model_peft,

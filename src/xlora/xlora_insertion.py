@@ -11,6 +11,8 @@ from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
 
+from xlora.xlora_config import xLoRAConfig
+
 from . import xlora_state
 
 
@@ -98,11 +100,23 @@ class PeftModelWrapper:
         self,
         base_model: PeftModel,
         base_model_save: Callable[..., None],
-        use_trainable_adapters: bool,
+        config: xLoRAConfig,
     ):
         self.model = base_model
         self.base_model_save = base_model_save
-        self.use_trainable_adapters = use_trainable_adapters
+        self.config = config
+
+    def set_use_trainable_adapters(self, use_trainable_adapters: bool):
+        """
+        Set the adapters to trainable or not trainable.
+        """
+        if not use_trainable_adapters:
+            self.model.base_model.eval()
+            for name, param in self.model.base_model.named_parameters():
+                if "lora_" in name:
+                    param.requires_grad = False
+
+        self.config.use_trainable_adapters = use_trainable_adapters
 
     def save_pretrained(
         self,
@@ -139,7 +153,7 @@ class PeftModelWrapper:
         with open(os.path.join(save_directory, "xlora_config.json"), "w") as f:
             json.dump(conf, f)
 
-        if self.use_trainable_adapters:
+        if self.config.use_trainable_adapters:
             if is_main_process:
                 os.makedirs(os.path.join(save_directory, "adapters"), exist_ok=True)
             self.base_model_save(
