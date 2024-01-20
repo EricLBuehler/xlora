@@ -70,7 +70,7 @@ class xLoRAClassifier(nn.Module):
         elif self.config.xlora_depth == 2:
             self.inner.append(nn.Linear(config.hidden_size, config.xlora_size, bias=False).to(config.device).to(dtype))
 
-            if not config.enable_relu_and_dropout:
+            if config.enable_relu_and_dropout:
                 self.inner.append(nn.ReLU())
                 self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
 
@@ -82,7 +82,7 @@ class xLoRAClassifier(nn.Module):
             assert self.config.xlora_depth > 0
             self.inner.append(nn.Linear(config.hidden_size, config.xlora_size, bias=False).to(config.device).to(dtype))
 
-            if not config.enable_relu_and_dropout:
+            if config.enable_relu_and_dropout:
                 self.inner.append(nn.ReLU())
                 self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
 
@@ -91,7 +91,7 @@ class xLoRAClassifier(nn.Module):
                     nn.Linear(config.xlora_size, config.xlora_size, bias=False).to(config.device).to(dtype)
                 )
 
-                if not config.enable_relu_and_dropout:
+                if config.enable_relu_and_dropout:
                     self.inner.append(nn.ReLU())
                     self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
 
