@@ -121,7 +121,7 @@ def add_xlora_to_model(
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
     model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
-    peft_model_wrapper = PeftModelWrapper(model_peft)
+    peft_model_wrapper = PeftModelWrapper(model_peft, model_peft.save_pretrained)
     model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
 
     total_swapped = convert_layers_to_xlora(

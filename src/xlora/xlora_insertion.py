@@ -94,8 +94,13 @@ class BaseTunerWrapper:
 
 
 class PeftModelWrapper:
-    def __init__(self, base_model: PeftModel):
+    def __init__(
+        self,
+        base_model: PeftModel,
+        base_model_save: Callable[..., None],
+    ):
         self.model = base_model
+        self.base_model_save = base_model_save
 
     def save_pretrained(
         self,
@@ -122,6 +127,9 @@ class PeftModelWrapper:
         if os.path.isfile(save_directory):
             raise ValueError(f"Provided path ({save_directory}) should be a directory, not a file")
 
+        if is_main_process:
+            os.makedirs(save_directory, exist_ok=True)
+
         classifier = xlora_state.get_xlora_classifier()
 
         conf = classifier.config.__dict__.copy()
@@ -131,7 +139,9 @@ class PeftModelWrapper:
             json.dump(conf, f)
 
         if xlora_state.get_enable_trainable_adapters():
-            self.model.save_pretrained(
+            if is_main_process:
+                os.makedirs(os.path.join(save_directory, "adapters"), exist_ok=True)
+            self.base_model_save(
                 save_directory=os.path.join(save_directory, "adapters"),
                 safe_serialization=safe_serialization,
                 is_main_process=is_main_process,
