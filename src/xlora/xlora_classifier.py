@@ -151,16 +151,19 @@ class xLoRAClassifier(nn.Module):
 
         assert hidden_states is not None
         hidden_state = hidden_states[-1]  # Get the last hidden state
-
+        
+        '''
+		############################# CLASSIFIER ##################################################
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
 
         logits = self.last.forward(hidden_state)
-
-        ### Repeat to make layerwise scalings if the classifier layer does not
+       ### Repeat to make layerwise scalings if the classifier layer does not
         if not self.config.layerwise_scalings:
             logits = logits.repeat(1, 1, self.n_layers)
+		############################# CLASSIFIER ##################################################
 
+ 
         ### Calculate the sequence lengths
         if self.config.stop_token_id is None:  # Calculate via attention mask
             if input_ids is not None:
@@ -189,7 +192,76 @@ class xLoRAClassifier(nn.Module):
 
         if self.config.enable_softmax:
             scalings = scalings.softmax(dim=-1)
+        '''
+		
+		
 
+        ### Calculate the sequence lengths
+        if self.config.stop_token_id is None:  # Calculate via attention mask
+            if input_ids is not None:
+                assert attention_mask is not None, (
+                    "Stop token id was not provided, so sequence length calculation via attention mask was attempted"
+                    + "but the attention mask was not given"
+                )
+                sequence_lengths: Union[int, torch.Tensor] = torch.eq(attention_mask, 0).int().argmax(-1) - 1
+                sequence_lengths = sequence_lengths % input_ids.shape[-1]
+                sequence_lengths = sequence_lengths.to(hidden_state.device)  # type: ignore
+            else:
+                sequence_lengths = -1
+        else:  # Calculate via stop token id
+            if input_ids is not None:
+                # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
+                sequence_lengths = torch.eq(input_ids, self.config.stop_token_id).int().argmax(-1) - 1
+                sequence_lengths = sequence_lengths % input_ids.shape[-1]
+                sequence_lengths = sequence_lengths.to(hidden_state.device)  # type: ignore
+            else:
+                sequence_lengths = -1
+
+        use_mean_pool=True
+        if use_mean_pool:
+                max_length = hidden_state.shape[1]
+                mask = torch.arange(max_length).expand(len(sequence_lengths), max_length).to(hidden_state.device) < sequence_lengths.unsqueeze(1)
+
+				# Mask the hidden_states
+                masked_hidden_states = hidden_state * mask.unsqueeze(-1)
+
+				# Sum across the sequence length and divide by actual sequence length
+                summed = torch.sum(hidden_state, dim=1)
+                hidden_state = summed / sequence_lengths.unsqueeze(1)
+			
+        else:
+                #Get it for the last token
+                hidden_state: torch.Tensor = hidden_state[torch.arange(batch_size, device=hidden_state.device), sequence_lengths]
+        
+        
+		#hidden_state=[b, hidden_size]
+		############################# CLASSIFIER ##################################################
+        for layer in self.inner:
+            hidden_state = layer.forward(hidden_state)
+
+        logits = self.last.forward(hidden_state)
+       ### Repeat to make layerwise scalings if the classifier layer does not
+        if not self.config.layerwise_scalings:
+            #logits = logits.repeat(1, 1, self.n_layers)
+            #logits = logits.repeat(1, self.n_layers, 1)
+            logits=logits.unsqueeze(1)
+            logits=logits.expand(-1,self.n_layers,-1) 
+
+		############################# CLASSIFIER ##################################################
+
+ 
+        scalings = logits.reshape(batch_size, self.n_layers, self.n_classes)
+
+        if self.config.enable_softmax:
+            #scalings = scalings.softmax(dim=-1)	
+            #m = torch.nn.Softmax2d()
+            m = torch.nn.Softmax(dim=-1)
+            scalings= m(scalings)
+            
+            
+		
+		
+		
         n_pred_life = get_n_predictions_lifetime()
         if n_pred_life > 0:
             print(f"Scaling predictions: {scalings}")
