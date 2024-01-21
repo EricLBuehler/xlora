@@ -32,6 +32,8 @@ class xLoRAConfig:
             The id of the stop token for the input. If this is None, the sequence length is calculated using the attention mask.
         use_trainable_adapters (`bool`, *optional`, defaults to False):
             Make the adapters trainable.
+        use_mean_pool (`bool`, *optional*, defaults to True):
+            Sum the hidden states for the last token
     """
 
     model_type = "xlora"
@@ -47,3 +49,4 @@ class xLoRAConfig:
     xlora_dropout_p: float = 0.2
     stop_token_id: Optional[int] = None
     use_trainable_adapters: bool = False
+    use_mean_pool: bool = True
