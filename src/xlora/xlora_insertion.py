@@ -38,12 +38,8 @@ class xLoRALayer:
         self.layer_number = layer_number
         self.disabled = False
 
+    """
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
-        """
-        This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
-        To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
-        """
-
         outputs: List[Tensor] = []
         if self.top_k_lora is None:
             for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
@@ -75,16 +71,138 @@ class xLoRALayer:
 
         result = torch.cat(outputs, dim=0)
         return result
+    """
 
     @staticmethod
-    def scale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str]):
-        for scaling, adapter in zip(scalings, adapters):
-            target.scaling[adapter] = target.scaling[adapter] * scaling
+    def get_scalings_matrix(scalings: torch.Tensor, adapter: int, layer: int) -> torch.Tensor:
+        return scalings[:, layer, adapter].unsqueeze(1).unsqueeze(1)
 
-    @staticmethod
-    def unscale_adapters(target: lora.LoraLayer, scalings: Tensor, adapters: List[str]):
-        for scaling, adapter in zip(scalings, adapters):
-            target.scaling[adapter] = target.scaling[adapter] / scaling
+
+class xLoRALinearLayer(xLoRALayer):
+    def __init__(
+        self,
+        target: lora.Linear,
+        target_forward: Callable[..., Any],
+        scaling_keys: List[str],
+        layer_number: int,
+        top_k_lora: Optional[int] = None,
+    ) -> None:
+        super().__init__(target, target_forward, scaling_keys, layer_number, top_k_lora)
+
+    def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
+        """
+        This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
+        To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
+        """
+
+        previous_dtype = x.dtype
+        xlora_scalings = xlora_state.get_scalings()
+
+        if self.target.disable_adapters:
+            if self.target.merged:
+                self.target.unmerge()
+            result = self.target.base_layer(x, *args, **kwargs)
+        elif self.target.merged:
+            result = self.target.base_layer(x, *args, **kwargs)
+        else:
+            result = self.target.base_layer(x, *args, **kwargs)
+            for adapter_n, active_adapter in enumerate(self.target.active_adapters):
+                if active_adapter not in self.target.lora_A.keys():
+                    continue
+                lora_A = self.target.lora_A[active_adapter]
+                lora_B = self.target.lora_B[active_adapter]
+                dropout = self.target.lora_dropout[active_adapter]
+                scaling = self.target.scaling[active_adapter]
+                x = x.to(lora_A.weight.dtype)  # type: ignore
+                x = self.get_scalings_matrix(xlora_scalings, adapter_n, self.layer_number)
+                result += lora_B(lora_A(dropout(x))) * scaling
+
+        result = result.to(previous_dtype)
+        return result
+
+
+class xLoRAEmbeddingLayer(xLoRALayer):
+    def __init__(
+        self,
+        target: lora.Embedding,
+        target_forward: Callable[..., Any],
+        scaling_keys: List[str],
+        layer_number: int,
+        top_k_lora: Optional[int] = None,
+    ) -> None:
+        super().__init__(target, target_forward, scaling_keys, layer_number, top_k_lora)
+
+    def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
+        """
+        This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
+        To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
+        """
+
+        xlora_scalings = xlora_state.get_scalings()
+
+        # TODO: no dtype conversion here, unlike in Linear, is that correct?
+        if self.target.disable_adapters:
+            if self.target.merged:
+                self.target.unmerge()
+            result = self.target.base_layer(x, *args, **kwargs)
+        elif self.target.merged:
+            result = self.target.base_layer(x, *args, **kwargs)
+        else:
+            result = self.target.base_layer(x, *args, **kwargs)
+            for adapter_n, active_adapter in enumerate(self.target.active_adapters):
+                if active_adapter not in self.target.lora_embedding_A:
+                    continue
+                embedding_A = self.target.lora_embedding_A[active_adapter].T
+                embedding_B = self.target.lora_embedding_B[active_adapter].T
+                scaling = self.target.scaling[active_adapter]
+                x = self.get_scalings_matrix(xlora_scalings, adapter_n, self.layer_number)
+                after_A = self.target._embed(x, embedding_A)  # type: ignore
+                result += (after_A @ embedding_B) * scaling
+
+        return result
+
+
+class xLoRAConv2dLayer(xLoRALayer):
+    def __init__(
+        self,
+        target: lora.Conv2d,
+        target_forward: Callable[..., Any],
+        scaling_keys: List[str],
+        layer_number: int,
+        top_k_lora: Optional[int] = None,
+    ) -> None:
+        super().__init__(target, target_forward, scaling_keys, layer_number, top_k_lora)
+
+    def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
+        """
+        This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
+        To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
+        """
+
+        previous_dtype = x.dtype
+        xlora_scalings = xlora_state.get_scalings()
+
+        if self.target.disable_adapters:
+            if self.target.merged:
+                self.target.unmerge()
+            result = self.target.base_layer(x, *args, **kwargs)
+        elif self.target.merged:
+            result = self.target.base_layer(x, *args, **kwargs)
+        else:
+            result = self.target.base_layer(x, *args, **kwargs)
+            for adapter_n, active_adapter in enumerate(self.target.active_adapters):
+                if active_adapter not in self.target.lora_A.keys():
+                    continue
+                lora_A = self.target.lora_A[active_adapter]
+                lora_B = self.target.lora_B[active_adapter]
+                dropout = self.target.lora_dropout[active_adapter]
+                scaling = self.target.scaling[active_adapter]
+                x = x.to(lora_A.weight.dtype)  # type: ignore
+                x = self.get_scalings_matrix(xlora_scalings, adapter_n, self.layer_number)
+                result += lora_B(lora_A(dropout(x))) * scaling
+
+        result = result.to(previous_dtype)
+        return result
 
 
 class BaseTunerWrapper:
