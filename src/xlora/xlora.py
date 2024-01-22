@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import peft
 import safetensors  # type: ignore
@@ -25,7 +25,6 @@ from .xlora_insertion import (
 def convert_layers_to_xlora(
     base: PeftModel,
     verbose: bool,
-    top_k_lora: Optional[int] = None,
 ) -> int:
     """
     Returns the number of swapped layers.
@@ -45,7 +44,6 @@ def convert_layers_to_xlora(
                 target=module,
                 target_forward=module.forward,
                 scaling_keys=scaling_keys,
-                top_k_lora=top_k_lora,
                 layer_number=total_swapped,
             )
             module.forward = new_layer.forward  # type: ignore[method-assign]
@@ -56,7 +54,6 @@ def convert_layers_to_xlora(
                 target=module,
                 target_forward=module.forward,
                 scaling_keys=scaling_keys,
-                top_k_lora=top_k_lora,
                 layer_number=total_swapped,
             )
             module.forward = new_layer.forward  # type: ignore[method-assign]
@@ -67,7 +64,6 @@ def convert_layers_to_xlora(
                 target=module,
                 target_forward=module.forward,
                 scaling_keys=scaling_keys,
-                top_k_lora=top_k_lora,
                 layer_number=total_swapped,
             )
             module.forward = new_layer.forward  # type: ignore[method-assign]
@@ -162,7 +158,6 @@ def add_xlora_to_model(
     total_swapped = convert_layers_to_xlora(
         model_peft,
         verbose,
-        xlora_config.top_k_lora,
     )
 
     n_classes = len(adapters)

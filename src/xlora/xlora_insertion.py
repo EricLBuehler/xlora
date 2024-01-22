@@ -29,12 +29,10 @@ class xLoRALayer:
         target_forward: Callable[..., Any],
         scaling_keys: List[str],
         layer_number: int,
-        top_k_lora: Optional[int] = None,
     ) -> None:
         self.target_forward = target_forward
         self.target = target
         self.scaling_keys = scaling_keys
-        self.top_k_lora = top_k_lora
         self.layer_number = layer_number
         self.disabled = False
 
@@ -86,9 +84,8 @@ class xLoRALinearLayer(xLoRALayer):
         target_forward: Callable[..., Any],
         scaling_keys: List[str],
         layer_number: int,
-        top_k_lora: Optional[int] = None,
     ) -> None:
-        super().__init__(target, target_forward, scaling_keys, layer_number, top_k_lora)
+        super().__init__(target, target_forward, scaling_keys, layer_number)
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
@@ -129,9 +126,8 @@ class xLoRAEmbeddingLayer(xLoRALayer):
         target_forward: Callable[..., Any],
         scaling_keys: List[str],
         layer_number: int,
-        top_k_lora: Optional[int] = None,
     ) -> None:
-        super().__init__(target, target_forward, scaling_keys, layer_number, top_k_lora)
+        super().__init__(target, target_forward, scaling_keys, layer_number)
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
@@ -170,9 +166,8 @@ class xLoRAConv2dLayer(xLoRALayer):
         target_forward: Callable[..., Any],
         scaling_keys: List[str],
         layer_number: int,
-        top_k_lora: Optional[int] = None,
     ) -> None:
-        super().__init__(target, target_forward, scaling_keys, layer_number, top_k_lora)
+        super().__init__(target, target_forward, scaling_keys, layer_number)
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
