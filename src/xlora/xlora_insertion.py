@@ -36,41 +36,6 @@ class xLoRALayer:
         self.layer_number = layer_number
         self.disabled = False
 
-    """
-    def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
-        outputs: List[Tensor] = []
-        if self.top_k_lora is None:
-            for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
-                layer_batch_scalings = batch_scalings[self.layer_number]
-                if not self.disabled:
-                    self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
-                    output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
-                    outputs.append(output)
-                    self.unscale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
-                else:  # If disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
-                    output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
-                    outputs.append(output)
-        else:
-            for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
-                layer_batch_scalings = batch_scalings[self.layer_number]
-
-                (topk_scalings, indices) = torch.topk(input=layer_batch_scalings, k=self.top_k_lora)
-                indices = list(indices)
-                adapters = [self.scaling_keys[i] for i in indices]
-
-                if not self.disabled:
-                    self.scale_adapters(self.target, topk_scalings, adapters)
-                    output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
-                    outputs.append(output)
-                    self.unscale_adapters(self.target, topk_scalings, adapters)
-                else:  # If disabled just run the model w/o adapters and w/o scaling NOTE(EricLBuehler): not implemented
-                    output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
-                    outputs.append(output)
-
-        result = torch.cat(outputs, dim=0)
-        return result
-    """
-
     @staticmethod
     def apply_scalings_to_x(x: torch.Tensor, scalings: torch.Tensor, adapter: int, layer: int) -> torch.Tensor:
         scalings = scalings[:, layer, adapter].unsqueeze(1).unsqueeze(1)
