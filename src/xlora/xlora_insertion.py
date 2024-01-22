@@ -74,8 +74,9 @@ class xLoRALayer:
     """
 
     @staticmethod
-    def get_scalings_matrix(scalings: torch.Tensor, adapter: int, layer: int) -> torch.Tensor:
-        return scalings[:, layer, adapter].unsqueeze(1).unsqueeze(1)
+    def apply_scalings_to_x(x: torch.Tensor, scalings: torch.Tensor, adapter: int, layer: int) -> torch.Tensor:
+        scalings = scalings[:, layer, adapter].unsqueeze(1).unsqueeze(1)
+        return x * scalings
 
 
 class xLoRALinearLayer(xLoRALayer):
@@ -114,7 +115,7 @@ class xLoRALinearLayer(xLoRALayer):
                 dropout = self.target.lora_dropout[active_adapter]
                 scaling = self.target.scaling[active_adapter]
                 x = x.to(lora_A.weight.dtype)  # type: ignore
-                x = self.get_scalings_matrix(xlora_scalings, adapter_n, self.layer_number)
+                x = self.apply_scalings_to_x(x, xlora_scalings, adapter_n, self.layer_number)
                 result += lora_B(lora_A(dropout(x))) * scaling
 
         result = result.to(previous_dtype)
@@ -155,7 +156,7 @@ class xLoRAEmbeddingLayer(xLoRALayer):
                 embedding_A = self.target.lora_embedding_A[active_adapter].T
                 embedding_B = self.target.lora_embedding_B[active_adapter].T
                 scaling = self.target.scaling[active_adapter]
-                x = self.get_scalings_matrix(xlora_scalings, adapter_n, self.layer_number)
+                x = self.apply_scalings_to_x(x, xlora_scalings, adapter_n, self.layer_number)
                 after_A = self.target._embed(x, embedding_A)  # type: ignore
                 result += (after_A @ embedding_B) * scaling
 
@@ -198,7 +199,7 @@ class xLoRAConv2dLayer(xLoRALayer):
                 dropout = self.target.lora_dropout[active_adapter]
                 scaling = self.target.scaling[active_adapter]
                 x = x.to(lora_A.weight.dtype)  # type: ignore
-                x = self.get_scalings_matrix(xlora_scalings, adapter_n, self.layer_number)
+                x = self.apply_scalings_to_x(x, xlora_scalings, adapter_n, self.layer_number)
                 result += lora_B(lora_A(dropout(x))) * scaling
 
         result = result.to(previous_dtype)
