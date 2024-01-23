@@ -39,7 +39,7 @@ def set_scalings_logging(value: bool):
 
 class xLoRAClassifier(nn.Module):
     """
-    A classifier to select LoRA layers for xLoRA. It runs the base model with LoRA adapter scalings of 0.
+    A classifier to select LoRA layers for xLoRA.
     """
 
     def __init__(
