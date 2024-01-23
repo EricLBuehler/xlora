@@ -61,7 +61,6 @@ class xLoRAClassifier(nn.Module):
 
         dtype = next(model.parameters()).dtype
 
-        ##self.score = nn.Linear(config.hidden_size, self.num_labels, bias=False)
         self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.xlora_depth == 1:
             if config.layerwise_scalings:
