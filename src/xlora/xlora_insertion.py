@@ -189,11 +189,9 @@ class PeftModelWrapper:
         """
         Set the adapters to trainable or not trainable.
         """
-        if not use_trainable_adapters:
-            self.model.base_model.eval()
-            for name, param in self.model.base_model.named_parameters():
-                if "lora_" in name:
-                    param.requires_grad = False
+        for name, param in self.model.base_model.named_parameters():
+            if "lora_" in name:
+                param.requires_grad = use_trainable_adapters
 
         self.config.use_trainable_adapters = use_trainable_adapters
 
