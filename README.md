@@ -18,6 +18,7 @@ See the [examples](examples) folder for some examples of how to get started with
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> PeftModel`
 - `xlora.disable_scalings_logging()`
 - `xlora.enable_scalings_logging()`
+- `xlora.flush_log_scalings(path: str)`
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> PeftModel`
 - `xlora.get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]`
 - `xlora.print_scalings_predictions(n_predictions_lifetime: int)`
