@@ -68,9 +68,9 @@ def set_scalings(value: Tensor) -> None:
 def set_scalings_lifetime(value: Tensor, n_accesses_lifetime: int) -> None:
     global _scalings
     """
-    Sets the scaling states to a Tensor. The scaling states will have a lifetime of n accesses.
+    Sets the scaling states to a Tensor. The scaling states will have a lifetime of n forward passes.
 
-    A tensor with 2 dim is expected: (batch_size, num_layers, num_classes)
+    A tensor with 3 dim is expected: (batch_size, num_layers, num_classes)
     """
     assert value.ndim == 3
     _scalings = _xLoRAScalingsWithLifetime(value, _scalings.value, n_accesses_lifetime)  # type: ignore
