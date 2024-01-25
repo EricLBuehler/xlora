@@ -30,7 +30,7 @@ See the [examples](examples) folder for some examples of how to get started with
 - `xlora.print_scalings_predictions(n_predictions_lifetime: int)`
   - Print the scalings predictions for the next n forward passes of the model.
 - `xlora.print_trainable_parameters(model: PeftModel)`
-  - Print the trainable and non-trainable paramters for the given model, including with the xLoRA components.
+  - Print the trainable and non-trainable parameters for the given model, including with the xLoRA components.
 - `xlora.set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int)`
   - Set the scalings to a specific value for the next n forward passes of the model. **Work in progress**
 - `PeftModel.set_use_trainable_adapters(use_trainable_adapters: bool)`

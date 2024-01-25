@@ -229,9 +229,11 @@ def enable_scalings_logging():
 
 def disable_scalings_logging():
     """
-    Disable scalings logging.
+    Disable scalings logging, clearing the log.
     """
     xlora_classifier.set_scalings_logging(False)
+    classifier = xlora_state.get_xlora_classifier()
+    classifier.log_scalings = []
 
 
 def flush_log_scalings(path: str):
