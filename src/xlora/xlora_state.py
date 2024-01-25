@@ -14,6 +14,9 @@ class _xLoRAScalings:
     def value(self) -> Tensor:
         return self.inner
 
+    def inc_forward(self):
+        ...
+
 
 class _xLoRAScalingsWithLifetime(_xLoRAScalings):
     def __init__(self, inner: Tensor, old_scalings: Tensor, n_accesses_lifetime: int) -> None:
@@ -25,11 +28,14 @@ class _xLoRAScalingsWithLifetime(_xLoRAScalings):
     @property
     @override
     def value(self) -> Tensor:
-        self.n_accesses += 1
         result = super().value
         if self.n_accesses >= self.n_accesses_lifetime:
             self.inner = self.old_scalings
         return result
+
+    @override
+    def inc_forward(self):
+        self.n_accesses += 1
 
 
 _scalings: Optional[_xLoRAScalings] = None
@@ -41,6 +47,11 @@ def get_scalings() -> Tensor:
     """
     assert _scalings is not None
     return _scalings.value
+
+
+def inc_forward_scalings():
+    assert _scalings is not None
+    _scalings.inc_forward()
 
 
 def set_scalings(value: Tensor) -> None:
