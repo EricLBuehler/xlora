@@ -17,25 +17,23 @@ class _xLoRAScalings:
     def inc_forward(self):
         ...
 
+    def is_alive(self) -> bool:
+        return False
+
 
 class _xLoRAScalingsWithLifetime(_xLoRAScalings):
-    def __init__(self, inner: Tensor, old_scalings: Tensor, n_accesses_lifetime: int) -> None:
+    def __init__(self, inner: Tensor, n_accesses_lifetime: int) -> None:
         super().__init__(inner)
-        self.old_scalings = old_scalings
         self.n_accesses_lifetime = n_accesses_lifetime
         self.n_accesses = 0
-
-    @property
-    @override
-    def value(self) -> Tensor:
-        result = super().value
-        if self.n_accesses >= self.n_accesses_lifetime:
-            self.inner = self.old_scalings
-        return result
 
     @override
     def inc_forward(self):
         self.n_accesses += 1
+
+    @override
+    def is_alive(self) -> bool:
+        return self.n_accesses < self.n_accesses_lifetime
 
 
 _scalings: Optional[_xLoRAScalings] = None
@@ -57,12 +55,13 @@ def inc_forward_scalings():
 def set_scalings(value: Tensor) -> None:
     global _scalings
     """
-    Sets the scaling states to a Tensor.
+    Sets the scaling states to a Tensor. If the scalings with a lifetime are still alive then the scalings will not be overwritten.
 
     A tensor with 3 dim is expected: (batch_size, num_layers, num_classes)
     """
     assert value.ndim == 3
-    _scalings = _xLoRAScalings(value)
+    if _scalings is None or not _scalings.is_alive():
+        _scalings = _xLoRAScalings(value)
 
 
 def set_scalings_lifetime(value: Tensor, n_accesses_lifetime: int) -> None:
