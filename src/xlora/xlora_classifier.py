@@ -257,3 +257,4 @@ class xLoRAClassifier(nn.Module):
         result = torch.cat(self.log_scalings, dim=0)
         npy = result.numpy()
         numpy.save(path, npy)
+        self.log_scalings = []

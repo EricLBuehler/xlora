@@ -26,5 +26,28 @@ See the [examples](examples) folder for some examples of how to get started with
 - `xlora.set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int)`
 - `PeftModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
 
+### Scalings Logging
+```python
+# Load model...
+
+# Load xlora...
+
+xlora.enable_scalings_logging()
+
+# Forward passes...
+
+xlora.flush_log_scalings(path)
+```
+
+### Set trainability of adapters
+```python
+# Load model... 
+
+# Load xlora...
+
+trainability = ...
+model.set_use_trainable_adapters(trainability)
+```
+
 ## Installation
 Pending a pip release, `git clone` this repository and run `pip install -e .`.
