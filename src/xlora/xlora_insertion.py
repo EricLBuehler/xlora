@@ -95,12 +95,14 @@ class BaseTunerWrapper:
 
     def forward(self, *args, **kwargs):
         if "_xlora_classifier_inhibitor_flag" not in kwargs:
-            print("Forward called with _xlora_classifier_inhibitor_flag")
             self.classifier.forward(*args, **kwargs)
         else:
-            print("Forward called withOUT _xlora_classifier_inhibitor_flag")
             del kwargs["_xlora_classifier_inhibitor_flag"]
         return self.model(*args, **kwargs)
+
+    def generate(self, *args, **kwargs):
+        self.classifier.forward(*args, **kwargs)
+        return self.model.generate(*args, **kwargs)
 
 
 class PeftModelWrapper:
