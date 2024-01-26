@@ -104,7 +104,12 @@ class BaseTunerWrapper:
     def generate(self, *args, **kwargs):
         kwargs_modified = kwargs.copy()
         kwargs_modified = {
-            k: v for k, v in kwargs_modified.items() if k in inspect.signature(self.model.forward).parameters
+            k: v
+            for k, v in kwargs_modified.items()
+            if (
+                k in inspect.signature(self.model.forward).parameters
+                or k in inspect.signature(self.classifier.forward).parameters
+            )
         }
         self.classifier.forward(*args, **kwargs_modified)
         return self.model.generate(*args, **kwargs)
