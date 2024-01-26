@@ -107,10 +107,12 @@ class PeftModelWrapper:
         base_model: PeftModel,
         base_model_save: Callable[..., None],
         config: xLoRAConfig,
+        base_model_get_nb_trainable_parameters: Callable[..., Tuple[int, int]],
     ):
         self.model = base_model
         self.base_model_save = base_model_save
         self.config = config
+        self.base_model_get_nb_trainable_parameters = base_model_get_nb_trainable_parameters
 
     def print_scalings_predictions(self, n_predictions_lifetime: int):
         """

@@ -102,7 +102,9 @@ def add_xlora_to_model(
     base_model_wrapper = BaseTunerWrapper(model_peft.base_model, xlora_classifier)
     model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
-    peft_model_wrapper = PeftModelWrapper(model_peft, model_peft.save_pretrained, xlora_config)
+    peft_model_wrapper = PeftModelWrapper(
+        model_peft, model_peft.save_pretrained, xlora_config, model_peft.get_nb_trainable_parameters
+    )
     model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
 
     assert not hasattr(model_peft, "set_use_trainable_adapters")
