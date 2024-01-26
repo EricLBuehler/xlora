@@ -1,4 +1,5 @@
 import collections
+import inspect
 import json
 import os
 from typing import Any, Callable, List, Optional, Tuple, Union
@@ -101,7 +102,11 @@ class BaseTunerWrapper:
         return self.model(*args, **kwargs)
 
     def generate(self, *args, **kwargs):
-        self.classifier.forward(*args, **kwargs)
+        kwargs_modified = kwargs.copy()
+        kwargs_modified = {
+            k: v for k, v in kwargs_modified.items() if k in inspect.signature(self.model.forward).parameters
+        }
+        self.classifier.forward(*args, **kwargs_modified)
         return self.model.generate(*args, **kwargs)
 
 
