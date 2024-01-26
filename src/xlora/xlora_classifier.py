@@ -123,6 +123,7 @@ class xLoRAClassifier(nn.Module):
                     torch.ones(batch_size, self.n_layers, self.n_classes, requires_grad=True) / self.n_classes
                 )  # TODO(EricLBuehler): is the requires_grad=True necessary?
 
+                print("Running the scaling pass..")
                 result: ModelOutput = model.forward(
                     *args,
                     input_ids=input_ids,
@@ -130,6 +131,7 @@ class xLoRAClassifier(nn.Module):
                     _xlora_classifier_inhibitor_flag=True,
                     **kwargs,
                 )
+                print("Done running the scaling pass..")
 
                 # NOTE(EricLBuehler): not implemented
                 """
