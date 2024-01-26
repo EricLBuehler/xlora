@@ -11,31 +11,6 @@ from transformers.modeling_outputs import (  # type: ignore
 
 from .xlora_config import xLoRAConfig
 
-_n_predictions_lifetime: int = 0
-_scalings_logging: bool = False
-
-
-def get_n_predictions_lifetime() -> int:
-    global _n_predictions_lifetime
-    """
-    Reads the n predictions lifetime.
-    """
-    assert _n_predictions_lifetime is not None
-    return _n_predictions_lifetime
-
-
-def set_n_predictions_lifetime(value: int) -> None:
-    global _n_predictions_lifetime
-    """
-    Sets the n predictions lifetime.
-    """
-    _n_predictions_lifetime = value
-
-
-def set_scalings_logging(value: bool):
-    global _scalings_logging
-    _scalings_logging = value
-
 
 class xLoRAClassifier(nn.Module):
     """
@@ -59,20 +34,25 @@ class xLoRAClassifier(nn.Module):
         self.log_scalings: List[torch.Tensor] = []
         self.softmax = torch.nn.Softmax(dim=-1)
 
+        self.n_predictions_lifetime = 0
+        self.scalings_logging = False
+
         dtype = next(model.parameters()).dtype
         if config.enable_relu_and_dropout:
-            bias_flag=True #turn on bias if using ReLU 
+            bias_flag = True  # turn on bias if using ReLU
         else:
-            bias_flag=False
+            bias_flag = False
 
         self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.xlora_depth == 1:
-            if config.layerwise_scalings: #bias=False if we have just one layer
+            if config.layerwise_scalings:  # bias=False if we have just one layer
                 self.last = nn.Linear(config.hidden_size, n_classes * n_layers, bias=False).to(config.device).to(dtype)
             else:
                 self.last = nn.Linear(config.hidden_size, n_classes, bias=False).to(config.device).to(dtype)
         elif self.config.xlora_depth == 2:
-            self.inner.append(nn.Linear(config.hidden_size, config.xlora_size, bias=bias_flag).to(config.device).to(dtype))
+            self.inner.append(
+                nn.Linear(config.hidden_size, config.xlora_size, bias=bias_flag).to(config.device).to(dtype)
+            )
 
             if config.enable_relu_and_dropout:
                 self.inner.append(nn.ReLU())
@@ -84,7 +64,9 @@ class xLoRAClassifier(nn.Module):
                 self.last = nn.Linear(config.xlora_size, n_classes, bias=False).to(config.device).to(dtype)
         else:
             assert self.config.xlora_depth > 0
-            self.inner.append(nn.Linear(config.hidden_size, config.xlora_size, bias=bias_flag).to(config.device).to(dtype))
+            self.inner.append(
+                nn.Linear(config.hidden_size, config.xlora_size, bias=bias_flag).to(config.device).to(dtype)
+            )
 
             if config.enable_relu_and_dropout:
                 self.inner.append(nn.ReLU())
@@ -100,7 +82,9 @@ class xLoRAClassifier(nn.Module):
                     self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
 
             if config.layerwise_scalings:
-                self.last = nn.Linear(config.xlora_size, n_classes * n_layers, bias=bias_flag).to(config.device).to(dtype)
+                self.last = (
+                    nn.Linear(config.xlora_size, n_classes * n_layers, bias=bias_flag).to(config.device).to(dtype)
+                )
             else:
                 self.last = nn.Linear(config.xlora_size, n_classes, bias=bias_flag).to(config.device).to(dtype)
 
@@ -111,9 +95,9 @@ class xLoRAClassifier(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         *args,
         **kwargs,
-    ) -> torch.Tensor:
+    ):
         """
-        Using the hidden states of the model, predict `n_classes` LoRA alpha values.
+        Using the hidden states of the model, predict `n_classes` LoRA alpha values. Sets the scalings.
         """
         if input_ids is not None:
             batch_size = input_ids.shape[0]
@@ -134,11 +118,16 @@ class xLoRAClassifier(nn.Module):
 
                 kwargs["output_hidden_states"] = True
                 kwargs["return_dict"] = True
+
+                model.internal_xlora_scalings = (  # type: ignore
+                    torch.ones(batch_size, self.n_layers, self.n_classes, requires_grad=True) / self.n_classes
+                )  # TODO(EricLBuehler): is the requires_grad=True necessary?
+
                 result: ModelOutput = model.forward(
                     *args,
                     input_ids=input_ids,
                     inputs_embeds=inputs_embeds,
-                    _xlora_classifier_inhibitor_flag=batch_size,
+                    _xlora_classifier_inhibitor_flag=True,
                     **kwargs,
                 )
 
@@ -216,15 +205,15 @@ class xLoRAClassifier(nn.Module):
         if self.config.enable_softmax:
             scalings = self.softmax(scalings)
 
-        n_pred_life = get_n_predictions_lifetime()
-        if n_pred_life > 0:
+        if self.n_predictions_lifetime > 0:
             print(f"Scaling predictions: {scalings}")
-            set_n_predictions_lifetime(n_pred_life - 1)
+            self.n_predictions_lifetime -= 1
 
-        if _scalings_logging:
+        if self.scalings_logging:
             self.log_scalings.append(scalings.unsqueeze(0))
 
-        return scalings
+        # Set the scalings
+        self.model.internal_xlora_scalings = scalings  # type: ignore
 
     def get_nb_trainable_parameters(self):
         # https://github.com/huggingface/peft/blob/main/src/peft/mixed_model.py#L156
@@ -252,7 +241,7 @@ class xLoRAClassifier(nn.Module):
         return trainable_params, all_param
 
     def flush_log_scalings(self, path: str):
-        if not _scalings_logging:
+        if not self.scalings_logging:
             raise Exception("Scalings logging is disabled!")
 
         if len(self.log_scalings) == 0:

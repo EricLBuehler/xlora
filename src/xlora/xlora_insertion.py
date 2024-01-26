@@ -11,9 +11,8 @@ from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
 
+from xlora.xlora_classifier import xLoRAClassifier
 from xlora.xlora_config import xLoRAConfig
-
-from . import xlora_state
 
 
 class xLoRALayer:
@@ -25,12 +24,14 @@ class xLoRALayer:
 
     def __init__(
         self,
+        model: PeftModel,
         target: lora.LoraLayer,
         target_forward: Callable[..., Any],
         scaling_keys: List[str],
         layer_number: int,
         top_k_lora: Optional[int] = None,
     ) -> None:
+        self.model = model
         self.target_forward = target_forward
         self.target = target
         self.scaling_keys = scaling_keys
@@ -46,7 +47,7 @@ class xLoRALayer:
 
         outputs: List[Tensor] = []
         if self.top_k_lora is None:
-            for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
+            for batch_x, batch_scalings in zip(x, self.model.internal_xlora_scalings):  # type: ignore
                 layer_batch_scalings = batch_scalings[self.layer_number]
                 if not self.disabled:
                     self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
@@ -57,7 +58,7 @@ class xLoRALayer:
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
         else:
-            for batch_x, batch_scalings in zip(x, xlora_state.get_scalings()):
+            for batch_x, batch_scalings in zip(x, self.model.internal_xlora_scalings):  # type: ignore
                 layer_batch_scalings = batch_scalings[self.layer_number]
 
                 (topk_scalings, indices) = torch.topk(input=layer_batch_scalings, k=self.top_k_lora)
@@ -88,10 +89,15 @@ class xLoRALayer:
 
 
 class BaseTunerWrapper:
-    def __init__(self, base_model: BaseTuner):
+    def __init__(self, base_model: BaseTuner, classifier: xLoRAClassifier):
         self.model = base_model.model
+        self.classifier = classifier
 
     def forward(self, *args, **kwargs):
+        if "_xlora_classifier_inhibitor_flag" not in kwargs:
+            self.classifier.forward(*args, **kwargs)
+        else:
+            del kwargs["_xlora_classifier_inhibitor_flag"]
         return self.model(*args, **kwargs)
 
 
@@ -105,6 +111,63 @@ class PeftModelWrapper:
         self.model = base_model
         self.base_model_save = base_model_save
         self.config = config
+
+    def print_scalings_predictions(self, n_predictions_lifetime: int):
+        """
+        Print the scaling states for the next n classifier predictions (i.e. forward, generate passes)
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        classifier.n_predictions_lifetime = n_predictions_lifetime
+
+    def enable_scalings_logging(self):
+        """
+        Enable scalings logging.
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        classifier.scalings_logging = True
+
+    def disable_scalings_logging(self):
+        """
+        Disable scalings logging, clearing the log.
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        classifier.scalings_logging = False
+        classifier.log_scalings = []
+
+    def flush_log_scalings(self, path: str):
+        """
+        Write the scalings log (a tensor of shape (num_logged, batch_size, n_layers, n_classes)) to the specified path.
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        classifier.flush_log_scalings(path)
+
+    def get_nb_trainable_parameters(self) -> Tuple[int, int]:
+        """
+        Returns the number of trainable parameters and number of all parameters in the model.
+        """
+        model_trainable_params, model_all_param = self.model.get_nb_trainable_parameters()
+
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        xlora_trainable_params, xlora_all_param = classifier.get_nb_trainable_parameters()
+
+        trainable_params, all_param = (
+            (model_trainable_params + xlora_trainable_params),
+            (model_all_param + xlora_all_param),
+        )
+
+        return trainable_params, all_param
+
+    def print_trainable_parameters(self):
+        """
+        Prints the number of trainable parameters in the model, including of the xLoRA classifier.
+        """
+        trainable_params, all_param = self.get_nb_trainable_parameters()
+
+        print(
+            f"trainable params: {trainable_params:,d} || "
+            f"all params: {all_param:,d} || "
+            f"trainable%: {100 * trainable_params / all_param:.4f}"
+        )
 
     def set_use_trainable_adapters(self, use_trainable_adapters: bool):
         """
@@ -144,7 +207,7 @@ class PeftModelWrapper:
         if is_main_process:
             os.makedirs(save_directory, exist_ok=True)
 
-        classifier = xlora_state.get_xlora_classifier()
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
 
         conf = classifier.config.__dict__.copy()
         del conf["device"]

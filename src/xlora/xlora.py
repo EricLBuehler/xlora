@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import peft
 import safetensors  # type: ignore
@@ -10,7 +10,6 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
-from . import xlora_classifier, xlora_state
 from .xlora_classifier import xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import BaseTunerWrapper, PeftModelWrapper, xLoRALayer
@@ -33,6 +32,7 @@ def convert_layers_to_xlora(
             if not scaling_keys:
                 scaling_keys = list(module.scaling.keys())  # NOTE(EricLBuehler): Python 3.7: dicts are ordered!
             new_layer = xLoRALayer(
+                model=base,
                 target=module,
                 target_forward=module.forward,
                 scaling_keys=scaling_keys,
@@ -71,35 +71,6 @@ def add_xlora_to_model(
             The new model.
     """
 
-    def hook(module, *args, **kwargs) -> None:
-        args_real = args[0]
-        kwargs_real: dict = args[1]
-        kwargs_real.update(kwargs)
-
-        xlora_classifier = xlora_state.get_xlora_classifier()
-
-        if "_xlora_classifier_inhibitor_flag" in kwargs_real:
-            batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
-
-            del kwargs_real["_xlora_classifier_inhibitor_flag"]
-
-            xlora_state.set_scalings(
-                torch.ones(
-                    batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes, requires_grad=True
-                )  # TODO(EricLBuehler): is the requires_grad=True necessary?
-                / xlora_classifier.n_classes
-            )
-
-            return
-
-        xlora_scalings = xlora_classifier.forward(
-            *args_real,
-            **kwargs_real,
-        )
-        xlora_state.set_scalings(xlora_scalings)
-
-    model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
-
     use_trainable_adapters = xlora_config.use_trainable_adapters
     adapters_items = iter(tqdm.tqdm(adapters.items()))
     first_item = next(adapters_items)
@@ -118,15 +89,6 @@ def add_xlora_to_model(
 
     assert isinstance(model_peft.base_model, peft.tuners.lora.LoraModel)
 
-    base_model_wrapper = BaseTunerWrapper(model_peft.base_model)
-    model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
-
-    peft_model_wrapper = PeftModelWrapper(model_peft, model_peft.save_pretrained, xlora_config)
-    model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
-
-    assert not hasattr(model_peft, "set_use_trainable_adapters")
-    model_peft.set_use_trainable_adapters = peft_model_wrapper.set_use_trainable_adapters  # type: ignore
-
     total_swapped = convert_layers_to_xlora(
         model_peft,
         verbose,
@@ -135,7 +97,39 @@ def add_xlora_to_model(
 
     n_classes = len(adapters)
     xlora_classifier = xLoRAClassifier(model_peft, xlora_config, n_classes, total_swapped)
-    xlora_state.set_xlora_classifier(xlora_classifier)
+
+    # Setup the internal state
+    base_model_wrapper = BaseTunerWrapper(model_peft.base_model, xlora_classifier)
+    model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
+
+    peft_model_wrapper = PeftModelWrapper(model_peft, model_peft.save_pretrained, xlora_config)
+    model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
+
+    assert not hasattr(model_peft, "set_use_trainable_adapters")
+    model_peft.set_use_trainable_adapters = peft_model_wrapper.set_use_trainable_adapters  # type: ignore
+
+    assert not hasattr(model_peft, "print_scalings_predictions")
+    model_peft.print_scalings_predictions = peft_model_wrapper.print_scalings_predictions  # type: ignore
+
+    assert not hasattr(model_peft, "enable_scalings_logging")
+    model_peft.enable_scalings_logging = peft_model_wrapper.enable_scalings_logging  # type: ignore
+
+    assert not hasattr(model_peft, "disable_scalings_logging")
+    model_peft.disable_scalings_logging = peft_model_wrapper.disable_scalings_logging  # type: ignore
+
+    assert not hasattr(model_peft, "flush_log_scalings")
+    model_peft.flush_log_scalings = peft_model_wrapper.flush_log_scalings  # type: ignore
+
+    model_peft.get_nb_trainable_parameters = peft_model_wrapper.get_nb_trainable_parameters  # type: ignore
+
+    model_peft.print_trainable_parameters = peft_model_wrapper.print_trainable_parameters  # type: ignore
+
+    # Setup the model internal state
+    assert not hasattr(model_peft, "internal_xlora_classifier")
+    model_peft.internal_xlora_classifier = xlora_classifier
+
+    assert not hasattr(model_peft, "internal_xlora_scalings")
+    model_peft.internal_xlora_scalings = None  # type: ignore
 
     return model_peft
 
@@ -189,7 +183,7 @@ def from_pretrained(
         adapters_dict = adapters
 
     model_peft = add_xlora_to_model(model, xlora_config, adapters_dict, verbose)
-    classifier = xlora_state.get_xlora_classifier()
+    classifier: xLoRAClassifier = model_peft.internal_xlora_classifier  # type: ignore
     if from_safetensors:
         state_dict = safetensors.torch.load_file(  # type: ignore
             os.path.join(load_directory, "xlora_classifier.safetensors"),
@@ -200,75 +194,3 @@ def from_pretrained(
     classifier.load_state_dict(state_dict)
 
     return model_peft
-
-
-def set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int):
-    """
-    Sets the scaling states to a Tensor. The scaling states will have a lifetime of n accesses. Following
-    this, the value of the scalings will be reset to the previous value. If the original value had a lifetime,
-    only the value which it would have if it were read at assignment-time will be preserved.
-
-    A tensor with 2 dim is expected: (batch_size, num_classes)
-    """
-    xlora_state.set_scalings_lifetime(value, n_accesses_lifetime)
-
-
-def print_scalings_predictions(n_predictions_lifetime: int):
-    """
-    Print the scaling states for the next n classifier predictions (i.e. forward, generate passes)
-    """
-    xlora_classifier.set_n_predictions_lifetime(n_predictions_lifetime)
-
-
-def enable_scalings_logging():
-    """
-    Enable scalings logging.
-    """
-    xlora_classifier.set_scalings_logging(True)
-
-
-def disable_scalings_logging():
-    """
-    Disable scalings logging, clearing the log.
-    """
-    xlora_classifier.set_scalings_logging(False)
-    classifier = xlora_state.get_xlora_classifier()
-    classifier.log_scalings = []
-
-
-def flush_log_scalings(path: str):
-    """
-    Write the scalings log (a tensor of shape (num_logged, batch_size, n_layers, n_classes)) to the specified path.
-    """
-    classfier = xlora_state.get_xlora_classifier()
-    classfier.flush_log_scalings(path)
-
-
-def get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]:
-    """
-    Returns the number of trainable parameters and number of all parameters in the model.
-    """
-    model_trainable_params, model_all_param = model.get_nb_trainable_parameters()
-
-    xlora_classifier = xlora_state.get_xlora_classifier()
-    xlora_trainable_params, xlora_all_param = xlora_classifier.get_nb_trainable_parameters()
-
-    trainable_params, all_param = (
-        (model_trainable_params + xlora_trainable_params),
-        (model_all_param + xlora_all_param),
-    )
-
-    return trainable_params, all_param
-
-
-def print_trainable_parameters(model: PeftModel):
-    """
-    Prints the number of trainable parameters in the model, including of the xLoRA classifier.
-    """
-    trainable_params, all_param = get_nb_trainable_parameters(model)
-
-    print(
-        f"trainable params: {trainable_params:,d} || "
-        f"all params: {all_param:,d} || "
-        f"trainable%: {100 * trainable_params / all_param:.4f}"
-    )
