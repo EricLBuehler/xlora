@@ -17,22 +17,20 @@ See the [examples](examples) folder for some examples of how to get started with
 ## API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> PeftModel`
   - Convert a model to an xLoRA-model, instantiating the classifier and adapters.
-- `xlora.disable_scalings_logging()`
+- `PeftModel.disable_scalings_logging()`
   - Disable scalings logging, clearing the log.
-- `xlora.enable_scalings_logging()`
+- `PeftModel.enable_scalings_logging()`
   - Enable scalings logging.
-- `xlora.flush_log_scalings(path: str)`
+- `PeftModel.flush_log_scalings(path: str)`
   - Save the log scalings as a tensor of `[log_length, batch_size, num_layers, num_scalings]`. Flushes the log.
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> PeftModel`
   - Load the xLoRA classifier and potentially adapters. This should be called after an xLoRA classifier has been trained.
-- `xlora.get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]`
+- `PeftModel.get_nb_trainable_parameters() -> Tuple[int, int]`
   - Return a tuple `(num_trainable, num_all_params)`
-- `xlora.print_scalings_predictions(n_predictions_lifetime: int)`
+- `PeftModel.print_scalings_predictions(n_predictions_lifetime: int)`
   - Print the scalings predictions for the next n forward passes of the model.
-- `xlora.print_trainable_parameters(model: PeftModel)`
+- `PeftModel.print_trainable_parameters()`
   - Print the trainable and non-trainable parameters for the given model, including with the xLoRA components.
-- `xlora.set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int)`
-  - Set the scalings to a specific value for the next n forward passes of the model.
 - `PeftModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
   - Set the trainability of the adapters.
 
