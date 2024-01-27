@@ -143,7 +143,7 @@ class PeftModelWrapper:
         """
         Returns the number of trainable parameters and number of all parameters in the model.
         """
-        model_trainable_params, model_all_param = self.model.get_nb_trainable_parameters()
+        model_trainable_params, model_all_param = self.base_model_get_nb_trainable_parameters()
 
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         xlora_trainable_params, xlora_all_param = classifier.get_nb_trainable_parameters()

@@ -52,4 +52,4 @@ class xLoRAConfig:
     xlora_dropout_p: float = 0.2
     stop_token_id: Optional[int] = None
     use_trainable_adapters: bool = False
-    use_mean_pool: bool = True
+    use_mean_pool: bool = False  # TODO(all): test
