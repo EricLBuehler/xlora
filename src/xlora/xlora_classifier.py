@@ -38,10 +38,6 @@ class xLoRAClassifier(nn.Module):
         self.scalings_logging = False
 
         dtype = next(model.parameters()).dtype
-        # if config.enable_relu_and_dropout:
-        #    bias_flag = True  # turn on bias if using ReLU
-        # else:
-        #    bias_flag = False
         bias_flag = config.use_bias
 
         self.inner: nn.ModuleList = nn.ModuleList([])
