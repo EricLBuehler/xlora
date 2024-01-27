@@ -1,5 +1,4 @@
 import collections
-import inspect
 import json
 import os
 from typing import Any, Callable, List, Optional, Tuple, Union
@@ -95,24 +94,7 @@ class BaseTunerWrapper:
         self.classifier = classifier
 
     def forward(self, *args, **kwargs):
-        if "_xlora_classifier_inhibitor_flag" not in kwargs:
-            self.classifier.forward(*args, **kwargs)
-        else:
-            del kwargs["_xlora_classifier_inhibitor_flag"]
-        return self.model(*args, **kwargs)
-
-    def generate(self, *args, **kwargs):
-        kwargs_modified = kwargs.copy()
-        kwargs_modified = {
-            k: v
-            for k, v in kwargs_modified.items()
-            if (
-                k in inspect.signature(self.model.forward).parameters
-                or k in inspect.signature(self.classifier.forward).parameters
-            )
-        }
-        self.classifier.forward(*args, **kwargs_modified)
-        return self.model.generate(*args, **kwargs)
+        return self.model(*args, **kwargs)  # Important to *call* the model
 
 
 class PeftModelWrapper:

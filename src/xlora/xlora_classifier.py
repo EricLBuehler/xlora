@@ -38,16 +38,18 @@ class xLoRAClassifier(nn.Module):
         self.scalings_logging = False
 
         dtype = next(model.parameters()).dtype
-        #if config.enable_relu_and_dropout:
+        # if config.enable_relu_and_dropout:
         #    bias_flag = True  # turn on bias if using ReLU
-        #else:
+        # else:
         #    bias_flag = False
-        bias_flag=config.use_bias
+        bias_flag = config.use_bias
 
         self.inner: nn.ModuleList = nn.ModuleList([])
         if self.config.xlora_depth == 1:
             if config.layerwise_scalings:  # bias=False if we have just one layer
-                self.last = nn.Linear(config.hidden_size, n_classes * n_layers, bias=bias_flag).to(config.device).to(dtype)
+                self.last = (
+                    nn.Linear(config.hidden_size, n_classes * n_layers, bias=bias_flag).to(config.device).to(dtype)
+                )
             else:
                 self.last = nn.Linear(config.hidden_size, n_classes, bias=bias_flag).to(config.device).to(dtype)
         elif self.config.xlora_depth == 2:
@@ -60,7 +62,9 @@ class xLoRAClassifier(nn.Module):
                 self.inner.append(nn.Dropout(p=config.xlora_dropout_p))
 
             if config.layerwise_scalings:
-                self.last = nn.Linear(config.xlora_size, n_classes * n_layers, bias=bias_flag).to(config.device).to(dtype)
+                self.last = (
+                    nn.Linear(config.xlora_size, n_classes * n_layers, bias=bias_flag).to(config.device).to(dtype)
+                )
             else:
                 self.last = nn.Linear(config.xlora_size, n_classes, bias=bias_flag).to(config.device).to(dtype)
         else:
@@ -96,7 +100,7 @@ class xLoRAClassifier(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         *args,
         **kwargs,
-    ):
+    ) -> torch.Tensor:
         """
         Using the hidden states of the model, predict `n_classes` LoRA alpha values. Sets the scalings.
         """
@@ -128,7 +132,7 @@ class xLoRAClassifier(nn.Module):
                     *args,
                     input_ids=input_ids,
                     inputs_embeds=inputs_embeds,
-                    _xlora_classifier_inhibitor_flag=True,
+                    _xlora_classifier_inhibitor_flag=batch_size,
                     **kwargs,
                 )
 
@@ -213,8 +217,7 @@ class xLoRAClassifier(nn.Module):
         if self.scalings_logging:
             self.log_scalings.append(scalings.unsqueeze(0))
 
-        # Set the scalings
-        self.model.internal_xlora_scalings = scalings  # type: ignore
+        return scalings
 
     def get_nb_trainable_parameters(self):
         # https://github.com/huggingface/peft/blob/main/src/peft/mixed_model.py#L156
