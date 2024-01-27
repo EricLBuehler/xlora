@@ -71,19 +71,29 @@ def add_xlora_to_model(
             The new model.
     """
 
-    def hook(model, *args, **kwargs) -> None:
+    use_trainable_adapters = xlora_config.use_trainable_adapters
+    adapters_items = iter(tqdm.tqdm(adapters.items()))
+    first_item = next(adapters_items)
+    model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], is_trainable=use_trainable_adapters)
+
+    for adapter_name, model_id in adapters_items:
+        model_peft.load_adapter(model_id, adapter_name, is_trainable=use_trainable_adapters)
+
+    model_peft.base_model.set_adapter(list(adapters.keys()))
+
+    def hook(module, *args, **kwargs) -> None:
         args_real = args[0]
         kwargs_real: dict = args[1]
         kwargs_real.update(kwargs)
 
-        xlora_classifier: xLoRAClassifier = model.internal_xlora_classifier
+        xlora_classifier: xLoRAClassifier = model_peft.internal_xlora_classifier
 
         if "_xlora_classifier_inhibitor_flag" in kwargs_real:
             batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
 
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 
-            model.internal_xlora_scalings = (
+            model_peft.internal_xlora_scalings = (
                 torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes, requires_grad=True)
                 / xlora_classifier.n_classes
             )  # TODO(EricLBuehler): is the requires_grad=True necessary?
@@ -94,19 +104,9 @@ def add_xlora_to_model(
             *args_real,
             **kwargs_real,
         )
-        model.internal_xlora_scalings = xlora_scalings  # Set the scalings
+        model_peft.internal_xlora_scalings = xlora_scalings  # Set the scalings
 
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
-
-    use_trainable_adapters = xlora_config.use_trainable_adapters
-    adapters_items = iter(tqdm.tqdm(adapters.items()))
-    first_item = next(adapters_items)
-    model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], is_trainable=use_trainable_adapters)
-
-    for adapter_name, model_id in adapters_items:
-        model_peft.load_adapter(model_id, adapter_name, is_trainable=use_trainable_adapters)
-
-    model_peft.base_model.set_adapter(list(adapters.keys()))
 
     if not use_trainable_adapters:
         model_peft.base_model.eval()
