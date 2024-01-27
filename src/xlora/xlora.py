@@ -94,7 +94,8 @@ def add_xlora_to_model(
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 
             model_peft.internal_xlora_scalings = (
-                torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes, requires_grad=True)
+                torch.ones(batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes, #requires_grad=True
+                           )
                 / xlora_classifier.n_classes
             )  # TODO(EricLBuehler): is the requires_grad=True necessary?
 
