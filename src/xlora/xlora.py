@@ -86,7 +86,7 @@ def add_xlora_to_model(
         kwargs_real: dict = args[1]
         kwargs_real.update(kwargs)
 
-        xlora_classifier: xLoRAClassifier = model_peft.internal_xlora_classifier
+        xlora_classifier: xLoRAClassifier = model_peft.internal_xlora_classifier  # type: ignore
 
         if "_xlora_classifier_inhibitor_flag" in kwargs_real:
             batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
