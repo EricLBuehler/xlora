@@ -47,7 +47,7 @@ class xLoRAClassifier(nn.Module):
         self.log_scalings: List[torch.Tensor] = []
         #self.softmax = torch.nn.Softmax(dim=-1)
         self.softmax = TemperatureScaledSoftmax (temperature=self.config.softmax_temperature)
-         
+          
 
         self.n_predictions_lifetime = 0
         self.scalings_logging = False
@@ -219,9 +219,8 @@ class xLoRAClassifier(nn.Module):
         scalings = logits.reshape(batch_size, self.n_layers, self.n_classes)
 
         if self.config.enable_softmax:
-            #scalings = self.softmax(scalings)
-            scalings = self.temperature_scaled_softmax(scalings )
-
+            scalings = self.softmax(scalings)
+            
         if self.n_predictions_lifetime > 0:
             print(f"Scaling predictions: {scalings}")
             self.n_predictions_lifetime -= 1
