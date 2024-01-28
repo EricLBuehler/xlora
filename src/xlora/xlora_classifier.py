@@ -219,8 +219,8 @@ class xLoRAClassifier(nn.Module):
         scalings = logits.reshape(batch_size, self.n_layers, self.n_classes)
 
         if self.config.enable_softmax:
-            scalings = self.softmax(scalings)
-            scalings = temperature_scaled_softmax(scalings, )
+            #scalings = self.softmax(scalings)
+            scalings = self.temperature_scaled_softmax(scalings )
 
         if self.n_predictions_lifetime > 0:
             print(f"Scaling predictions: {scalings}")
