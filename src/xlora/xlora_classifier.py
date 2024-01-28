@@ -11,7 +11,20 @@ from transformers.modeling_outputs import (  # type: ignore
 
 from .xlora_config import xLoRAConfig
 
+import torch.nn.functional as F
 
+class TemperatureScaledSoftmax(nn.Module):
+    def __init__(self, temperature=1.0):
+        super().__init__()
+        self.temperature = temperature
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self, logits):
+        # Scale logits by the temperature
+        scaled_logits = logits / self.temperature
+        # Apply softmax to the scaled logits
+        return self.softmax(scaled_logits)
+    
 class xLoRAClassifier(nn.Module):
     """
     A classifier to select LoRA layers for xLoRA.
@@ -32,7 +45,9 @@ class xLoRAClassifier(nn.Module):
         self.n_layers = n_layers
         self.config = config
         self.log_scalings: List[torch.Tensor] = []
-        self.softmax = torch.nn.Softmax(dim=-1)
+        #self.softmax = torch.nn.Softmax(dim=-1)
+        self.softmax = TemperatureScaledSoftmax (temperature=self.config.softmax_temperature)
+         
 
         self.n_predictions_lifetime = 0
         self.scalings_logging = False
@@ -205,6 +220,7 @@ class xLoRAClassifier(nn.Module):
 
         if self.config.enable_softmax:
             scalings = self.softmax(scalings)
+            scalings = temperature_scaled_softmax(scalings, )
 
         if self.n_predictions_lifetime > 0:
             print(f"Scaling predictions: {scalings}")

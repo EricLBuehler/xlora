@@ -16,6 +16,7 @@ class xLoRAConfig:
             Device for the X-LoRA classifier.
         enable_softmax (`bool`, *optional*, defaults to `True`):
             Enable softmax application for the X-LoRA classifier.
+        softmax_temperature (`float`): softmax temperature, lower yields sharper predictions
         layerwise_scalings (`bool`, *optional*, defaults to `False`):
             Generate scalings for each layer.
         top_k_lora (`int`, *optional*, defaults to None):
@@ -53,3 +54,4 @@ class xLoRAConfig:
     stop_token_id: Optional[int] = None
     use_trainable_adapters: bool = False
     use_mean_pool: bool = False  # TODO(all): test
+    softmax_temperature: float = 1.0
