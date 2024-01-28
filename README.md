@@ -15,14 +15,46 @@ See the [examples](examples) folder for some examples of how to get started with
 
 ## API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> PeftModel`
-- `xlora.disable_scalings_logging()`
-- `xlora.enable_scalings_logging()`
+  - Convert a model to an xLoRA-model, instantiating the classifier and adapters.
+- `PeftModel.disable_scalings_logging()`
+  - Disable scalings logging, clearing the log.
+- `PeftModel.enable_scalings_logging()`
+  - Enable scalings logging.
+- `PeftModel.flush_log_scalings(path: str)`
+  - Save the log scalings as a tensor of `[log_length, batch_size, num_layers, num_scalings]`. Flushes the log.
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> PeftModel`
-- `xlora.get_nb_trainable_parameters(model: PeftModel) -> Tuple[int, int]`
-- `xlora.print_scalings_predictions(n_predictions_lifetime: int)`
-- `xlora.print_trainable_parameters(model: PeftModel)`
-- `xlora.set_scalings_with_lifetime(value: torch.Tensor, n_accesses_lifetime: int)`
+  - Load the xLoRA classifier and potentially adapters. This should be called after an xLoRA classifier has been trained.
+- `PeftModel.get_nb_trainable_parameters() -> Tuple[int, int]`
+  - Return a tuple `(num_trainable, num_all_params)`
+- `PeftModel.print_scalings_predictions(n_predictions_lifetime: int)`
+  - Print the scalings predictions for the next n forward passes of the model.
+- `PeftModel.print_trainable_parameters()`
+  - Print the trainable and non-trainable parameters for the given model, including with the xLoRA components.
 - `PeftModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
+  - Set the trainability of the adapters.
+
+### Scalings Logging
+```python
+# Load model...
+
+# Load xlora...
+
+xlora.enable_scalings_logging()
+
+# Forward passes...
+
+xlora.flush_log_scalings(path)
+```
+
+### Set trainability of adapters
+```python
+# Load model... 
+
+# Load xlora...
+
+trainability = ...
+model.set_use_trainable_adapters(trainability)
+```
 
 ## Installation
 Pending a pip release, `git clone` this repository and run `pip install -e .`.
