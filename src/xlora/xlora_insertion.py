@@ -10,43 +10,9 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
-from typing_extensions import override
 
 from xlora.xlora_classifier import Number, xLoRAClassifier
 from xlora.xlora_config import xLoRAConfig
-
-
-class _xLoRAScalings:
-    def __init__(self, inner: torch.Tensor) -> None:
-        self.inner = inner
-
-    @property
-    def value(self) -> torch.Tensor:
-        return self.inner
-
-
-class _xLoRAScalingsWithLifetime(_xLoRAScalings):
-    def __init__(self, inner: torch.Tensor, n_passes_lifetime: int, old: torch.Tensor) -> None:
-        super().__init__(inner)
-        n_layers = inner.shape[1]
-        self.n_passes_lifetime = n_passes_lifetime * n_layers
-        self.n_accesses = 0
-        self.old = old
-
-    @property
-    @override
-    def value(self) -> torch.Tensor:
-        if self.is_alive():
-            self._inc_forward()
-            return self.inner
-        else:
-            return self.old
-
-    def _inc_forward(self):
-        self.n_accesses += 1
-
-    def is_alive(self) -> bool:
-        return self.n_accesses < self.n_passes_lifetime
 
 
 class xLoRALayer:
@@ -115,7 +81,7 @@ class xLoRALinearLayer(xLoRALayer):
 
         outputs: List[Tensor] = []
         if self.top_k_lora is None:
-            for batch_x, batch_scalings in zip(x, self.model.internal_xlora_scalings.value):  # type: ignore
+            for batch_x, batch_scalings in zip(x, self.model.internal_xlora_scalings):  # type: ignore
                 layer_batch_scalings = batch_scalings[self.layer_number]
                 if not self.disabled:
                     self.scale_adapters(self.target, layer_batch_scalings, self.scaling_keys)
@@ -126,7 +92,7 @@ class xLoRALinearLayer(xLoRALayer):
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
         else:
-            for batch_x, batch_scalings in zip(x, self.model.internal_xlora_scalings.value):  # type: ignore
+            for batch_x, batch_scalings in zip(x, self.model.internal_xlora_scalings):  # type: ignore
                 layer_batch_scalings = batch_scalings[self.layer_number]
 
                 (topk_scalings, indices) = torch.topk(input=layer_batch_scalings, k=self.top_k_lora)
