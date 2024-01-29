@@ -26,6 +26,12 @@ class TemperatureScaledSoftmax(nn.Module):
         return self.softmax(scaled_logits)
 
 
+@dataclass
+class InhibitorFlagPayload:
+    batch_size: int
+    override_scaling_pass_value: Number
+
+
 class xLoRAClassifier(nn.Module):
     """
     A classifier to select LoRA layers for xLoRA.
@@ -48,6 +54,7 @@ class xLoRAClassifier(nn.Module):
         self.log_scalings: List[torch.Tensor] = []
         # self.softmax = torch.nn.Softmax(dim=-1)
         self.softmax = TemperatureScaledSoftmax(temperature=self.config.softmax_temperature)
+        self.override_scaling_pass_value: Number = 1 / n_classes
 
         self.n_predictions_lifetime = 0
         self.scalings_logging = False
@@ -266,3 +273,9 @@ class xLoRAClassifier(nn.Module):
         npy = result.numpy()
         numpy.save(path, npy)
         self.log_scalings = []
+
+    def set_override_scaling_pass_value(self, value: Union[Number, None]):
+        if value is None:
+            self.override_scaling_pass_value = 1 / self.n_classes
+        else:
+            self.override_scaling_pass_value = value
