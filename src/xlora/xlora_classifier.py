@@ -9,6 +9,7 @@ from transformers.modeling_outputs import (  # type: ignore
     ModelOutput,
 )
 
+from . import xlora_insertion
 from .xlora_config import xLoRAConfig
 
 
@@ -134,7 +135,7 @@ class xLoRAClassifier(nn.Module):
                 kwargs["output_hidden_states"] = True
                 kwargs["return_dict"] = True
 
-                model.internal_xlora_scalings = (  # type: ignore
+                model.internal_xlora_scalings = xlora_insertion._xLoRAScalings(  # type: ignore
                     torch.ones(batch_size, self.n_layers, self.n_classes, requires_grad=True) / self.n_classes
                 )  # TODO(EricLBuehler): is the requires_grad=True necessary?
 
