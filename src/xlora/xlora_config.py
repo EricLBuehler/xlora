@@ -19,6 +19,8 @@ class xLoRAConfig:
         softmax_temperature (`float`): softmax temperature, lower yields sharper predictions
         layerwise_scalings (`bool`, *optional*, defaults to `False`):
             Generate scalings for each layer.
+        top_k_lora (`int`, *optional*, defaults to None):
+            Sparsely select the top_k LoRA experts instead of the default dense method.
         xlora_depth (`int`, *optional*, defaults to 1):
             Depth of the X-LoRA classifier.
         xlora_size (`int`, *optional*, defaults to 32):
@@ -52,3 +54,4 @@ class xLoRAConfig:
     use_trainable_adapters: bool = False
     use_mean_pool: bool = False  # TODO(all): test
     softmax_temperature: float = 1.0
+    top_k_lora: Optional[int] = None
