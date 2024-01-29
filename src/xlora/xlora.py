@@ -40,7 +40,7 @@ def convert_layers_to_xlora(
                 top_k_lora=top_k_lora,
                 layer_number=total_swapped,
             )
-            module.forward = new_layer.forward
+            module.forward = new_layer.forward  # type: ignore
             total_swapped += 1
     if verbose:
         print(

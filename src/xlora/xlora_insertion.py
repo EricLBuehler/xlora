@@ -100,15 +100,16 @@ class xLoRALinearLayer(xLoRALayer):
         self,
         model: PeftModel,
         target: lora.Linear,
+        scaling_keys: List[str],
         target_forward: Callable[..., Any],
         layer_number: int,
         top_k_lora: Optional[int],
     ) -> None:
-        super().__init__(model, target, target_forward, layer_number, top_k_lora)
+        super().__init__(model, target, target_forward, scaling_keys, layer_number, top_k_lora)
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
-        This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
+        This method is designed to be a drop-in-replacement for the pefEt LoRA layers' .forward method.
         To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
         """
 
@@ -125,7 +126,7 @@ class xLoRALinearLayer(xLoRALayer):
                     output = self.target_forward(batch_x.unsqueeze(dim=0), *args, **kwargs)
                     outputs.append(output)
         else:
-            for batch_x, batch_scalings in zip(x, self.model.internal_xlora_scalings):  # type: ignore
+            for batch_x, batch_scalings in zip(x, self.model.internal_xlora_scalings.value):  # type: ignore
                 layer_batch_scalings = batch_scalings[self.layer_number]
 
                 (topk_scalings, indices) = torch.topk(input=layer_batch_scalings, k=self.top_k_lora)
