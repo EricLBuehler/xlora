@@ -105,7 +105,7 @@ class xLoRALinearLayer(xLoRALayer):
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
-        This method is designed to be a drop-in-replacement for the pefEt LoRA layers' .forward method.
+        This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
         To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
         """
 
