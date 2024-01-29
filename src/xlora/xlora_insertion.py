@@ -10,9 +10,43 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
+from typing_extensions import override
 
 from xlora.xlora_classifier import xLoRAClassifier
 from xlora.xlora_config import xLoRAConfig
+
+
+class _xLoRAScalings:
+    def __init__(self, inner: torch.Tensor) -> None:
+        self.inner = inner
+
+    @property
+    def value(self) -> torch.Tensor:
+        return self.inner
+
+
+class _xLoRAScalingsWithLifetime(_xLoRAScalings):
+    def __init__(self, inner: torch.Tensor, n_passes_lifetime: int, old: torch.Tensor) -> None:
+        super().__init__(inner)
+        n_layers = inner.shape[1]
+        self.n_passes_lifetime = n_passes_lifetime * n_layers
+        self.n_accesses = 0
+        self.old = old
+
+    @property
+    @override
+    def value(self) -> torch.Tensor:
+        if self.is_alive():
+            self._inc_forward()
+            return self.inner
+        else:
+            return self.old
+
+    def _inc_forward(self):
+        self.n_accesses += 1
+
+    def is_alive(self) -> bool:
+        return self.n_accesses < self.n_passes_lifetime
 
 
 class xLoRALayer:
@@ -44,7 +78,7 @@ class xLoRALayer:
 
     @staticmethod
     def get_maybe_topk_scalings(model: PeftModel, layer: int, top_k_lora: Optional[int]) -> torch.Tensor:
-        xlora_scalings: Tensor = model.internal_xlora_scalings[layer]  # type: ignore
+        xlora_scalings: Tensor = model.internal_xlora_scalings.value[layer]  # type: ignore
 
         if top_k_lora is not None:
             _, topk_indices = torch.topk(xlora_scalings, k=top_k_lora, dim=1)
@@ -207,6 +241,17 @@ class PeftModelWrapper:
         self.base_model_save = base_model_save
         self.config = config
         self.base_model_get_nb_trainable_parameters = base_model_get_nb_trainable_parameters
+
+    def set_scalings(self, input: torch.Tensor):
+        """
+        Manually set the scalings to a tensor of shape (batch_size, num_layers, num_classes).
+        The scalings will last for one forward pass.
+        """
+        self.model.internal_xlora_scalings = _xLoRAScalingsWithLifetime(  # type: ignore
+            input,
+            1,
+            self.model.internal_xlora_scalings.value,  # type: ignore
+        )
 
     def print_scalings_predictions(self, n_predictions_lifetime: int):
         """

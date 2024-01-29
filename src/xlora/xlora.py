@@ -10,6 +10,7 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
+from . import xlora_insertion
 from .xlora_classifier import xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import (
@@ -124,7 +125,7 @@ def add_xlora_to_model(
 
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 
-            model_peft.internal_xlora_scalings = (
+            model_peft.internal_xlora_scalings = xlora_insertion._xLoRAScalings(  # type: ignore
                 torch.ones(
                     batch_size,
                     xlora_classifier.n_layers,
@@ -139,7 +140,8 @@ def add_xlora_to_model(
             *args_real,
             **kwargs_real,
         )
-        model_peft.internal_xlora_scalings = xlora_scalings  # Set the scalings
+        # Set the scalings
+        model_peft.internal_xlora_scalings = xlora_insertion._xLoRAScalings(xlora_scalings)  # type: ignore
 
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
 
