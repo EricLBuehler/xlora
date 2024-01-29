@@ -11,7 +11,7 @@ from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
 from . import xlora_insertion
-from .xlora_classifier import xLoRAClassifier
+from .xlora_classifier import InhibitorFlagPayload, xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import BaseTunerWrapper, PeftModelWrapper, xLoRALayer
 
@@ -90,18 +90,27 @@ def add_xlora_to_model(
         xlora_classifier: xLoRAClassifier = model_peft.internal_xlora_classifier  # type: ignore
 
         if "_xlora_classifier_inhibitor_flag" in kwargs_real:
-            batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
+            payload: InhibitorFlagPayload = kwargs_real["_xlora_classifier_inhibitor_flag"]
 
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 
-            model_peft.internal_xlora_scalings = xlora_insertion._xLoRAScalings(  # type: ignore
-                torch.ones(
-                    batch_size,
-                    xlora_classifier.n_layers,
-                    xlora_classifier.n_classes,  # requires_grad=True
-                )
-                / xlora_classifier.n_classes
-            )  # TODO(EricLBuehler): is the requires_grad=True necessary?
+            if payload.override_scaling_pass_value is not None:
+                model_peft.internal_xlora_scalings = xlora_insertion._xLoRAScalings(  # type: ignore
+                    torch.full(
+                        (payload.batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes),
+                        payload.override_scaling_pass_value,  # requires_grad=True
+                    )
+                    / xlora_classifier.n_classes
+                )  # TODO(EricLBuehler): is the requires_grad=True necessary?
+            else:
+                model_peft.internal_xlora_scalings = xlora_insertion._xLoRAScalings(  # type: ignore
+                    torch.ones(
+                        payload.batch_size,
+                        xlora_classifier.n_layers,
+                        xlora_classifier.n_classes,  # requires_grad=True
+                    )
+                    / xlora_classifier.n_classes
+                )  # TODO(EricLBuehler): is the requires_grad=True necessary?
 
             return
 

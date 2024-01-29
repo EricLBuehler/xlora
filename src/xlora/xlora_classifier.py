@@ -1,4 +1,6 @@
+import builtins
 import typing
+from dataclasses import dataclass
 from typing import List, Optional, Union
 
 import numpy
@@ -12,6 +14,8 @@ from transformers.modeling_outputs import (  # type: ignore
 from . import xlora_insertion
 from .xlora_config import xLoRAConfig
 
+Number = Union[builtins.int, builtins.float, builtins.bool]
+
 
 class TemperatureScaledSoftmax(nn.Module):
     def __init__(self, temperature=1.0):
@@ -24,6 +28,12 @@ class TemperatureScaledSoftmax(nn.Module):
         scaled_logits = logits / self.temperature
         # Apply softmax to the scaled logits
         return self.softmax(scaled_logits)
+
+
+@dataclass
+class InhibitorFlagPayload:
+    batch_size: int
+    override_scaling_pass_value: Union[Number, None]
 
 
 class xLoRAClassifier(nn.Module):
@@ -46,8 +56,8 @@ class xLoRAClassifier(nn.Module):
         self.n_layers = n_layers
         self.config = config
         self.log_scalings: List[torch.Tensor] = []
-        # self.softmax = torch.nn.Softmax(dim=-1)
         self.softmax = TemperatureScaledSoftmax(temperature=self.config.softmax_temperature)
+        self.override_scaling_pass_value: Union[Number, None] = None
 
         self.n_predictions_lifetime = 0
         self.scalings_logging = False
@@ -143,7 +153,9 @@ class xLoRAClassifier(nn.Module):
                     *args,
                     input_ids=input_ids,
                     inputs_embeds=inputs_embeds,
-                    _xlora_classifier_inhibitor_flag=batch_size,
+                    _xlora_classifier_inhibitor_flag=InhibitorFlagPayload(
+                        batch_size=batch_size, override_scaling_pass_value=self.override_scaling_pass_value
+                    ),
                     **kwargs,
                 )
 
@@ -266,3 +278,6 @@ class xLoRAClassifier(nn.Module):
         npy = result.numpy()
         numpy.save(path, npy)
         self.log_scalings = []
+
+    def set_override_scaling_pass_value(self, value: Union[Number, None]):
+        self.override_scaling_pass_value = value
