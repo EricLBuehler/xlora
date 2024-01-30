@@ -42,11 +42,11 @@ See the [examples](examples) folder for some examples of how to get started with
 
 # Load xlora...
 
-xlora.enable_scalings_logging()
+model.enable_scalings_logging()
 
 # Forward passes...
 
-xlora.flush_log_scalings(path)
+model.flush_log_scalings(path)
 ```
 
 ### Set trainability of adapters
