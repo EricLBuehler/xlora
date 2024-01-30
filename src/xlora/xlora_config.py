@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from typing import Optional
 
@@ -16,6 +17,8 @@ class xLoRAConfig:
             Device for the X-LoRA classifier.
         enable_softmax (`bool`, *optional*, defaults to `True`):
             Enable softmax application for the X-LoRA classifier.
+        enable_softmax_topk (`bool`, *optional*, defaults to `False` or `True` if `top_k_lora` is specified):
+            Enable softmax application for the top-k LoRA adapters. Mutually exclusive to `enable_softmax`.
         softmax_temperature (`float`): softmax temperature, lower yields sharper predictions
         layerwise_scalings (`bool`, *optional*, defaults to `False`):
             Generate scalings for each layer.
@@ -44,6 +47,7 @@ class xLoRAConfig:
     hidden_size: int
     device: torch.device
     enable_softmax: bool = True
+    enable_softmax_topk: bool = False
     layerwise_scalings: bool = False
     xlora_depth: int = 1
     xlora_size: int = 2048
@@ -52,6 +56,20 @@ class xLoRAConfig:
     xlora_dropout_p: float = 0.2
     stop_token_id: Optional[int] = None
     use_trainable_adapters: bool = False
-    use_mean_pool: bool = False  # TODO(all): test
+    use_mean_pool: bool = False  # TODO(all): test. See #9
     softmax_temperature: float = 1.0
     top_k_lora: Optional[int] = None
+
+    def __post_init__(self):
+        self.enable_softmax_topk = self.top_k_lora is not None or self.enable_softmax_topk
+
+        if self.enable_softmax_topk and self.enable_softmax:
+            warnings.warn(
+                "`enable_softmax_topk` and `enable_softmax` are both enabled. This will result in worse performance."
+            )
+
+        if self.use_mean_pool:
+            warnings.warn("`use_mean_pool` implementaton is currently in testing. See #9.")
+
+        if self.top_k_lora is not None and self.top_k_lora < 1:
+            warnings.warn("`top_k_lora` value must be at least 1.")
