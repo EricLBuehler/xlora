@@ -67,7 +67,7 @@ class xLoRAConfig:
             )
 
         if self.use_mean_pool:
-            warnings.warn("`use_mean_pool` implementaton is currently in testing. See #9.")
+            warnings.warn("`use_mean_pool` implementation is currently in testing. See #9.")
 
         if self.top_k_lora is not None and self.top_k_lora < 1:
             warnings.warn("`top_k_lora` value must be at least 1.")
