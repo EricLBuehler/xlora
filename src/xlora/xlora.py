@@ -10,7 +10,6 @@ from peft.peft_model import PeftModel
 from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
-from . import xlora_insertion
 from .xlora_classifier import InhibitorFlagPayload, xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import BaseTunerWrapper, PeftModelWrapper, xLoRALayer
@@ -106,7 +105,7 @@ def add_xlora_to_model(
             **kwargs_real,
         )
         # Set the scalings
-        model_peft.internal_xlora_scalings = xlora_insertion._xLoRAScalings(xlora_scalings)  # type: ignore
+        model_peft.internal_xlora_scalings = xlora_scalings
 
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
 
@@ -150,6 +149,9 @@ def add_xlora_to_model(
 
     assert not hasattr(model_peft, "flush_log_scalings")
     model_peft.flush_log_scalings = peft_model_wrapper.flush_log_scalings  # type: ignore
+
+    assert not hasattr(model_peft, "set_scaling_pass_value")
+    model_peft.set_scaling_pass_value = peft_model_wrapper.set_scaling_pass_value  # type: ignore
 
     model_peft.get_nb_trainable_parameters = peft_model_wrapper.get_nb_trainable_parameters  # type: ignore
 
