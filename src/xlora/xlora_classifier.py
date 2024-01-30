@@ -56,7 +56,6 @@ class xLoRAClassifier(nn.Module):
         self.n_layers = n_layers
         self.config = config
         self.log_scalings: List[torch.Tensor] = []
-        # self.softmax = torch.nn.Softmax(dim=-1)
         self.softmax = TemperatureScaledSoftmax(temperature=self.config.softmax_temperature)
         self.override_scaling_pass_value: Number = 1 / n_classes
 
@@ -154,7 +153,9 @@ class xLoRAClassifier(nn.Module):
                     *args,
                     input_ids=input_ids,
                     inputs_embeds=inputs_embeds,
-                    _xlora_classifier_inhibitor_flag=batch_size,
+                    _xlora_classifier_inhibitor_flag=InhibitorFlagPayload(
+                        batch_size=batch_size, override_scaling_pass_value=self.override_scaling_pass_value
+                    ),
                     **kwargs,
                 )
 
