@@ -45,7 +45,6 @@ class xLoRAConfig:
     device: torch.device
     enable_softmax: bool = True
     layerwise_scalings: bool = False
-    top_k_lora: Optional[int] = None
     xlora_depth: int = 1
     xlora_size: int = 2048
     enable_relu_and_dropout: bool = False
@@ -55,3 +54,4 @@ class xLoRAConfig:
     use_trainable_adapters: bool = False
     use_mean_pool: bool = False  # TODO(all): test
     softmax_temperature: float = 1.0
+    top_k_lora: Optional[int] = None

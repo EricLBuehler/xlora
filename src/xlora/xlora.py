@@ -12,13 +12,19 @@ from transformers import PreTrainedModel  # type: ignore
 
 from .xlora_classifier import InhibitorFlagPayload, xLoRAClassifier
 from .xlora_config import xLoRAConfig
-from .xlora_insertion import BaseTunerWrapper, PeftModelWrapper, xLoRALayer
+from .xlora_insertion import (
+    BaseTunerWrapper,
+    PeftModelWrapper,
+    xLoRAConv2dLayer,
+    xLoRAEmbeddingLayer,
+    xLoRALinearLayer,
+)
 
 
 def convert_layers_to_xlora(
     base: PeftModel,
     verbose: bool,
-    top_k_lora: Optional[int] = None,
+    top_k_lora: Optional[int],
 ) -> int:
     """
     Returns the number of swapped layers.
@@ -31,16 +37,41 @@ def convert_layers_to_xlora(
         if isinstance(module, lora.LoraLayer):
             if not scaling_keys:
                 scaling_keys = list(module.scaling.keys())  # NOTE(EricLBuehler): Python 3.7: dicts are ordered!
-            new_layer = xLoRALayer(
+
+        if isinstance(module, lora.Linear):
+            assert scaling_keys is not None
+            new_layer: Union[xLoRALinearLayer, xLoRAEmbeddingLayer, xLoRAConv2dLayer] = xLoRALinearLayer(
                 model=base,
                 target=module,
                 target_forward=module.forward,
-                scaling_keys=scaling_keys,
-                top_k_lora=top_k_lora,
                 layer_number=total_swapped,
+                top_k_lora=top_k_lora,
             )
-            module.forward = new_layer.forward  # type: ignore
+            module.forward = new_layer.forward  # type: ignore[method-assign]
             total_swapped += 1
+        elif isinstance(module, lora.Embedding):
+            assert scaling_keys is not None
+            new_layer = xLoRAEmbeddingLayer(
+                model=base,
+                target=module,
+                target_forward=module.forward,
+                layer_number=total_swapped,
+                top_k_lora=top_k_lora,
+            )
+            module.forward = new_layer.forward  # type: ignore[method-assign]
+            total_swapped += 1
+        elif isinstance(module, lora.Conv2d):
+            assert scaling_keys is not None
+            new_layer = xLoRAConv2dLayer(
+                model=base,
+                target=module,
+                target_forward=module.forward,
+                layer_number=total_swapped,
+                top_k_lora=top_k_lora,
+            )
+            module.forward = new_layer.forward  # type: ignore[method-assign]
+            total_swapped += 1
+
     if verbose:
         print(
             f"LoRA -> xLoRA complete: Swapped {total_swapped} LoRA layers (out of {len(list(base.modules()))} modules)."
