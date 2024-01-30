@@ -11,7 +11,6 @@ from transformers.modeling_outputs import (  # type: ignore
     ModelOutput,
 )
 
-from . import xlora_insertion
 from .xlora_config import xLoRAConfig
 
 Number = Union[builtins.int, builtins.float, builtins.bool]
