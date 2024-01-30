@@ -111,7 +111,7 @@ class PeftModelWrapper:
         self.config = config
         self.base_model_get_nb_trainable_parameters = base_model_get_nb_trainable_parameters
 
-    def set_scalings(self, value: Union[Number, None]):
+    def set_scaling_pass_value(self, value: Union[Number, None]):
         """
         Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default
         scalings.
