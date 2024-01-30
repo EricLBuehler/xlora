@@ -40,39 +40,6 @@ class xLoRALayer:
         self.disabled = False
         self.top_k_lora = top_k_lora
 
-    @staticmethod
-    def apply_scalings_to_x(x: torch.Tensor, scalings_layer: torch.Tensor, adapter: int) -> torch.Tensor:
-        scalings = scalings_layer[:, adapter].unsqueeze(1).unsqueeze(1)
-        return x * scalings
-
-    @staticmethod
-    def get_maybe_topk_scalings(model: PeftModel, layer: int, top_k_lora: Optional[int]) -> torch.Tensor:
-        xlora_scalings: Tensor = model.internal_xlora_scalings[layer]  # type: ignore
-
-        if top_k_lora is not None:
-            _, topk_indices = torch.topk(xlora_scalings, k=top_k_lora, dim=1)
-
-            # Mask the topk to True, the rest to False
-            mask = torch.zeros_like(xlora_scalings, dtype=torch.bool)
-            mask.scatter_(1, topk_indices, True)
-
-            xlora_scalings = xlora_scalings * mask.to(xlora_scalings.dtype)
-
-        return xlora_scalings
-
-
-class xLoRALinearLayer(xLoRALayer):
-    def __init__(
-        self,
-        model: PeftModel,
-        target: lora.Linear,
-        scaling_keys: List[str],
-        target_forward: Callable[..., Any],
-        layer_number: int,
-        top_k_lora: Optional[int],
-    ) -> None:
-        super().__init__(model, target, target_forward, scaling_keys, layer_number, top_k_lora)
-
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
         This method is designed to be a drop-in-replacement for the peft LoRA layers' .forward method.
