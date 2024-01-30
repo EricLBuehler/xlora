@@ -56,7 +56,9 @@ class xLoRALayer:
 
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         if classifier.config.enable_softmax_topk:
-            xlora_scalings = torch.softmax(xlora_scalings, dim=-1)
+            nonzero_mask = xlora_scalings != 0
+            softmax_res_nonzero = torch.softmax(xlora_scalings[nonzero_mask], dim=-1)
+            xlora_scalings[nonzero_mask] = softmax_res_nonzero
 
         return xlora_scalings
 

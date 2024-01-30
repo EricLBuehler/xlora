@@ -18,7 +18,7 @@ class xLoRAConfig:
         enable_softmax (`bool`, *optional*, defaults to `True`):
             Enable softmax application for the X-LoRA classifier.
         enable_softmax_topk (`bool`, *optional*, defaults to `False`):
-            Enable softmax application for the top-k LoRA adapters. Mutually exclusive to `enable_softmax`.
+            Enable softmax application for the top-k LoRA adapters. Mutually exclusive to `enable_softmax` and must only be set if `top_k_lora` is.
         softmax_temperature (`float`): softmax temperature, lower yields sharper predictions
         layerwise_scalings (`bool`, *optional*, defaults to `False`):
             Generate scalings for each layer.
@@ -61,6 +61,9 @@ class xLoRAConfig:
     top_k_lora: Optional[int] = None
 
     def __post_init__(self):
+        if self.enable_softmax_topk and self.top_k_lora is None:
+            warnings.warn("`enable_softmax_topk` enabled `top_k_lora` is not set")
+
         if self.enable_softmax_topk and self.enable_softmax:
             warnings.warn(
                 "`enable_softmax_topk` and `enable_softmax` are both enabled. This will result in worse performance."
