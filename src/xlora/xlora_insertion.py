@@ -44,7 +44,7 @@ class xLoRALayer:
 
     @staticmethod
     def get_maybe_topk_scalings(model: PeftModel, layer: int, top_k_lora: Optional[int]) -> torch.Tensor:
-        xlora_scalings: Tensor = model.internal_xlora_scalings.value[:, layer, :]  # type: ignore
+        xlora_scalings: Tensor = model.internal_xlora_scalings[:, layer, :]  # type: ignore
 
         if top_k_lora is not None:
             _, topk_indices = torch.topk(xlora_scalings, k=top_k_lora, dim=1)
