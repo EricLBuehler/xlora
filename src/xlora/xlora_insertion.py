@@ -42,12 +42,11 @@ class xLoRALayer:
         scalings = scalings_layer[:, adapter].unsqueeze(1).unsqueeze(1)
         return x * scalings
 
-    @staticmethod
-    def get_maybe_topk_scalings(model: PeftModel, layer: int, top_k_lora: Optional[int]) -> torch.Tensor:
-        xlora_scalings: Tensor = model.internal_xlora_scalings[:, layer, :]  # type: ignore
+    def get_maybe_topk_scalings(self) -> torch.Tensor:
+        xlora_scalings: Tensor = self.model.internal_xlora_scalings[:, self.layer_number, :]  # type: ignore
 
-        if top_k_lora is not None:
-            _, topk_indices = torch.topk(xlora_scalings, k=top_k_lora, dim=1)
+        if self.top_k_lora is not None:
+            _, topk_indices = torch.topk(xlora_scalings, k=self.top_k_lora, dim=1)
 
             # Mask the topk to True, the rest to False
             mask = torch.zeros_like(xlora_scalings, dtype=torch.bool)
@@ -55,7 +54,7 @@ class xLoRALayer:
 
             xlora_scalings = xlora_scalings * mask.to(xlora_scalings.dtype)
 
-        classifier: xLoRAClassifier = model.internal_xlora_classifier  # type: ignore
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         if classifier.config.enable_softmax_topk:
             xlora_scalings = torch.softmax(xlora_scalings, dim=-1)
 
@@ -80,7 +79,7 @@ class xLoRALinearLayer(xLoRALayer):
         """
 
         previous_dtype = x.dtype
-        xlora_scalings = self.get_maybe_topk_scalings(self.model, self.layer_number, self.top_k_lora)
+        xlora_scalings = self.get_maybe_topk_scalings()
 
         if self.target.disable_adapters:
             if self.target.merged:
@@ -123,7 +122,7 @@ class xLoRAEmbeddingLayer(xLoRALayer):
         To use it, a bound method must be created (bound to an instance of the xLoRALayer class).
         """
 
-        xlora_scalings = self.get_maybe_topk_scalings(self.model, self.layer_number, self.top_k_lora)
+        xlora_scalings = self.get_maybe_topk_scalings()
 
         # TODO: no dtype conversion here, unlike in Linear, is that correct?
         if self.target.disable_adapters:
@@ -165,7 +164,7 @@ class xLoRAConv2dLayer(xLoRALayer):
         """
 
         previous_dtype = x.dtype
-        xlora_scalings = self.get_maybe_topk_scalings(self.model, self.layer_number, self.top_k_lora)
+        xlora_scalings = self.get_maybe_topk_scalings()
 
         if self.target.disable_adapters:
             if self.target.merged:
