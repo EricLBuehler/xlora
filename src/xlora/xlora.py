@@ -11,7 +11,7 @@ from peft.tuners import lora
 from transformers import PreTrainedModel  # type: ignore
 
 from . import xlora_insertion
-from .xlora_classifier import xLoRAClassifier
+from .xlora_classifier import InhibitorFlagPayload, xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import (
     BaseTunerWrapper,
@@ -121,7 +121,7 @@ def add_xlora_to_model(
         xlora_classifier: xLoRAClassifier = model_peft.internal_xlora_classifier  # type: ignore
 
         if "_xlora_classifier_inhibitor_flag" in kwargs_real:
-            batch_size = kwargs_real["_xlora_classifier_inhibitor_flag"]
+            payload: InhibitorFlagPayload = kwargs_real["_xlora_classifier_inhibitor_flag"]
 
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 

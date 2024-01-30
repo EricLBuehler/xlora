@@ -11,7 +11,7 @@ from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
 from torch import Tensor
 
-from xlora.xlora_classifier import xLoRAClassifier
+from xlora.xlora_classifier import Number, xLoRAClassifier
 from xlora.xlora_config import xLoRAConfig
 
 
@@ -208,16 +208,13 @@ class PeftModelWrapper:
         self.config = config
         self.base_model_get_nb_trainable_parameters = base_model_get_nb_trainable_parameters
 
-    def set_scalings(self, input: torch.Tensor):
+    def set_scalings(self, value: Union[Number, None]):
         """
-        Manually set the scalings to a tensor of shape (batch_size, num_layers, num_classes).
-        The scalings will last for one forward pass.
+        Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default
+        scalings.
         """
-        self.model.internal_xlora_scalings = _xLoRAScalingsWithLifetime(  # type: ignore
-            input,
-            1,
-            self.model.internal_xlora_scalings.value,  # type: ignore
-        )
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        classifier.set_override_scaling_pass_value(value)
 
     def print_scalings_predictions(self, n_predictions_lifetime: int):
         """

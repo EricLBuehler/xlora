@@ -32,8 +32,8 @@ See the [examples](examples) folder for some examples of how to get started with
   - Print the trainable and non-trainable parameters for the given model, including with the xLoRA components.
 - `PeftModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
   - Set the trainability of the adapters.
-- `PeftModel.set_scalings(self, input: torch.Tensor)`
-  - Manually set the scalings to a tensor of shape (batch_size, num_layers, num_classes). They will last for one forward pass.
+- `PeftModel.set_scalings(self, value: Union[Number, None])`
+  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default  scalings.
 
 ### Scalings Logging
 ```python

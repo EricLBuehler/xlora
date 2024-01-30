@@ -1,4 +1,6 @@
+import builtins
 import typing
+from dataclasses import dataclass
 from typing import List, Optional, Union
 
 import numpy
@@ -11,6 +13,8 @@ from transformers.modeling_outputs import (  # type: ignore
 
 from . import xlora_insertion
 from .xlora_config import xLoRAConfig
+
+Number = Union[builtins.int, builtins.float, builtins.bool]
 
 
 class TemperatureScaledSoftmax(nn.Module):
