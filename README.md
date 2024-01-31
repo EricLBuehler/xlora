@@ -23,7 +23,9 @@ See the [examples](examples) folder for some examples of how to get started with
 - `PeftModel.flush_log_scalings(path: str)`
   - Write the scalings log (a tensor of shape (num_logged, batch_size, seq_len, n_layers, n_classes)) to the specified path.
     If the tensor cannot be constructed, multiple files are written containing tensors of shape
-    (num_logged, batch_size, seq_len, n_layers, n_classes) such that each file contains one sequence length.
+    (num_logged, batch_size, seq_len, n_layers, n_classes) such that each file contains one sequence length. Additionally a JSON
+    file is outputted containing the mapping from each sequence log file to the index of the contained tensor so that one may reconstruct
+    the log order.
     The file specified should not contain an extension.
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> PeftModel`
   - Load the xLoRA classifier and potentially adapters. This should be called after an xLoRA classifier has been trained.

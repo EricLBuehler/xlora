@@ -1,7 +1,8 @@
 import builtins
+import json
 import typing
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy
 import torch
@@ -263,19 +264,28 @@ class xLoRAClassifier(nn.Module):
         if len(self.log_scalings) == 0:
             raise ValueError("No log scalings to flush.")
 
-        seqlens_map: Dict[int, List[torch.Tensor]] = {}
-        for scaling in self.log_scalings:
+        seqlens_map: Dict[int, Tuple[List[int], List[torch.Tensor]]] = {}
+        for i, scaling in enumerate(self.log_scalings):
             seq_len = scaling.shape[0]
             if seq_len not in seqlens_map:
-                seqlens_map[seq_len] = [scaling]
+                seqlens_map[seq_len] = ([i], [scaling])
             else:
-                seqlens_map[seq_len].append(scaling)
+                seqlens_map[seq_len][0].append(i)
+                seqlens_map[seq_len][1].append(scaling)
 
         if len(seqlens_map) == 1:
             self.save_scalings(path, self.log_scalings)
         else:
+            indices_map: Dict[str, List[int]] = {}
             for seq_len, scalings in seqlens_map.items():
-                self.save_scalings(f"{path}-{seq_len}", scalings)
+                indices = scalings[0]
+                indices_map[f"{path}-{seq_len}.npy"] = indices
+
+                scalings_list = scalings[1]
+                self.save_scalings(f"{path}-{seq_len}", scalings_list)
+
+            with open(f"{path}-mapping.json", "w") as f:
+                f.write(json.dumps(indices_map))
 
         self.log_scalings = []
 
