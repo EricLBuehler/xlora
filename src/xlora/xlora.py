@@ -301,6 +301,6 @@ def load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]:
     else:
         npy_arr = numpy.load(path)
         torch_arr = torch.from_numpy(npy_arr)
-        output.append(torch_arr.split(1, dim=0))
+        output.extend(torch_arr.split(1, dim=0))
 
     return output
