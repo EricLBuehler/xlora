@@ -23,6 +23,10 @@ from .xlora_insertion import (
 )
 
 
+class xLoRAModel(PeftModel, PeftModelWrapper):
+    pass
+
+
 def convert_layers_to_xlora(
     base: PeftModel,
     verbose: bool,
@@ -87,7 +91,7 @@ def add_xlora_to_model(
     xlora_config: xLoRAConfig,
     adapters: Dict[str, str],
     verbose: bool = False,
-) -> PeftModel:
+) -> xLoRAModel:
     """
     This method converts all LoRA adapters to xLoRA layers, and it is one of the intended entrypoints
     for use of xLoRA. All LoRA adapters will be frozen, and the xLoRAClassifier is initialized.
@@ -100,7 +104,7 @@ def add_xlora_to_model(
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
     Returns:
-        model (`PeftModel`):
+        model (`xLoRAModel`):
             The new model.
     """
 
@@ -200,7 +204,7 @@ def add_xlora_to_model(
     assert not hasattr(model_peft, "internal_xlora_scalings")
     model_peft.internal_xlora_scalings = None  # type: ignore
 
-    return model_peft
+    return model_peft  # type: ignore
 
 
 def from_pretrained(
@@ -210,7 +214,7 @@ def from_pretrained(
     device: str,
     verbose: bool = False,
     from_safetensors: bool = True,
-) -> PeftModel:
+) -> xLoRAModel:
     """
     Loads a pretrained classifier and potentially adapters from the specified folder while initializing the model. This is the counterpart to `save_pretrained`.
     If trainable adapters was enabled, those saved adapters will be loaded.
@@ -233,7 +237,7 @@ def from_pretrained(
         from_safetensors (`bool`, *optional*, defaults to True):
             Whether to load the classifier weights from a .pt or .safetensors file.
     Returns:
-        model (`PeftModel`):
+        model (`xLoRAModel`):
             The new model.
     """
 
