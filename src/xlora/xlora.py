@@ -86,7 +86,7 @@ def add_xlora_to_model(
     model: PreTrainedModel,
     xlora_config: xLoRAConfig,
     adapters: Dict[str, str],
-    verbose: bool,
+    verbose: bool = False,
 ) -> PeftModel:
     """
     This method converts all LoRA adapters to xLoRA layers, and it is one of the intended entrypoints
@@ -95,7 +95,7 @@ def add_xlora_to_model(
     Args:
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place.
-        verbose (`bool`):
+        verbose (`bool`, defaults to `False`):
             Display tqdm, total swapping count.
         adapters (`dict`):
             Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
@@ -105,7 +105,10 @@ def add_xlora_to_model(
     """
 
     use_trainable_adapters = xlora_config.use_trainable_adapters
-    adapters_items = iter(tqdm.tqdm(adapters.items()))
+    if verbose:
+        adapters_items = iter(tqdm.tqdm(adapters.items()))
+    else:
+        adapters_items = iter(adapters.items())
     first_item = next(adapters_items)
     model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], is_trainable=use_trainable_adapters)
 
@@ -204,8 +207,8 @@ def from_pretrained(
     load_directory: str,
     model: PreTrainedModel,
     adapters: Union[List[str], Dict[str, str]],
-    verbose: bool,
     device: str,
+    verbose: bool = False,
     from_safetensors: bool = True,
 ) -> PeftModel:
     """
@@ -223,7 +226,7 @@ def from_pretrained(
         adapters (`list` or `dict`):
             List of adapter names (the keys of the adapters `dict` in `add_xlora_to_model`) OR Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
             Specify the list if the adapters were trainable.
-        verbose (`bool`):
+        verbose (`bool`, defaults to `False`):
             Display tqdm, total swapping count.
         device (`str`):
             Device of the model, used to load the classifier.
