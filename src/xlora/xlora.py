@@ -285,9 +285,9 @@ def load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]:
         maxindex = -1
 
         if verbose:
-            iterator = tqdm.tqdm(mapping.items())
+            iterator = iter(tqdm.tqdm(mapping.items()))
         else:
-            iterator = mapping.items()
+            iterator = iter(mapping.items())
 
         for file, indices in iterator:
             npy_arr = numpy.load(file)
