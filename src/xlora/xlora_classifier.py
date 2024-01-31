@@ -33,6 +33,7 @@ class TemperatureScaledSoftmax(nn.Module):
 @dataclass
 class InhibitorFlagPayload:
     batch_size: int
+    seq_len: int
     override_scaling_pass_value: Number
 
 
@@ -155,7 +156,9 @@ class xLoRAClassifier(nn.Module):
                     input_ids=input_ids,
                     inputs_embeds=inputs_embeds,
                     _xlora_classifier_inhibitor_flag=InhibitorFlagPayload(
-                        batch_size=batch_size, override_scaling_pass_value=self.override_scaling_pass_value
+                        batch_size=batch_size,
+                        seq_len=seq_len,
+                        override_scaling_pass_value=self.override_scaling_pass_value,
                     ),
                     **kwargs,
                 )
