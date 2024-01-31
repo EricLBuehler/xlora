@@ -280,11 +280,9 @@ class xLoRAClassifier(nn.Module):
             self.save_scalings(path, self.log_scalings)
         else:
             indices_map: Dict[str, List[int]] = {}
-            for seq_len, scalings in seqlens_map.items():
-                indices = scalings[0]
+            for seq_len, (indices, scalings_list) in seqlens_map.items():
                 indices_map[f"{path}-{seq_len}.npy"] = indices
 
-                scalings_list = scalings[1]
                 self.save_scalings(f"{path}-{seq_len}", scalings_list)
 
             with open(f"{path}-mapping.json", "w") as f:
