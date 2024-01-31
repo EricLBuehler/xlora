@@ -255,7 +255,7 @@ class xLoRAClassifier(nn.Module):
         return trainable_params, all_param
 
     @staticmethod
-    def save_scalings(file: str, scalings: List[torch.Tensor]):
+    def _save_scalings(file: str, scalings: List[torch.Tensor]):
         result = torch.cat(scalings, dim=0)
         npy = result.numpy()
         numpy.save(file, npy)
@@ -277,13 +277,13 @@ class xLoRAClassifier(nn.Module):
                 seqlens_map[seq_len][1].append(scaling)
 
         if len(seqlens_map) == 1:
-            self.save_scalings(path, self.log_scalings)
+            self._save_scalings(path, self.log_scalings)
         else:
             indices_map: Dict[str, List[int]] = {}
             for seq_len, (indices, scalings_list) in seqlens_map.items():
                 indices_map[f"{path}-{seq_len}.npy"] = indices
 
-                self.save_scalings(f"{path}-{seq_len}", scalings_list)
+                self._save_scalings(f"{path}-{seq_len}", scalings_list)
 
             with open(f"{path}-mapping.json", "w") as f:
                 f.write(json.dumps(indices_map))
