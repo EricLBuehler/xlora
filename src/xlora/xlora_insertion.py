@@ -248,7 +248,7 @@ class PeftModelWrapper:
 
     def flush_log_scalings(self, path: str):
         """
-        Write the scalings log (a tensor of shape (num_logged, batch_size, n_layers, n_classes)) to the specified path.
+        Write the scalings log (a tensor of shape (num_logged, batch_size, seq_len, n_layers, n_classes)) to the specified path.
         """
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         classifier.flush_log_scalings(path)

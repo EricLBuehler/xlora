@@ -21,7 +21,7 @@ See the [examples](examples) folder for some examples of how to get started with
 - `PeftModel.enable_scalings_logging()`
   - Enable scalings logging.
 - `PeftModel.flush_log_scalings(path: str)`
-  - Save the log scalings as a tensor of `[log_length, batch_size, num_layers, num_scalings]`. Flushes the log.
+  - Save the log scalings as a tensor of `[log_length, batch_size, seq_len, num_layers, num_scalings]`. Flushes the log.
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> PeftModel`
   - Load the xLoRA classifier and potentially adapters. This should be called after an xLoRA classifier has been trained.
 - `PeftModel.get_nb_trainable_parameters() -> Tuple[int, int]`
