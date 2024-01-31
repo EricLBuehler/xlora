@@ -2,6 +2,7 @@ import json
 import os
 from typing import Dict, List, Optional, Union
 
+import numpy
 import peft
 import safetensors  # type: ignore
 import torch
@@ -258,3 +259,17 @@ def from_pretrained(
     classifier.load_state_dict(state_dict)
 
     return model_peft
+
+
+def load_scalings_log(path: str) -> List[torch.Tensor]:
+    """
+    Load the scalings log.
+
+    Args:
+        path (`str`):
+            The path provided to `flush_log_scalings`.
+    """
+
+    npy_arr = numpy.load(path)
+    torch_arr = torch.from_numpy(npy_arr)
+    return torch_arr.split(1, dim=0)
