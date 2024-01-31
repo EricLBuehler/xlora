@@ -20,7 +20,6 @@ See the [examples](examples) folder for some examples of how to get started with
   - Disable scalings logging, clearing the log.
 - `PeftModel.enable_scalings_logging()`
   - Enable scalings logging. Each time a forward pass occurs, the predicted scalings will be logged.
-  - Enable scalings logging. Each time a forward pass occurs, the predicted scalings will be logged.
 - `PeftModel.flush_log_scalings(path: str)`
   - Write the scalings log (a tensor of shape (num_logged, batch_size, seq_len, n_layers, n_classes)) to the specified path.
     If the tensor cannot be constructed, multiple files are written containing tensors of shape
@@ -43,27 +42,43 @@ See the [examples](examples) folder for some examples of how to get started with
 - `xlora.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
 
-### Scalings Logging
+### Application
 ```python
-# Load model...
+import xlora
+import torch
+from transformers import AutoConfig, AutoModelForCausalLM
 
-# Load xlora...
+model = AutoModelForCausalLM.from_pretrained(
+    "mistralai/Mistral-7B-Instruct-v0.1", 
+    trust_remote_code=True,
+    device_map="cuda:0",
+    torch_dtype=torch.bfloat16,
+    )
 
+config = AutoConfig.from_pretrained(
+    "mistralai/Mistral-7B-Instruct-v0.1",
+    trust_remote_code=True,
+    device_map="auto",
+    )
+
+### Convert the model to X-LoRA
+model = xlora.add_xlora_to_model(
+    model=model,
+    xlora_config=xlora.xLoRAConfig(config.hidden_size, xlora_depth=8, device=torch.device("cuda")),
+    verbose=True,
+    adapters={"adapter_1": "./path/to/the/checkpoint/", "adapter_2": "./path/to/the/checkpoint/", "adapter_n": "./path/to/the/checkpoint/"},
+)
+
+model.print_trainable_parameters()
+
+### Example of scalings logging
 model.enable_scalings_logging()
 
-# Forward passes...
+# Run forward passes to accumulate a log
 
-model.flush_log_scalings(path)
-```
+model.flush_log_scalings("./path/to/output/file")
 
-### Set trainability of adapters
-```python
-# Load model... 
-
-# Load xlora...
-
-trainability = ...
-model.set_use_trainable_adapters(trainability)
+model.disable_scalings_logging()
 ```
 
 ## Installation
