@@ -34,6 +34,8 @@ See the [examples](examples) folder for some examples of how to get started with
   - Set the trainability of the adapters.
 - `PeftModel.set_scaling_pass_value(self, value: Union[Number, None])`
   - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default  scalings.
+- `xlora.load_scalings_log(path: str) -> List[torch.Tensor]`
+  - Load the scalings log, with awareness to the two types.
 
 ### Scalings Logging
 ```python
