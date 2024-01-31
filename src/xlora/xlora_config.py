@@ -38,8 +38,6 @@ class xLoRAConfig:
             The id of the stop token for the input. If this is None, the sequence length is calculated using the attention mask.
         use_trainable_adapters (`bool`, *optional`, defaults to False):
             Make the adapters trainable.
-        use_mean_pool (`bool`, *optional*, defaults to True):
-            Sum the hidden states for the last token
     """
 
     model_type = "xlora"
@@ -56,7 +54,6 @@ class xLoRAConfig:
     xlora_dropout_p: float = 0.2
     stop_token_id: Optional[int] = None
     use_trainable_adapters: bool = False
-    use_mean_pool: bool = False  # TODO(all): test. See #9
     softmax_temperature: float = 1.0
     top_k_lora: Optional[int] = None
 
@@ -68,9 +65,6 @@ class xLoRAConfig:
             warnings.warn(
                 "`enable_softmax_topk` and `enable_softmax` are both enabled. This will result in worse performance."
             )
-
-        if self.use_mean_pool:
-            warnings.warn("`use_mean_pool` implementation is currently in testing. See #9.")
 
         if self.top_k_lora is not None and self.top_k_lora < 1:
             warnings.warn("`top_k_lora` value must be at least 1.")

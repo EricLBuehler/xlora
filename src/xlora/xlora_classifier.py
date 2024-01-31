@@ -1,7 +1,8 @@
 import builtins
+import json
 import typing
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy
 import torch
@@ -32,6 +33,7 @@ class TemperatureScaledSoftmax(nn.Module):
 @dataclass
 class InhibitorFlagPayload:
     batch_size: int
+    seq_len: int
     override_scaling_pass_value: Number
 
 
@@ -129,6 +131,11 @@ class xLoRAClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
+        if input_ids is not None:
+            seq_len = input_ids.shape[1]
+        else:
+            seq_len = typing.cast(torch.FloatTensor, inputs_embeds).shape[1]
+
         # For type checking
         model: PeftModel = self.model  # type: ignore
         with torch.no_grad():
@@ -149,7 +156,9 @@ class xLoRAClassifier(nn.Module):
                     input_ids=input_ids,
                     inputs_embeds=inputs_embeds,
                     _xlora_classifier_inhibitor_flag=InhibitorFlagPayload(
-                        batch_size=batch_size, override_scaling_pass_value=self.override_scaling_pass_value
+                        batch_size=batch_size,
+                        seq_len=seq_len,
+                        override_scaling_pass_value=self.override_scaling_pass_value,
                     ),
                     **kwargs,
                 )
@@ -191,26 +200,8 @@ class xLoRAClassifier(nn.Module):
             else:
                 sequence_lengths = -1
 
-        # hidden_state=[batch_size, hidden_size]
-        if self.config.use_mean_pool:
-            assert isinstance(sequence_lengths, torch.Tensor)
-            max_length = hidden_state.shape[1]
-            mask = torch.arange(max_length).expand(len(sequence_lengths), max_length).to(
-                hidden_state.device
-            ) < sequence_lengths.unsqueeze(1)
-
-            # Mask the hidden_states
-            masked_hidden_state = hidden_state * mask.unsqueeze(-1)
-
-            # Sum across the sequence length and divide by actual sequence length
-            summed = torch.sum(masked_hidden_state, dim=1)
-            hidden_state = summed / sequence_lengths.unsqueeze(1)
-        else:
-            # Get it for the last token
-            hidden_state = hidden_state[torch.arange(batch_size, device=hidden_state.device), sequence_lengths]
-
         ### Classifier run
-        # hidden_state=[batch_size, hidden_size]
+        # hidden_state=[batch_size, seq_len, hidden_size]
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
 
@@ -219,11 +210,12 @@ class xLoRAClassifier(nn.Module):
         ### Repeat to make layerwise scalings if the classifier layer does not
         if not self.config.layerwise_scalings:
             logits = logits.unsqueeze(1)
-            logits = logits.expand(-1, self.n_layers, -1)
+            logits = logits.expand(-1, -1, self.n_layers, -1)
 
         ### Classifier run
 
-        scalings = logits.reshape(batch_size, self.n_layers, self.n_classes)
+        scalings = logits.reshape(batch_size, seq_len, self.n_layers, self.n_classes)
+        # scalings = [batch_size, seq_len, n_layers, n_classes]
 
         if self.config.enable_softmax:
             scalings = self.softmax(scalings)
@@ -262,6 +254,12 @@ class xLoRAClassifier(nn.Module):
 
         return trainable_params, all_param
 
+    @staticmethod
+    def save_scalings(file: str, scalings: List[torch.Tensor]):
+        result = torch.cat(scalings, dim=0)
+        npy = result.numpy()
+        numpy.save(file, npy)
+
     def flush_log_scalings(self, path: str):
         if not self.scalings_logging:
             raise Exception("Scalings logging is disabled!")
@@ -269,9 +267,27 @@ class xLoRAClassifier(nn.Module):
         if len(self.log_scalings) == 0:
             raise ValueError("No log scalings to flush.")
 
-        result = torch.cat(self.log_scalings, dim=0)
-        npy = result.numpy()
-        numpy.save(path, npy)
+        seqlens_map: Dict[int, Tuple[List[int], List[torch.Tensor]]] = {}
+        for i, scaling in enumerate(self.log_scalings):
+            seq_len = scaling.shape[0]
+            if seq_len not in seqlens_map:
+                seqlens_map[seq_len] = ([i], [scaling])
+            else:
+                seqlens_map[seq_len][0].append(i)
+                seqlens_map[seq_len][1].append(scaling)
+
+        if len(seqlens_map) == 1:
+            self.save_scalings(path, self.log_scalings)
+        else:
+            indices_map: Dict[str, List[int]] = {}
+            for seq_len, (indices, scalings_list) in seqlens_map.items():
+                indices_map[f"{path}-{seq_len}.npy"] = indices
+
+                self.save_scalings(f"{path}-{seq_len}", scalings_list)
+
+            with open(f"{path}-mapping.json", "w") as f:
+                f.write(json.dumps(indices_map))
+
         self.log_scalings = []
 
     def set_override_scaling_pass_value(self, value: Union[Number, None]):

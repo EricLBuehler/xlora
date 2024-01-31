@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 from typing import Dict, List, Optional, Union
 
 import numpy
@@ -129,7 +130,7 @@ def add_xlora_to_model(
             del kwargs_real["_xlora_classifier_inhibitor_flag"]
 
             model_peft.internal_xlora_scalings = torch.full(  # type: ignore
-                (payload.batch_size, xlora_classifier.n_layers, xlora_classifier.n_classes),
+                (payload.batch_size, payload.seq_len, xlora_classifier.n_layers, xlora_classifier.n_classes),
                 payload.override_scaling_pass_value,  # requires_grad=True
             )  # TODO(EricLBuehler): is the requires_grad=True necessary?
 
@@ -264,15 +265,45 @@ def from_pretrained(
     return model_peft
 
 
-def load_scalings_log(path: str) -> List[torch.Tensor]:
+def load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]:
     """
-    Load the scalings log.
+    Load the scalings log, with awareness to the two types.
 
     Args:
         path (`str`):
             The path provided to `flush_log_scalings`.
+        verbose (`bool`, defaults to `False`)
+            Display tqdm.
     """
 
-    npy_arr = numpy.load(path)
-    torch_arr = torch.from_numpy(npy_arr)
-    return torch_arr.split(1, dim=0)
+    output: List[torch.Tensor] = []
+    if pathlib.Path(f"{path}-mapping.json").exists():
+        with open(f"{path}-mapping.json", "r") as f:
+            mapping: Dict[str, List[int]] = json.loads(f.read())
+
+        mapping_full: Dict[int, torch.Tensor] = {}
+        maxindex = -1
+
+        if verbose:
+            iterator = iter(tqdm.tqdm(mapping.items()))
+        else:
+            iterator = iter(mapping.items())
+
+        for file, indices in iterator:
+            npy_arr = numpy.load(file)
+            torch_arr = torch.from_numpy(npy_arr)
+            tensors = torch_arr.split(1, dim=0)
+            for tensor, index in zip(tensors, indices):
+                mapping_full[index] = tensor
+                if index > maxindex:
+                    maxindex = index
+
+        for index in range(maxindex + 1):
+            output.append(mapping_full[index])
+
+    else:
+        npy_arr = numpy.load(path)
+        torch_arr = torch.from_numpy(npy_arr)
+        output.extend(torch_arr.split(1, dim=0))
+
+    return output
