@@ -129,6 +129,11 @@ class xLoRAClassifier(nn.Module):
         else:
             batch_size = typing.cast(torch.FloatTensor, inputs_embeds).shape[0]
 
+        if input_ids is not None:
+            seq_len = input_ids.shape[1]
+        else:
+            seq_len = typing.cast(torch.FloatTensor, inputs_embeds).shape[1]
+
         # For type checking
         model: PeftModel = self.model  # type: ignore
         with torch.no_grad():
@@ -191,26 +196,8 @@ class xLoRAClassifier(nn.Module):
             else:
                 sequence_lengths = -1
 
-        # hidden_state=[batch_size, hidden_size]
-        if self.config.use_mean_pool:
-            assert isinstance(sequence_lengths, torch.Tensor)
-            max_length = hidden_state.shape[1]
-            mask = torch.arange(max_length).expand(len(sequence_lengths), max_length).to(
-                hidden_state.device
-            ) < sequence_lengths.unsqueeze(1)
-
-            # Mask the hidden_states
-            masked_hidden_state = hidden_state * mask.unsqueeze(-1)
-
-            # Sum across the sequence length and divide by actual sequence length
-            summed = torch.sum(masked_hidden_state, dim=1)
-            hidden_state = summed / sequence_lengths.unsqueeze(1)
-        else:
-            # Get it for the last token
-            hidden_state = hidden_state[torch.arange(batch_size, device=hidden_state.device), sequence_lengths]
-
         ### Classifier run
-        # hidden_state=[batch_size, hidden_size]
+        # hidden_state=[batch_size, seq_len, hidden_size]
         for layer in self.inner:
             hidden_state = layer.forward(hidden_state)
 
@@ -219,11 +206,12 @@ class xLoRAClassifier(nn.Module):
         ### Repeat to make layerwise scalings if the classifier layer does not
         if not self.config.layerwise_scalings:
             logits = logits.unsqueeze(1)
-            logits = logits.expand(-1, self.n_layers, -1)
+            logits = logits.expand(-1, -1, self.n_layers, -1)
 
         ### Classifier run
 
-        scalings = logits.reshape(batch_size, self.n_layers, self.n_classes)
+        scalings = logits.reshape(batch_size, seq_len, self.n_layers, self.n_classes)
+        # scalings = [batch_size, seq_len, n_layers, n_classes]
 
         if self.config.enable_softmax:
             scalings = self.softmax(scalings)
