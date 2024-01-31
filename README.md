@@ -19,7 +19,7 @@ See the [examples](examples) folder for some examples of how to get started with
 - `PeftModel.disable_scalings_logging()`
   - Disable scalings logging, clearing the log.
 - `PeftModel.enable_scalings_logging()`
-  - Enable scalings logging.
+  - Enable scalings logging. Each time a forward pass occurs, the predicted scalings will be logged.
 - `PeftModel.flush_log_scalings(path: str)`
   - Save the log scalings as a tensor of `[log_length, batch_size, num_layers, num_scalings]`. Flushes the log.
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> PeftModel`
