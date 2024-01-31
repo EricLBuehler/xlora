@@ -1,7 +1,7 @@
 import builtins
 import typing
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import numpy
 import torch
@@ -250,6 +250,12 @@ class xLoRAClassifier(nn.Module):
 
         return trainable_params, all_param
 
+    @staticmethod
+    def save_scalings(file: str, scalings: List[torch.Tensor]):
+        result = torch.cat(scalings, dim=0)
+        npy = result.numpy()
+        numpy.save(file, npy)
+
     def flush_log_scalings(self, path: str):
         if not self.scalings_logging:
             raise Exception("Scalings logging is disabled!")
@@ -257,9 +263,20 @@ class xLoRAClassifier(nn.Module):
         if len(self.log_scalings) == 0:
             raise ValueError("No log scalings to flush.")
 
-        result = torch.cat(self.log_scalings, dim=0)
-        npy = result.numpy()
-        numpy.save(path, npy)
+        seqlens_map: Dict[int, List[torch.Tensor]] = {}
+        for scaling in self.log_scalings:
+            seq_len = scaling.shape[0]
+            if seq_len not in seqlens_map:
+                seqlens_map[seq_len] = [scaling]
+            else:
+                seqlens_map[seq_len].append(scaling)
+
+        if len(seqlens_map) == 1:
+            self.save_scalings(path, self.log_scalings)
+        else:
+            for seq_len, scalings in seqlens_map.items():
+                self.save_scalings(f"{path}-{seq_len}", scalings)
+
         self.log_scalings = []
 
     def set_override_scaling_pass_value(self, value: Union[Number, None]):
