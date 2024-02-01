@@ -220,9 +220,10 @@ class PeftModelWrapper:
         res = self.base_model_generate(*args, **kwargs)  # type: ignore
         # TODO(EricLBuehler): Evaluate effectiveness and performance degradation
         self.model.base_model.eval()
-        for name, param in self.model.base_model.named_parameters():
-            if "lora_" in name:
-                param.requires_grad = False
+        if not self.config.use_trainable_adapters:
+            for name, param in self.model.base_model.named_parameters():
+                if "lora_" in name:
+                    param.requires_grad = False
         return res
 
     def set_scaling_pass_value(self, value: Union[Number, None]):
