@@ -216,6 +216,7 @@ class PeftModelWrapper:
 
     def generate(self, *args, **kwargs):
         res = self.model.generate(*args, **kwargs)  # type: ignore
+        # TODO(EricLBuehler): Evaluate effectiveness and performance degradation
         self.model.base_model.eval()
         for name, param in self.model.base_model.named_parameters():
             if "lora_" in name:
