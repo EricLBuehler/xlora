@@ -149,8 +149,8 @@ def add_xlora_to_model(
 
     model.register_forward_pre_hook(hook, with_kwargs=True, prepend=True)
 
+    model_peft.base_model.eval()
     if not use_trainable_adapters:
-        model_peft.base_model.eval()
         total_frozen = 0
         for name, param in model_peft.base_model.named_parameters():
             if "lora_" in name:
@@ -178,6 +178,7 @@ def add_xlora_to_model(
         model_peft, model_peft.save_pretrained, xlora_config, model_peft.get_nb_trainable_parameters
     )
     model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
+    model_peft.generate = peft_model_wrapper.generate  # type: ignore
 
     assert not hasattr(model_peft, "set_use_trainable_adapters")
     model_peft.set_use_trainable_adapters = peft_model_wrapper.set_use_trainable_adapters  # type: ignore
@@ -269,7 +270,7 @@ def from_pretrained(
         classifier.to(device)
     else:
         state_dict = torch.load(os.path.join(load_directory, "xlora_classifier.pt"))
-        classifier.load_state_dict(state_dict)
+        classifier.load_state_dict(state_dict)  # type: ignore
 
     return model_peft
 

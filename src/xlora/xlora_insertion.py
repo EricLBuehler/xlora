@@ -214,6 +214,14 @@ class PeftModelWrapper:
         self.config = config
         self.base_model_get_nb_trainable_parameters = base_model_get_nb_trainable_parameters
 
+    def generate(self, *args, **kwargs):
+        res = self.model.generate(*args, **kwargs)  # type: ignore
+        self.model.base_model.eval()
+        for name, param in self.model.base_model.named_parameters():
+            if "lora_" in name:
+                param.requires_grad = False
+        return res
+
     def set_scaling_pass_value(self, value: Union[Number, None]):
         """
         Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default
