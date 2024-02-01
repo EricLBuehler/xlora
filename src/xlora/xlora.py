@@ -175,7 +175,11 @@ def add_xlora_to_model(
     model_peft.base_model.forward = base_model_wrapper.forward  # type: ignore[method-assign]
 
     peft_model_wrapper = PeftModelWrapper(
-        model_peft, model_peft.save_pretrained, xlora_config, model_peft.get_nb_trainable_parameters
+        model_peft,
+        model_peft.save_pretrained,
+        xlora_config,
+        model_peft.get_nb_trainable_parameters,
+        model_peft.generate,
     )
     model_peft.save_pretrained = peft_model_wrapper.save_pretrained  # type: ignore[method-assign]
     model_peft.generate = peft_model_wrapper.generate  # type: ignore

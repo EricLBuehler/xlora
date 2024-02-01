@@ -208,11 +208,13 @@ class PeftModelWrapper:
         base_model_save: Callable[..., None],
         config: xLoRAConfig,
         base_model_get_nb_trainable_parameters: Callable[..., Tuple[int, int]],
+        base_model_generate: Callable[..., Any],
     ):
         self.model = base_model
         self.base_model_save = base_model_save
         self.config = config
         self.base_model_get_nb_trainable_parameters = base_model_get_nb_trainable_parameters
+        self.base_model_generate = base_model_generate
 
     def generate(self, *args, **kwargs):
         res = self.model.generate(*args, **kwargs)  # type: ignore
