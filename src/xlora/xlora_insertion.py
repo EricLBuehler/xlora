@@ -297,6 +297,12 @@ class PeftModelWrapper:
 
         self.config.use_trainable_adapters = use_trainable_adapters
 
+    def get_use_trainable_adapters(self) -> bool:
+        """
+        Get the trainable or not trainable state of the adapters.
+        """
+        return self.config.use_trainable_adapters
+
     def save_pretrained(
         self,
         save_directory: str,
