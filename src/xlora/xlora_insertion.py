@@ -217,7 +217,7 @@ class PeftModelWrapper:
         self.base_model_generate = base_model_generate
 
     def generate(self, *args, **kwargs):
-        res = self.model.generate(*args, **kwargs)  # type: ignore
+        res = self.base_model_generate(*args, **kwargs)  # type: ignore
         # TODO(EricLBuehler): Evaluate effectiveness and performance degradation
         self.model.base_model.eval()
         for name, param in self.model.base_model.named_parameters():
