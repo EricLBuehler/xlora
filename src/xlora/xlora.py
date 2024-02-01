@@ -5,11 +5,11 @@ from typing import Dict, List, Optional, Union
 
 import numpy
 import peft
-import safetensors  # type: ignore
 import torch
 import tqdm  # type: ignore
 from peft.peft_model import PeftModel
 from peft.tuners import lora
+from safetensors.torch import load_model  # type: ignore
 from transformers import PreTrainedModel  # type: ignore
 
 from .xlora_classifier import InhibitorFlagPayload, xLoRAClassifier
@@ -258,13 +258,14 @@ def from_pretrained(
     model_peft = add_xlora_to_model(model, xlora_config, adapters_dict, verbose)
     classifier: xLoRAClassifier = model_peft.internal_xlora_classifier  # type: ignore
     if from_safetensors:
-        state_dict = safetensors.torch.load_file(  # type: ignore
+        state_dict = load_model(
+            classifier,
             os.path.join(load_directory, "xlora_classifier.safetensors"),
-            device=device,  # type: ignore
         )
+        classifier.to(device)
     else:
         state_dict = torch.load(os.path.join(load_directory, "xlora_classifier.pt"))
-    classifier.load_state_dict(state_dict)
+        classifier.load_state_dict(state_dict)
 
     return model_peft
 

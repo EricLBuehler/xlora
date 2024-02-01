@@ -1,14 +1,12 @@
-import collections
 import json
 import os
 from typing import Any, Callable, List, Optional, Tuple, Union
 
-import peft
-import safetensors  # type: ignore
 import torch
 from peft.peft_model import PeftModel
 from peft.tuners import lora
 from peft.tuners.tuners_utils import BaseTuner  # type: ignore
+from safetensors.torch import save_model  # type: ignore
 from torch import Tensor
 
 from xlora.xlora_classifier import Number, xLoRAClassifier
@@ -350,36 +348,10 @@ class PeftModelWrapper:
                 **kwargs,
             )
 
-        state_dict = classifier.state_dict()
         if safe_serialization:
             # https://github.com/huggingface/peft/blob/main/src/peft/peft_model.py#L223
             if is_main_process and safe_serialization:
-                # Section copied from: https://github.com/huggingface/transformers/blob/main/src/transformers/modeling_utils.py#L2111-L2134
-                # Safetensors does not allow tensor aliasing.
-                # We're going to remove aliases before saving
-                ptrs: collections.defaultdict[
-                    Union[Tuple[torch.device, int, int], int], List[str]
-                ] = collections.defaultdict(list)
-                for name, tensor in state_dict.items():
-                    # Sometimes in the state_dict we have non-tensor objects.
-                    # e.g. in bitsandbytes we have some `str` objects in the state_dict
-                    if isinstance(tensor, torch.Tensor):
-                        ptrs[peft.utils.other.id_tensor_storage(tensor)].append(name)
-                    else:
-                        # In the non-tensor case, fall back to the pointer of the object itself
-                        ptrs[id(tensor)].append(name)
-
-                # These are all the pointers of shared tensors.
-                shared_ptrs = {ptr: names for ptr, names in ptrs.items() if len(names) > 1}
-
-                for _, names in shared_ptrs.items():
-                    # Here we just clone the shared tensors to avoid tensor aliasing which is
-                    # not supported in safetensors.
-                    for shared_tensor_name in names[1:]:
-                        state_dict[shared_tensor_name] = state_dict[shared_tensor_name].clone()
-
-                safetensors.torch.save_file(  # type: ignore
-                    state_dict, os.path.join(save_directory, "xlora_classifier.safetensors"), metadata={"format": "pt"}
-                )
+                save_model(classifier, os.path.join(save_directory, "xlora_classifier.safetensors"))
         elif is_main_process:
+            state_dict = classifier.state_dict()
             torch.save(state_dict, os.path.join(save_directory, "xlora_classifier.pt"))
