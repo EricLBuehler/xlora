@@ -1,5 +1,5 @@
 # X-LoRA
-Mixture of LoRA Experts: leverage the power of fine-tuned LoRA experts by employing a mixture of experts, or MoE technique.
+Mixture of LoRA Experts: Leverage the power of fine-tuned LoRA experts by employing a mixture of experts, or MoE technique.
 
 X-LoRA works by learning the alpha scaling values for LoRA adapters, which are frozen. These learned alpha values are used to
 gate the LoRA experts in a dense fashion.
@@ -9,9 +9,10 @@ X-LoRA is easily applied to any HuggingFace Transformers model.
 ## Advantages and features
 - Effective: Dense gating of experts allows effective mixing
 - Efficient fine-tuning: low trainable parameter count
-- Easy-to-use API: `add_xlora_to_model`
+- Hierarchical encapsulated strategy: Re-use existing trained models or model section and re-use them to address complex tasks that cut across experts, following a bio-inspired strategy 
+- Easy-to-use API: `add_xlora_to_model`, broad compatibility 
 
-See the [examples](examples) folder for some examples of how to get started with xLoRA.
+See the [examples](examples) folder for some examples of how to get started with X-LoRA.
 
 ## Example
 Excerpt from [this](./examples/simple.py) example.
@@ -39,9 +40,9 @@ model_created = xlora.add_xlora_to_model(
     xlora_config=xlora.xLoRAConfig(config.hidden_size, xlora_depth=8, device=torch.device("cuda")),
     verbose=True,
     adapters={
-        "adapter_1": "./path/to/the/checkpoint/",
-        "adapter_2": "./path/to/the/checkpoint/",
-        "adapter_n": "./path/to/the/checkpoint/",
+        "adapter_1": "./path/to/the/checkpoint_adapter_1/",
+        "adapter_2": "./path/to/the/checkpoint_adapter_2/",
+        "adapter_n": "./path/to/the/checkpoint_adapter_3/",
     },
 )
 ```
