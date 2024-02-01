@@ -14,6 +14,7 @@ X-LoRA is easily applied to any HuggingFace Transformers model.
 See the [examples](examples) folder for some examples of how to get started with xLoRA.
 
 ## Example
+Excerpt from [this](./examples/simple.py) example.
 ```python
 import torch
 import xlora
@@ -42,41 +43,6 @@ model_created = xlora.add_xlora_to_model(
         "adapter_2": "./path/to/the/checkpoint/",
         "adapter_n": "./path/to/the/checkpoint/",
     },
-)
-
-### Set the adapters to trainable
-### This means that when loading the model again we should specify only the adapter names.
-model_created.set_use_trainable_adapters(True)
-model_created.get_use_trainable_adapters()
-
-### Set the scaling pass value
-model_created.set_scaling_pass_value(0)
-
-### Reset the scaling pass value
-model_created.set_scaling_pass_value(None)
-
-### Example of scalings logging
-model_created.enable_scalings_logging()
-
-# Run forward passes to accumulate a log
-
-model_created.flush_log_scalings("./path/to/output/file")
-
-model_created.disable_scalings_logging()
-
-### From pretrained for models trained with `model_created.get_use_trainable_adapters() == True`
-loaded_model = xlora.from_pretrained("./path/to/saved/model", model, ["adapter_1", "adapter_2"], "cuda")
-
-### From pretrained for models trained with `model_created.get_use_trainable_adapters() == False`
-model_created = xlora.from_pretrained(
-    "./path/to/saved/model",
-    model,
-    {
-        "adapter_1": "./path/to/the/checkpoint/",
-        "adapter_2": "./path/to/the/checkpoint/",
-        "adapter_n": "./path/to/the/checkpoint/",
-    },
-    "cuda",
 )
 ```
 
