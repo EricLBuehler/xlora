@@ -151,9 +151,13 @@ def add_xlora_to_model(
 
     if not use_trainable_adapters:
         model_peft.base_model.eval()
+        total_frozen = 0
         for name, param in model_peft.base_model.named_parameters():
             if "lora_" in name:
                 param.requires_grad = False
+                total_frozen += 1
+        if verbose:
+            print(f"Froze {total_frozen} adapters.")
 
     assert isinstance(model_peft.base_model, peft.tuners.lora.LoraModel)
 
