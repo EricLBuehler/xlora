@@ -20,6 +20,8 @@ class xLoRALayer:
     xLoRA algorithm. To avoid a RuntimeException, set the scaling state.
     """
 
+    __slots__ = {"model", "target_forward", "target", "layer_number", "disabled", "top_k_lora"}
+
     def __init__(
         self,
         model: PeftModel,
