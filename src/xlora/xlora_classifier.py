@@ -140,7 +140,7 @@ class xLoRAClassifier(nn.Module):
         model: PeftModel = self.model  # type: ignore
         with torch.no_grad():
             with model.disable_adapter():
-                # NOTE(EricLBuehler): not implemented
+                # TODO(EricLBuehler): Pending removal following analysis
                 """
                 for module in model.base_model.modules():
                     if isinstance(module.forward.__self__, xLoRALayer):
@@ -163,7 +163,7 @@ class xLoRAClassifier(nn.Module):
                     **kwargs,
                 )
 
-                # NOTE(EricLBuehler): not implemented
+                # TODO(EricLBuehler): Pending removal following analysis
                 """
                 # Enable the xLoRALayers
                 for module in model.base_model.modules():

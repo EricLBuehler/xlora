@@ -32,7 +32,7 @@ class xLoRALayer:
         self.target_forward = target_forward
         self.target = target
         self.layer_number = layer_number
-        self.disabled = False
+        self.disabled = False  # TODO(EricLBuehler): Pending removal following analysis
         self.top_k_lora = top_k_lora
 
     @staticmethod
