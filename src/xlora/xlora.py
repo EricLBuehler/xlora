@@ -24,7 +24,10 @@ from .xlora_insertion import (
 
 
 class xLoRAModel(PeftModel, PeftModelWrapper):
-    pass
+    def __new__(cls):
+        raise RuntimeError(
+            "xLoRAModel is a non instantiatable type and can only be created through `add_xlora_to_model`."
+        )
 
 
 def convert_layers_to_xlora(
