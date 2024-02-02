@@ -16,8 +16,8 @@ from xlora.xlora_config import xLoRAConfig
 class xLoRALayer:
     """
     A xLoRALayer wraps any LoraLayer and performs the xLoRA operation on the LoRA adaptors specified.
-    Its primary API is the forward method, which uses the scalings from xlora_state to execute the
-    xLoRA algorithm. To avoid a RuntimeException, set the scaling state.
+    Its primary API is the forward method, which uses the scalings to execute the
+    xLoRA algorithm.
     """
 
     __slots__ = {"model", "target_forward", "target", "layer_number", "disabled", "top_k_lora"}
