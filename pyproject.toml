@@ -2,7 +2,7 @@
 ignore = ["C901", "E501", "E741", "W605"]
 select = ["C", "E", "F", "I", "W"]
 line-length = 119
-extend-include = ["basic.ipynb"]
+extend-include = ["*.ipynb"]
 
 [tool.ruff.extend-per-file-ignores]
 "__init__.py" = ["F401"]

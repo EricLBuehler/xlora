@@ -15,7 +15,7 @@ X-LoRA is easily applied to any HuggingFace Transformers model.
 See the [examples](examples) folder for some examples of how to get started with X-LoRA.
 
 ## Examples
-Excerpt from [this](./examples/simple.py) example.
+Excerpt from [this](./examples/simple.ipynb) example.
 
 ### Converting a model
 ```python
@@ -51,7 +51,7 @@ model_created = xlora.add_xlora_to_model(
 )
 ```
 
-### Loading a trained X-LoRA model from scratch
+### Loading a trained X-LoRA model *trained without trainable adapters* from scratch
 ```python
 import torch
 import xlora
@@ -80,6 +80,35 @@ model_created = xlora.from_pretrained(
         "adapter_2": "./path/to/the/checkpoint/",
         "adapter_n": "./path/to/the/checkpoint/",
     },
+    "cuda",
+)
+```
+
+### Loading a trained X-LoRA model *trained with trainable adapters* from scratch
+```python
+import torch
+import xlora
+from transformers import AutoConfig, AutoModelForCausalLM # type: ignore
+
+model = AutoModelForCausalLM.from_pretrained(
+    "mistralai/Mistral-7B-Instruct-v0.1",
+    trust_remote_code=True,
+    use_flash_attention_2=False,
+    device_map="cuda:0",
+    torch_dtype=torch.bfloat16,
+)
+
+config = AutoConfig.from_pretrained(
+    "mistralai/Mistral-7B-Instruct-v0.1",
+    trust_remote_code=True,
+    use_flash_attention_2=False,
+    device_map="auto",
+)
+
+model_created = xlora.from_pretrained(
+    "./path/to/saved/model",
+    model,
+    ["adapter_1", "adapter_2", "adapter_n"],
     "cuda",
 )
 ```
