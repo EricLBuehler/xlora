@@ -209,7 +209,7 @@ class xLoRAClassifier(nn.Module):
 
         ### Repeat to make layerwise scalings if the classifier layer does not
         if not self.config.layerwise_scalings:
-            logits = logits.unsqueeze(1)
+            logits = logits.unsqueeze(2)
             logits = logits.expand(-1, -1, self.n_layers, -1)
 
         ### Classifier run
