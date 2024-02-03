@@ -103,8 +103,8 @@ class xLoRALinearLayer(xLoRALayer):
                 dropout = self.target.lora_dropout[active_adapter]
                 scaling = self.target.scaling[active_adapter]
                 x = x.to(lora_A.weight.dtype)  # type: ignore
-                x = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
-                result += lora_B(lora_A(dropout(x))) * scaling
+                x_mod = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
+                result += lora_B(lora_A(dropout(x_mod))) * scaling
 
         result = result.to(previous_dtype)
         return result
@@ -144,8 +144,8 @@ class xLoRAEmbeddingLayer(xLoRALayer):
                 embedding_A = self.target.lora_embedding_A[active_adapter].T
                 embedding_B = self.target.lora_embedding_B[active_adapter].T
                 scaling = self.target.scaling[active_adapter]
-                x = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
-                after_A = self.target._embed(x, embedding_A)  # type: ignore
+                x_mod = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
+                after_A = self.target._embed(x_mod, embedding_A)  # type: ignore
                 result += (after_A @ embedding_B) * scaling
 
         return result
@@ -187,8 +187,8 @@ class xLoRAConv2dLayer(xLoRALayer):
                 dropout = self.target.lora_dropout[active_adapter]
                 scaling = self.target.scaling[active_adapter]
                 x = x.to(lora_A.weight.dtype)  # type: ignore
-                x = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
-                result += lora_B(lora_A(dropout(x))) * scaling
+                x_mod = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
+                result += lora_B(lora_A(dropout(x_mod))) * scaling
 
         result = result.to(previous_dtype)
         return result

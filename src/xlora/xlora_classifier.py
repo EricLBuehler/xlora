@@ -200,6 +200,26 @@ class xLoRAClassifier(nn.Module):
             else:
                 sequence_lengths = -1
 
+        '''
+        # AFTER THIS: hidden_state=[batch_size, hidden_size]
+        if self.config.use_mean_pool:
+            assert isinstance(sequence_lengths, torch.Tensor)
+            max_length = hidden_state.shape[1]
+            mask = torch.arange(max_length).expand(len(sequence_lengths), max_length).to(
+                hidden_state.device
+            ) < sequence_lengths.unsqueeze(1)
+
+            # Mask the hidden_states
+            masked_hidden_state = hidden_state * mask.unsqueeze(-1)
+
+            # Sum across the sequence length and divide by actual sequence length
+            summed = torch.sum(masked_hidden_state, dim=1)
+            hidden_state = summed / sequence_lengths.unsqueeze(1)
+        else:
+            # Get it for the last token
+            hidden_state = hidden_state[torch.arange(batch_size, device=hidden_state.device), sequence_lengths]
+        '''
+
         ### Classifier run
         # hidden_state=[batch_size, seq_len, hidden_size]
         for layer in self.inner:
