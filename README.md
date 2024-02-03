@@ -48,41 +48,41 @@ model_created = xlora.add_xlora_to_model(
 ```
 
 ### API
-The xLoRA API is composed of 2 parts: the "Global API" and the "Model API". Generally the global API is used to create xLoRA models and the model API is used to interface with the models.
+The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models.
 
 ## Global API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
-  - Convert a model to an xLoRA-model, instantiating the classifier and adapters.
+  - Convert a model to an xLoraModel, instantiating the classifier and adapters.
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> xLoraModel`
-  - Load the xLoRA classifier and potentially adapters. This should be called after an xLoRA classifier has been trained.
+  - Load the X-LoRA classifier and potentially adapters. This should be called after an X-LoRA classifier has been trained.
 - `xlora.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
 
 ## Model API
-- `PeftModel.disable_scalings_logging()`
+- `xLoraModel.disable_scalings_logging()`
   - Disable scalings logging, clearing the log.
-- `PeftModel.enable_scalings_logging()`
+- `xLoraModel.enable_scalings_logging()`
   - Enable scalings logging. Each time a forward pass occurs, the predicted scalings will be logged.
-- `PeftModel.flush_log_scalings(path: str)`
+- `xLoraModel.flush_log_scalings(path: str)`
   - Write the scalings log (a tensor of shape (num_logged, batch_size, seq_len, n_layers, n_classes)) to the specified path.
     If the tensor cannot be constructed, multiple files are written containing tensors of shape
     (num_logged, batch_size, seq_len, n_layers, n_classes) such that each file contains one sequence length. Additionally a JSON
     file is outputted containing the mapping from each sequence log file to the index of the contained tensor so that one may reconstruct
     the log order.
     The file specified should not contain an extension.
-- `PeftModel.get_nb_trainable_parameters() -> Tuple[int, int]`
+- `xLoraModel.get_nb_trainable_parameters() -> Tuple[int, int]`
   - Return a tuple `(num_trainable, num_all_params)`
-- `PeftModel.print_scalings_predictions(n_predictions_lifetime: int)`
+- `xLoraModel.print_scalings_predictions(n_predictions_lifetime: int)`
   - Print the scalings predictions for the next n forward passes of the model.
-- `PeftModel.print_trainable_parameters()`
-  - Print the trainable and non-trainable parameters for the given model, including with the xLoRA components.
-- `PeftModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
+- `xLoraModel.print_trainable_parameters()`
+  - Print the trainable and non-trainable parameters for the given model, including with the X-LoRA components.
+- `xLoraModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
   - Set the trainability of the adapters.
-- `PeftModel.set_scaling_pass_value(self, value: Union[Number, None])`
+- `xLoraModel.set_scaling_pass_value(self, value: Union[Number, None])`
   - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings.
-- `PeftModel.get_use_trainable_adapters(self) -> bool`
+- `xLoraModel.get_use_trainable_adapters(self) -> bool`
   - Get the trainable or not trainable state of the adapters.
-- `PeftModel.get_scalings_log(self) -> List[Tensor]`
+- `xLoraModel.get_scalings_log(self) -> List[Tensor]`
   - Returns a list containing the scalings log. Editing the list does not change the underlying log.
 
 ## Installation
