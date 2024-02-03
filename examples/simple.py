@@ -1,10 +1,12 @@
 import torch
 import xlora
 from transformers import AutoConfig, AutoModelForCausalLM  # type: ignore
+from xlora.xlora_utils import load_model  # type: ignore
 
 model = AutoModelForCausalLM.from_pretrained(
     "mistralai/Mistral-7B-Instruct-v0.1",
     trust_remote_code=True,
+    use_flash_attention_2=False,
     device_map="cuda:0",
     torch_dtype=torch.bfloat16,
 )
@@ -12,6 +14,7 @@ model = AutoModelForCausalLM.from_pretrained(
 config = AutoConfig.from_pretrained(
     "mistralai/Mistral-7B-Instruct-v0.1",
     trust_remote_code=True,
+    use_flash_attention_2=False,
     device_map="auto",
 )
 
@@ -60,4 +63,20 @@ model_created = xlora.from_pretrained(
         "adapter_n": "./path/to/the/checkpoint/",
     },
     "cuda",
+)
+
+
+### Using the simpler API
+fine_tune_model_name = "Mistral_v204-rerun_V51Zephyr/checkpoint-420/"
+
+model_loaded, tokenizer = load_model(
+    model_name="HuggingFaceH4/zephyr-7b-beta",
+    device="cuda:0",
+    dtype=torch.bfloat16,
+    fine_tune_model_name=fine_tune_model_name,
+    adapters={
+        "adapter_1": "./path/to/the/checkpoint/",
+        "adapter_2": "./path/to/the/checkpoint/",
+        "adapter_n": "./path/to/the/checkpoint/",
+    },
 )

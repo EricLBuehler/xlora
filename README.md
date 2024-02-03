@@ -16,6 +16,8 @@ See the [examples](examples) folder for some examples of how to get started with
 
 ## Example
 Excerpt from [this](./examples/simple.py) example.
+
+### Converting a model
 ```python
 import torch
 import xlora
@@ -24,6 +26,7 @@ from transformers import AutoConfig, AutoModelForCausalLM # type: ignore
 model = AutoModelForCausalLM.from_pretrained(
     "mistralai/Mistral-7B-Instruct-v0.1",
     trust_remote_code=True,
+    use_flash_attention_2=False,
     device_map="cuda:0",
     torch_dtype=torch.bfloat16,
 )
@@ -31,6 +34,7 @@ model = AutoModelForCausalLM.from_pretrained(
 config = AutoConfig.from_pretrained(
     "mistralai/Mistral-7B-Instruct-v0.1",
     trust_remote_code=True,
+    use_flash_attention_2=False,
     device_map="auto",
 )
 
@@ -47,6 +51,59 @@ model_created = xlora.add_xlora_to_model(
 )
 ```
 
+### Loading a trained X-LoRA model from scratch
+```python
+import torch
+import xlora
+from transformers import AutoConfig, AutoModelForCausalLM # type: ignore
+
+model = AutoModelForCausalLM.from_pretrained(
+    "mistralai/Mistral-7B-Instruct-v0.1",
+    trust_remote_code=True,
+    use_flash_attention_2=False,
+    device_map="cuda:0",
+    torch_dtype=torch.bfloat16,
+)
+
+config = AutoConfig.from_pretrained(
+    "mistralai/Mistral-7B-Instruct-v0.1",
+    trust_remote_code=True,
+    use_flash_attention_2=False,
+    device_map="auto",
+)
+
+model_created = xlora.from_pretrained(
+    "./path/to/saved/model",
+    model,
+    {
+        "adapter_1": "./path/to/the/checkpoint/",
+        "adapter_2": "./path/to/the/checkpoint/",
+        "adapter_n": "./path/to/the/checkpoint/",
+    },
+    "cuda",
+)
+```
+
+### Loading a trained X-LoRA model with a convenience function
+```python
+import torch
+from xlora.xlora_utils import load_model  # type: ignore
+
+fine_tune_model_name = "Mistral_v204-rerun_V51Zephyr/checkpoint-420/"
+
+model_loaded, tokenizer = load_model(
+    model_name="HuggingFaceH4/zephyr-7b-beta",
+    device="cuda:0",
+    dtype=torch.bfloat16,
+    fine_tune_model_name=fine_tune_model_name,
+    adapters={
+        "adapter_1": "./path/to/the/checkpoint/",
+        "adapter_2": "./path/to/the/checkpoint/",
+        "adapter_n": "./path/to/the/checkpoint/",
+    },
+)
+```
+
 ### API
 The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models.
 
@@ -57,6 +114,8 @@ The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Gen
   - Load the X-LoRA classifier and potentially adapters. This should be called after an X-LoRA classifier has been trained.
 - `xlora.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
+- `xlora.xlora_utils.load_model(model_name: str, fine_tune_model_name: str, device: str, dtype: torch.dtype, adapters: Dict[str, str], use_flash_attention_2: bool = False, load_xlora: bool = False, verbose: bool = False, use_cache: bool = False) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
+  - Convenience function to load a model, converting it to xLoRA if specified.
 
 ## Model API
 - `xLoraModel.disable_scalings_logging()`
