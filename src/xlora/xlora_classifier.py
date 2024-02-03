@@ -200,7 +200,7 @@ class xLoRAClassifier(nn.Module):
             else:
                 sequence_lengths = -1
 
-        '''
+        """
         # AFTER THIS: hidden_state=[batch_size, hidden_size]
         if self.config.use_mean_pool:
             assert isinstance(sequence_lengths, torch.Tensor)
@@ -218,7 +218,7 @@ class xLoRAClassifier(nn.Module):
         else:
             # Get it for the last token
             hidden_state = hidden_state[torch.arange(batch_size, device=hidden_state.device), sequence_lengths]
-        '''
+        """
 
         ### Classifier run
         # hidden_state=[batch_size, seq_len, hidden_size]
