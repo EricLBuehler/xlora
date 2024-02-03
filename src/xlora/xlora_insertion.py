@@ -228,6 +228,13 @@ class PeftModelWrapper:
                     param.requires_grad = False
         return res
 
+    def get_scalings_log(self) -> List[Tensor]:
+        """
+        Returns a list containing the scalings log. Editing the list does not change the underlying log.
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        return classifier.log_scalings.copy()
+
     def set_scaling_pass_value(self, value: Union[Number, None]):
         """
         Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default

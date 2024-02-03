@@ -48,8 +48,17 @@ model_created = xlora.add_xlora_to_model(
 ```
 
 ### API
-- `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> PeftModel`
+The xLoRA API is composed of 2 parts: the "Global API" and the "Model API". Generally the global API is used to create xLoRA models and the model API is used to interface with the models.
+
+## Global API
+- `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
   - Convert a model to an xLoRA-model, instantiating the classifier and adapters.
+- `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> xLoraModel`
+  - Load the xLoRA classifier and potentially adapters. This should be called after an xLoRA classifier has been trained.
+- `xlora.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
+  - Load the scalings log, with awareness to the two types.
+
+## Model API
 - `PeftModel.disable_scalings_logging()`
   - Disable scalings logging, clearing the log.
 - `PeftModel.enable_scalings_logging()`
@@ -61,8 +70,6 @@ model_created = xlora.add_xlora_to_model(
     file is outputted containing the mapping from each sequence log file to the index of the contained tensor so that one may reconstruct
     the log order.
     The file specified should not contain an extension.
-- `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> PeftModel`
-  - Load the xLoRA classifier and potentially adapters. This should be called after an xLoRA classifier has been trained.
 - `PeftModel.get_nb_trainable_parameters() -> Tuple[int, int]`
   - Return a tuple `(num_trainable, num_all_params)`
 - `PeftModel.print_scalings_predictions(n_predictions_lifetime: int)`
@@ -72,11 +79,11 @@ model_created = xlora.add_xlora_to_model(
 - `PeftModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
   - Set the trainability of the adapters.
 - `PeftModel.set_scaling_pass_value(self, value: Union[Number, None])`
-  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default  scalings.
-- `xlora.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
-  - Load the scalings log, with awareness to the two types.
+  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings.
 - `PeftModel.get_use_trainable_adapters(self) -> bool`
   - Get the trainable or not trainable state of the adapters.
+- `PeftModel.get_scalings_log(self) -> List[Tensor]`
+  - Returns a list containing the scalings log. Editing the list does not change the underlying log.
 
 ## Installation
 Pending a pip release, `git clone` this repository and run `pip install -e .`.
