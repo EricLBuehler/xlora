@@ -14,7 +14,7 @@ X-LoRA is easily applied to any HuggingFace Transformers model.
 
 See the [examples](examples) folder for some examples of how to get started with X-LoRA.
 
-## Example
+## Examples
 Excerpt from [this](./examples/simple.py) example.
 
 ### Converting a model
@@ -104,6 +104,56 @@ model_loaded, tokenizer = load_model(
 )
 ```
 
+### Scalings logging
+```python
+model: xLoRAModel = ... # Load the model
+
+# Enable scalings logging and begin a log
+model.enable_scalings_logging()
+
+# Run forward passes to accumulate a log
+
+# Write the log to a file, or multiple.
+model.flush_log_scalings("./path/to/output/file")
+
+# Get a shallow copy of the scalings
+log_copy = model.get_scalings_log()
+
+# Disable scalings logging and clear the log
+model.disable_scalings_logging()
+```
+
+### Trainable parameters
+```python
+model: xLoRAModel = ... # Load the model
+
+num_trainable, num_all_params = model.get_nb_trainable_parameters()
+
+model.print_trainable_parameters()
+```
+
+### Setting trainability of adapters dynamically
+```python
+model: xLoRAModel = ... # Load the model
+
+# Use trainable adapters: mark all adapters as trainable
+model.set_use_trainable_adapters(True)
+
+# Get the current status of the trainable adapters, in this case returning True
+model.get_use_trainable_adapters()
+```
+
+### Setting and resetting the scaling pass value
+```python
+model: xLoRAModel = ... # Load the model
+
+# Set the scaling pass value to 0, meaning that no adapters will contribute to the scaling pass output
+model.set_scaling_pass_value(0)
+
+# Allow the model to use the default scaling pass value
+model.set_scaling_pass_value(None)
+```
+
 ### API
 The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models.
 
@@ -142,7 +192,7 @@ The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Gen
 - `xLoraModel.get_use_trainable_adapters(self) -> bool`
   - Get the trainable or not trainable state of the adapters.
 - `xLoraModel.get_scalings_log(self) -> List[Tensor]`
-  - Returns a list containing the scalings log. Editing the list does not change the underlying log.
+  - Returns a shallow copy of the list containing the scalings log. Editing the list does not change the underlying log.
 
 ## Installation
 Pending a pip release, `git clone` this repository and run `pip install -e .`.

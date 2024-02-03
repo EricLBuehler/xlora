@@ -32,23 +32,38 @@ model_created = xlora.add_xlora_to_model(
 
 ### Set the adapters to trainable
 ### This means that when loading the model again we should specify only the adapter names.
+# Use trainable adapters: mark all adapters as trainable
 model_created.set_use_trainable_adapters(True)
+
+# Get the current status of the trainable adapters, in this case returning True
 model_created.get_use_trainable_adapters()
 
-### Set the scaling pass value
+### Set and resetting the scaling pass value
+# Set the scaling pass value to 0, meaning that no adapters will contribute to the scaling pass output
 model_created.set_scaling_pass_value(0)
 
-### Reset the scaling pass value
+# Allow the model to use the default scaling pass value
 model_created.set_scaling_pass_value(None)
 
 ### Example of scalings logging
+# Enable scalings logging and begin a log
 model_created.enable_scalings_logging()
 
 # Run forward passes to accumulate a log
 
+# Write the log to a file, or multiple.
 model_created.flush_log_scalings("./path/to/output/file")
 
+# Get a shallow copy of the scalings
+log_copy = model_created.get_scalings_log()
+
+# Disable scalings logging and clear the log
 model_created.disable_scalings_logging()
+
+### Example of getting, printing trainable parameters
+num_trainable, num_all_params = model_created.get_nb_trainable_parameters()
+
+model_created.print_trainable_parameters()
 
 ### From pretrained for models trained with `model_created.get_use_trainable_adapters() == True`
 loaded_model = xlora.from_pretrained("./path/to/saved/model", model, ["adapter_1", "adapter_2"], "cuda")

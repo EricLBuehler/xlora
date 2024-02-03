@@ -230,7 +230,7 @@ class PeftModelWrapper:
 
     def get_scalings_log(self) -> List[Tensor]:
         """
-        Returns a list containing the scalings log. Editing the list does not change the underlying log.
+        Returns a shallow copy of the list containing the scalings log. Editing the list does not change the underlying log.
         """
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         return classifier.log_scalings.copy()
