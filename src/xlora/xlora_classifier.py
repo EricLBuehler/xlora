@@ -179,6 +179,8 @@ class xLoRAClassifier(nn.Module):
 
         ### Calculate the sequence lengths
 
+        # TODO(all): Pending removal following analysis
+        """
         # hidden_state=[batch_size, seq_len, hidden_size]
         if self.config.stop_token_id is None:  # Calculate via attention mask
             if input_ids is not None:
@@ -200,7 +202,6 @@ class xLoRAClassifier(nn.Module):
             else:
                 sequence_lengths = -1
 
-        """
         # AFTER THIS: hidden_state=[batch_size, hidden_size]
         if self.config.use_mean_pool:
             assert isinstance(sequence_lengths, torch.Tensor)
