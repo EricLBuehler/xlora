@@ -230,7 +230,7 @@ class PeftModelWrapper:
 
     def get_latest_scalings(self) -> Optional[Tensor]:
         """
-        Returns the latest scalings prediction, or None if no scalings have been predicted.
+        Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
         """
         return self.model.internal_xlora_scalings
 

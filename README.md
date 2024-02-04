@@ -226,7 +226,7 @@ The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Gen
 - `xLoraModel.get_scalings_log(self) -> List[Tensor]`
   - Returns a shallow copy of the list containing the scalings log. Editing the list does not change the underlying log.
 - `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
-  - Returns the latest scalings prediction, or None if no scalings have been predicted.
+  - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
 
 ## Installation
 Pending a pip release, `git clone` this repository and run `pip install -e .`.
