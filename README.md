@@ -231,3 +231,18 @@ The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Gen
 
 ## Installation
 Pending a pip release, `git clone` this repository and run `pip install -e .`.
+
+### Original paper and citation
+
+Cite this work as:
+```
+@article{NiBuehler_2024,
+    title   = {X-LoRA: Mixture of Low-Rank Adaptor Experts, a flexible mixture-of-expert framework for large language models},
+    author  = {E.L. Buehler, M.J. Buehler},
+    journal = {},
+    year    = {2024},
+    volume  = {},
+    pages   = {},
+    url     = {https://arxiv.org/abs/XXXX.YYYYY}
+}
+```
