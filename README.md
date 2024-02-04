@@ -17,6 +17,15 @@ See the [examples](examples) folder for some examples of how to get started with
 ## Examples
 Excerpt from [this](./examples/simple.ipynb) example.
 
+- [Converting a model](README.md#converting-a-model)
+- [Loading a trained X-LoRA model *trained without trainable adapters* from scratch](README.md#loading-a-trained-x-lora-model-trained-without-trainable-adapters-from-scratch)
+- [Loading a trained X-LoRA model *trained with trainable adapters* from scratch](README.md#loading-a-trained-x-lora-model-trained-with-trainable-adapters-from-scratch)
+- [Loading a trained X-LoRA model with a convenience function](README.md#loading-a-trained-x-lora-model-with-a-convenience-function)
+- [Scalings logging](README.md#scalings-logging)
+- [Trainable parameters](README.md#trainable-parameters)
+- [Setting trainability of adapters dynamically](README.md#setting-trainability-of-adapters-dynamically)
+- [Setting and resetting the scaling pass value](README.md#setting-and-resetting-the-scaling-pass-value)
+
 ### Converting a model
 ```python
 import torch
