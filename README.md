@@ -192,6 +192,28 @@ model.set_scaling_pass_value(None)
 ## API
 The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the "Utility API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models while the Utility API provides useful utility functions.
 
+- [Global API](README.md#global-api): `xlora.*`
+  - `xlora.add_xlora_to_model`
+  - `xlora.from_pretrained`
+- [Utility API](README.md#utility-api): `xlora.xlora_utils.*`
+  - `xlora.xlora_utils.load_scalings_log`
+  - `xlora.xlora_utils.load_model`
+- [Model API](README.md#model-api): `xLoraModel.*`
+  - [Scalings](README.md#scalings-1)
+    - `xLoraModel.disable_scalings_logging`
+    - `xLoraModel.enable_scalings_logging`
+    - `xLoraModel.flush_log_scalings`
+    - `xLoraModel.get_scalings_log`
+  - [Trainable parameters](README.md#trainable-parameters-1)
+    - `xLoraModel.get_nb_trainable_parameters`
+    - `xLoraModel.print_trainable_parameters`
+  - [Trainable adapters](README.md#setting-the-trainable-adapters)
+    - `xLoraModel.set_use_trainable_adapters`
+    - `xLoraModel.get_use_trainable_adapters`
+  - [Scalings](README.md#scalings-1)
+    - `xLoraModel.set_scaling_pass_value`
+    - `xLoraModel.get_latest_scalings`
+
 ### Global API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
   - Convert a model to an xLoraModel, instantiating the classifier and adapters.
