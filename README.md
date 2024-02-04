@@ -153,6 +153,9 @@ model.disable_scalings_logging()
 
 # Get the latest scalings prediction
 scalings_pred = model.get_latest_scalings()
+
+# Load the scalings log from a file, or multiple automatically.
+loaded_log = xlora.xlora_utils.load_scalings_log("./path/to/output/file", verbose=True)
 ```
 
 ### Trainable parameters
