@@ -118,13 +118,13 @@ model_created = xlora.from_pretrained(
 import torch
 from xlora.xlora_utils import load_model  # type: ignore
 
-fine_tune_model_name = "Mistral_v204-rerun_V51Zephyr/checkpoint-420/"
+XLoRA_model_name = "XLoRA/checkpoint-XYZ/"
 
 model_loaded, tokenizer = load_model(
     model_name="HuggingFaceH4/zephyr-7b-beta",
     device="cuda:0",
     dtype=torch.bfloat16,
-    fine_tune_model_name=fine_tune_model_name,
+    fine_tune_model_name=XLoRA_model_name,
     adapters={
         "adapter_1": "./path/to/the/checkpoint/",
         "adapter_2": "./path/to/the/checkpoint/",
