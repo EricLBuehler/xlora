@@ -228,6 +228,12 @@ class PeftModelWrapper:
                     param.requires_grad = False
         return res
 
+    def get_latest_scalings(self) -> Optional[Tensor]:
+        """
+        Returns the latest scalings prediction, or None if no scalings have been predicted.
+        """
+        return self.model.internal_xlora_scalings
+
     def get_scalings_log(self) -> List[Tensor]:
         """
         Returns a shallow copy of the list containing the scalings log. Editing the list does not change the underlying log.

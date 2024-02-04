@@ -150,6 +150,9 @@ log_copy = model.get_scalings_log()
 
 # Disable scalings logging and clear the log
 model.disable_scalings_logging()
+
+# Get the latest scalings prediction
+scalings_pred = model.get_latest_scalings()
 ```
 
 ### Trainable parameters
@@ -222,6 +225,8 @@ The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Gen
   - Get the trainable or not trainable state of the adapters.
 - `xLoraModel.get_scalings_log(self) -> List[Tensor]`
   - Returns a shallow copy of the list containing the scalings log. Editing the list does not change the underlying log.
+- `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
+  - Returns the latest scalings prediction, or None if no scalings have been predicted.
 
 ## Installation
 Pending a pip release, `git clone` this repository and run `pip install -e .`.
