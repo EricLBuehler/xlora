@@ -1,6 +1,10 @@
+import json
+import pathlib
 from typing import Dict, List, Optional, Tuple, Union
 
+import numpy
 import torch
+import tqdm  # type: ignore
 from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
 from transformers.tokenization_utils import PreTrainedTokenizer  # type: ignore
 from transformers.tokenization_utils_fast import PreTrainedTokenizerFast  # type: ignore
@@ -91,3 +95,47 @@ def load_model(
         print("No X-LoRA loaded, just base model.")
 
     return model, tokenizer
+
+
+def load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]:
+    """
+    Load the scalings log, with awareness to the two types.
+
+    Args:
+        path (`str`):
+            The path provided to `flush_log_scalings`.
+        verbose (`bool`, defaults to `False`)
+            Display tqdm.
+    """
+
+    output: List[torch.Tensor] = []
+    if pathlib.Path(f"{path}-mapping.json").exists():
+        with open(f"{path}-mapping.json", "r") as f:
+            mapping: Dict[str, List[int]] = json.loads(f.read())
+
+        mapping_full: Dict[int, torch.Tensor] = {}
+        maxindex = -1
+
+        if verbose:
+            iterator = iter(tqdm.tqdm(mapping.items()))
+        else:
+            iterator = iter(mapping.items())
+
+        for file, indices in iterator:
+            npy_arr = numpy.load(file)
+            torch_arr = torch.from_numpy(npy_arr)
+            tensors = torch_arr.split(1, dim=0)
+            for tensor, index in zip(tensors, indices):
+                mapping_full[index] = tensor
+                if index > maxindex:
+                    maxindex = index
+
+        for index in range(maxindex + 1):
+            output.append(mapping_full[index])
+
+    else:
+        npy_arr = numpy.load(path)
+        torch_arr = torch.from_numpy(npy_arr)
+        output.extend(torch_arr.split(1, dim=0))
+
+    return output
