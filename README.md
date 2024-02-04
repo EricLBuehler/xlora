@@ -224,7 +224,8 @@ The X-LoRA API is composed of 2 parts: the "Global API" and the "Model API". Gen
 - `xLoraModel.get_use_trainable_adapters(self) -> bool`
   - Get the trainable or not trainable state of the adapters.
 - `xLoraModel.get_scalings_log(self) -> List[Tensor]`
-  - Returns a shallow copy of the list containing the scalings log. Editing the list does not change the underlying log.
+  - Returns a shallow (only copying the list itself not the tensors) copy of the list containing the scalings log. Editing the list does not change the underlying log.
+    The tensors are of shape (batch_size, seq_len, n_layers, n_classes). The seq_len dim may vary with input dimension.
 - `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
   - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
 
