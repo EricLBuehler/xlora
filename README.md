@@ -189,22 +189,23 @@ model.set_scaling_pass_value(0)
 model.set_scaling_pass_value(None)
 ```
 
-### API
+## API
 The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the "Utility API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models while the Utility API provides useful utility functions.
 
-## Global API
+### Global API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
   - Convert a model to an xLoraModel, instantiating the classifier and adapters.
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> xLoraModel`
   - Load the X-LoRA classifier and potentially adapters. This should be called after an X-LoRA classifier has been trained.
 
-## Utility API
+### Utility API
 - `xlora.xlora_utils.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
 - `xlora.xlora_utils.load_model(model_name: str, fine_tune_model_name: str, device: str, dtype: torch.dtype, adapters: Dict[str, str], use_flash_attention_2: bool = False, load_xlora: bool = False, verbose: bool = False, use_cache: bool = False) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
   - Convenience function to load a model, converting it to xLoRA if specified.
 
-## Model API
+### Model API
+#### Scalings
 - `xLoraModel.disable_scalings_logging()`
   - Disable scalings logging, clearing the log.
 - `xLoraModel.enable_scalings_logging()`
@@ -216,21 +217,22 @@ The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the
     file is outputted containing the mapping from each sequence log file to the index of the contained tensor so that one may reconstruct
     the log order.
     The file specified should not contain an extension.
-- `xLoraModel.get_nb_trainable_parameters() -> Tuple[int, int]`
-  - Return a tuple `(num_trainable, num_all_params)`
-- `xLoraModel.print_scalings_predictions(n_predictions_lifetime: int)`
-  - Print the scalings predictions for the next n forward passes of the model.
-- `xLoraModel.print_trainable_parameters()`
-  - Print the trainable and non-trainable parameters for the given model, including with the X-LoRA components.
-- `xLoraModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
-  - Set the trainability of the adapters.
-- `xLoraModel.set_scaling_pass_value(self, value: Union[Number, None])`
-  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings.
-- `xLoraModel.get_use_trainable_adapters(self) -> bool`
-  - Get the trainable or not trainable state of the adapters.
 - `xLoraModel.get_scalings_log(self) -> List[Tensor]`
   - Returns a shallow (only copying the list itself not the tensors) copy of the list containing the scalings log. Editing the list does not change the underlying log.
     The tensors are of shape (batch_size, seq_len, n_layers, n_classes). The seq_len dim may vary with input dimension.
+#### Trainable parameters
+- `xLoraModel.get_nb_trainable_parameters() -> Tuple[int, int]`
+  - Return a tuple `(num_trainable, num_all_params)`
+- `xLoraModel.print_trainable_parameters()`
+  - Print the trainable and non-trainable parameters for the given model, including with the X-LoRA components.
+#### Setting the trainable adapters
+- `xLoraModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
+  - Set the trainability of the adapters.
+- `xLoraModel.get_use_trainable_adapters(self) -> bool`
+  - Get the trainable or not trainable state of the adapters.
+#### Scalings
+- `xLoraModel.set_scaling_pass_value(self, value: Union[Number, None])`
+  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings.
 - `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
   - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
 
