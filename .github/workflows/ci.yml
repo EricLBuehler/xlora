@@ -22,3 +22,9 @@ jobs:
         uses: crate-ci/typos@master
         with:
           config: .typos_config.toml
+  todos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Print all TODO markings
+        run: grep -e TODO * -r
