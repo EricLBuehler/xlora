@@ -6,6 +6,10 @@ gate the LoRA experts in a dense fashion.
 
 X-LoRA is easily applied to any HuggingFace Transformers model.
 
+<p align="center">
+    <img src="./res/general_arch_v4.png" alt="General Architecture" width=75%/>
+</p>
+
 ## Advantages and features
 - Effective: Dense gating of experts allows effective mixing
 - Efficient fine-tuning: low trainable parameter count
