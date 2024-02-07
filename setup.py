@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 VERSION = "0.1.0"
 
@@ -8,7 +8,7 @@ extras["quality"] = ["ruff>=0.0.241"]
 setup(
     name="xlora",
     version=VERSION,
-    description="Mixture of LoRA Experts (xLoRA)",
+    description="X-LoRA: Mixture of LoRA Experts",
     license_files=["LICENSE"],
     long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
@@ -21,7 +21,7 @@ setup(
     packages=find_packages("src"),
     package_data={"xlora": ["py.typed"]},
     entry_points={},
-    python_requires=">=3.8.0",
+    python_requires=">=3.7.0",
     install_requires=["peft", "transformers"],
     extras_require=extras,
     classifiers=[
