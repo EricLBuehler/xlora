@@ -1,3 +1,5 @@
 peft==0.7.1
 safetensors
 transformers
+numpy
+torch
