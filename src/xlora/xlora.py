@@ -99,7 +99,7 @@ def add_xlora_to_model(
 
     Args:
         model (`PreTrainedModel`):
-            The model to add the LoRA adapters to. It may be modified in place.
+            The model to add the LoRA adapters to. It may be modified in place. If applicable, `use_cache` must be False.
         verbose (`bool`, defaults to `False`):
             Display tqdm, total swapping count.
         adapters (`dict`):
@@ -108,6 +108,9 @@ def add_xlora_to_model(
         model (`xLoRAModel`):
             The new model.
     """
+
+    if hasattr(model.config, "use_cache"):
+        assert not model.config.use_cache, "`use_cache` must be False"
 
     use_trainable_adapters = xlora_config.use_trainable_adapters
     if verbose:
@@ -236,7 +239,7 @@ def from_pretrained(
         load_directory (`str`):
             The directory to load the classifier weights from.
         model (`PreTrainedModel`):
-            The model to add the LoRA adapters to. It may be modified in place.
+            The model to add the LoRA adapters to. It may be modified in place. If applicable, `use_cache` must be False.
         adapters (`list` or `dict`):
             List of adapter names (the keys of the adapters `dict` in `add_xlora_to_model`) OR Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
             Specify the list if the adapters were trainable.

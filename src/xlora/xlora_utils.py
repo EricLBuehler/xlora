@@ -45,8 +45,6 @@ def load_model(
             Load the model to xLoRA.
         verbose (`bool`, *optional*, defaults to False):
             Enable verbose loading.
-        use_cache (`bool`, *optional*, defaults to False):
-            If the base model config has a `use_cache` attribute, set it to this value.
         from_safetensors (`bool`, *optional*, defaults to True):
             Whether to load the classifier weights from a .pt or .safetensors file.
 
@@ -68,7 +66,7 @@ def load_model(
         verbose=verbose,
     )
     if hasattr(model.config, "use_cache"):
-        model.config.use_cache = use_cache
+        model.config.use_cache = False
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         trust_remote_code=True,
