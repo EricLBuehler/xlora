@@ -2,11 +2,11 @@ import json
 import os
 from typing import Dict, List, Optional, Union
 
-import peft # type: ignore
+import peft  # type: ignore
 import torch
 import tqdm  # type: ignore
-from peft.peft_model import PeftModel # type: ignore
-from peft.tuners import lora # type: ignore
+from peft.peft_model import PeftModel  # type: ignore
+from peft.tuners import lora  # type: ignore
 from safetensors.torch import load_model  # type: ignore
 from transformers import PreTrainedModel  # type: ignore
 
