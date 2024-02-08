@@ -274,7 +274,7 @@ The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the
 ## Installation
 Pending a pip release, `git clone` this repository and run `pip install -e .`.
 
-### Original paper and citation
+## Original paper and citation
 
 Cite this work as:
 ```
@@ -288,3 +288,6 @@ Cite this work as:
     url     = {https://arxiv.org/abs/XXXX.YYYYY}
 }
 ```
+
+## Contributing
+Please run `make style` before submitting a PR.
