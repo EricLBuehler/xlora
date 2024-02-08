@@ -277,7 +277,7 @@ Pending a pip release, `git clone` this repository and run `pip install -e .`.
 ## Original paper and citation
 
 Cite this work as:
-```
+```bibtex
 @article{NiBuehler_2024,
     title   = {X-LoRA: Mixture of Low-Rank Adaptor Experts, a flexible mixture-of-expert framework for large language models},
     author  = {E.L. Buehler, M.J. Buehler},
