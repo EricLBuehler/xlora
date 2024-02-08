@@ -1,8 +1,8 @@
 # X-LoRA
 Mixture of LoRA Experts: Leverage the power of fine-tuned LoRA experts by employing a mixture of experts, or MoE technique.
 
-X-LoRA works by learning the alpha scaling values for LoRA adapters, which are frozen. These learned alpha values are used to
-gate the LoRA experts in a dense fashion.
+X-LoRA works by learning scaling values for LoRA adapters. These learned scalings values are used to
+gate the LoRA experts in a dense fashion. Additionally, all LoRA adapters and the base model are frozen, allowing efficient fine tuning due to a low parameter count.
 
 X-LoRA is easily applied to any HuggingFace Transformers model.
 
