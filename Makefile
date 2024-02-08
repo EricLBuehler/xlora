@@ -11,3 +11,7 @@ quality:
 style:
 	ruff $(check_dirs) --fix
 	ruff format $(check_dirs)
+
+publish:
+	python3 -m build
+	twine upload dist/*
