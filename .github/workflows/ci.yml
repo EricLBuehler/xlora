@@ -26,3 +26,9 @@ jobs:
       - uses: actions/checkout@v3
       - name: Print all TODO markings
         run: grep -e TODO * -r
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check code quality
+        run: make quality
