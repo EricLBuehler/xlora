@@ -37,7 +37,6 @@ def load_model(
     use_flash_attention_2: bool = False,
     load_xlora: bool = True,
     verbose: bool = False,
-    use_cache: bool = False,
     from_safetensors: bool = True,
 ) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]]:
     """
