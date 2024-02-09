@@ -228,6 +228,42 @@ The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the
     - `xLoraModel.set_scaling_pass_value`
     - `xLoraModel.get_latest_scalings`
 
+### X-LoRA Config
+The X-LoRA Config saves the full configuration of an X-LoRA model.
+```python
+Args:
+    hidden_size (`int`):
+        Hidden size of the base model.
+    device (`torch.device`):
+        Device for the X-LoRA classifier.
+    enable_softmax (`bool`, *optional*, defaults to `True`):
+        Enable softmax application for the X-LoRA classifier.
+    enable_softmax_topk (`bool`, *optional*, defaults to `False`):
+        Enable softmax application for the top-k LoRA adapters. Mutually exclusive to `enable_softmax` and must only be set if `top_k_lora` is.
+    softmax_temperature (`float`, *optional*, defaults to 1.0):
+        Softmax temperature, lower yields sharper predictions
+    layerwise_scalings (`bool`, *optional*, defaults to `False`):
+        Generate scalings for each layer.
+    top_k_lora (`int`, *optional*, defaults to None):
+        Sparsely select the top_k LoRA experts instead of the default dense method.
+    xlora_depth (`int`, *optional*, defaults to 1):
+        Depth of the X-LoRA classifier.
+    xlora_size (`int`, *optional*, defaults to 2048):
+        Hidden size of the X-LoRA classifier, irrelevant if `xlora_depth=1`.
+    enable_relu_and_dropout (`bool`, *optional*, defaults to `False`):
+        Enable ReLU activation and Dropout application of the X-LoRA classifier.
+    use_bias (`bool`, *optional*, defaults to `True`):
+        Enable bias in X-LoRA classifier.
+    xlora_dropout_p (`float`, *optional*, defaults to 0.2):
+        Dropout probability of the X-LoRA classifier, irrelevant if `xlora_depth=1` or `enable_relu_and_dropout=True`.
+    stop_token_id (`int`, *optional*):
+        The id of the stop token for the input. If this is None, the sequence length is calculated using the attention mask.
+    use_trainable_adapters (`bool`, *optional*, defaults to False):
+        Make the adapters trainable.
+    scaling_pass_value (`float`, *optional*, defaults to 0):
+        Scaling pass value.
+```
+
 ### Global API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
   - Convert a model to an xLoraModel, instantiating the classifier and adapters.

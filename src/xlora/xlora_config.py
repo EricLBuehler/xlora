@@ -40,7 +40,7 @@ class xLoRAConfig:
         use_trainable_adapters (`bool`, *optional*, defaults to False):
             Make the adapters trainable.
         scaling_pass_value (`float`, *optional*, defaults to 0):
-            Scaling pass value
+            Scaling pass value.
     """
 
     model_type = "xlora"
