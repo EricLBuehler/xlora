@@ -9,6 +9,8 @@ import torch
 class xLoRAConfig:
     r"""
     This is the configuration class to store the configuration of a [`xLoRAClassifier`].
+    When the config is reloaded, the paths of the `adapters` field is disregarded in favor of the saved adapters. As such, only the keys
+    matter during loading.
 
     Args:
         hidden_size (`int`):
