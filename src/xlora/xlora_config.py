@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 
 import torch
 
@@ -15,6 +15,8 @@ class xLoRAConfig:
             Hidden size of the base model.
         device (`torch.device`):
             Device for the X-LoRA classifier.
+        adapters (`dict`):
+            Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
         enable_softmax (`bool`, *optional*, defaults to `True`):
             Enable softmax application for the X-LoRA classifier.
         enable_softmax_topk (`bool`, *optional*, defaults to `False`):
@@ -47,6 +49,7 @@ class xLoRAConfig:
 
     hidden_size: int
     device: torch.device
+    adapters: Dict[str, str]
     enable_softmax: bool = True
     enable_softmax_topk: bool = False
     layerwise_scalings: bool = False

@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional, Union
+from typing import Dict, Optional, Union
 
 import peft
 import torch
@@ -90,7 +90,6 @@ def convert_layers_to_xlora(
 def add_xlora_to_model(
     model: PreTrainedModel,
     xlora_config: xLoRAConfig,
-    adapters: Dict[str, str],
     verbose: bool = False,
 ) -> xLoRAModel:
     """
@@ -102,8 +101,6 @@ def add_xlora_to_model(
             The model to add the LoRA adapters to. It may be modified in place. If applicable, `use_cache` must be False.
         verbose (`bool`, defaults to `False`):
             Display tqdm, total swapping count.
-        adapters (`dict`):
-            Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
     Returns:
         model (`xLoRAModel`):
             The new model.
@@ -114,16 +111,16 @@ def add_xlora_to_model(
 
     use_trainable_adapters = xlora_config.use_trainable_adapters
     if verbose:
-        adapters_items = iter(tqdm.tqdm(adapters.items()))
+        adapters_items = iter(tqdm.tqdm(xlora_config.adapters.items()))
     else:
-        adapters_items = iter(adapters.items())
+        adapters_items = iter(xlora_config.adapters.items())
     first_item = next(adapters_items)
     model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], is_trainable=use_trainable_adapters)
 
     for adapter_name, model_id in adapters_items:
         model_peft.load_adapter(model_id, adapter_name, is_trainable=use_trainable_adapters)
 
-    model_peft.base_model.set_adapter(list(adapters.keys()))
+    model_peft.base_model.set_adapter(list(xlora_config.adapters.keys()))
 
     def hook(module, *args, **kwargs) -> None:
         args_real = args[0]
@@ -171,7 +168,7 @@ def add_xlora_to_model(
         xlora_config.top_k_lora,
     )
 
-    n_classes = len(adapters)
+    n_classes = len(xlora_config.adapters)
     xlora_classifier = xLoRAClassifier(model_peft, xlora_config, n_classes, total_swapped)
 
     # Setup the internal state
@@ -223,7 +220,6 @@ def add_xlora_to_model(
 def from_pretrained(
     load_directory: str,
     model: PreTrainedModel,
-    adapters: Union[List[str], Dict[str, str]],
     device: str,
     verbose: bool = False,
     from_safetensors: bool = True,
@@ -240,9 +236,6 @@ def from_pretrained(
             The directory or HF model repo ID to load the classifier weights from.
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place. If applicable, `use_cache` must be False.
-        adapters (`list` or `dict`):
-            List of adapter names (the keys of the adapters `dict` in `add_xlora_to_model`) OR Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
-            Specify the list if the adapters were trainable.
         verbose (`bool`, defaults to `False`):
             Display tqdm, total swapping count.
         device (`str`):
@@ -258,19 +251,14 @@ def from_pretrained(
         conf = json.load(f)
         conf["device"] = torch.device(device)
 
-        use_trainable_adapters = conf["use_trainable_adapters"]
-
         xlora_config = xLoRAConfig(**conf)
 
-    if use_trainable_adapters:
-        adapters_dict: Dict[str, str] = {
-            name: xlora_utils._get_file_path_dir(load_directory, name, "adapters") for name in adapters
-        }
-    else:
-        assert isinstance(adapters, dict)
-        adapters_dict = adapters
+    adapters_real: Dict[str, str] = {
+        name: xlora_utils._get_file_path_dir(load_directory, name, "adapters") for name in xlora_config.adapters
+    }
+    xlora_config.adapters = adapters_real
 
-    model_peft = add_xlora_to_model(model, xlora_config, adapters_dict, verbose)
+    model_peft = add_xlora_to_model(model, xlora_config, verbose)
     classifier: xLoRAClassifier = model_peft.internal_xlora_classifier  # type: ignore
     if from_safetensors:
         state_dict = load_model(
