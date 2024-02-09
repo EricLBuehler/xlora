@@ -1,4 +1,4 @@
-.PHONY: quality style
+.PHONY: quality style publish
 
 check_dirs := src tests examples
 
