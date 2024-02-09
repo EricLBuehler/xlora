@@ -10,6 +10,8 @@ from peft.tuners import lora
 from safetensors.torch import load_model  # type: ignore
 from transformers import PreTrainedModel  # type: ignore
 
+from . import xlora_utils  # type: ignore
+
 from .xlora_classifier import InhibitorFlagPayload, xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import (
@@ -237,7 +239,7 @@ def from_pretrained(
 
     Args:
         load_directory (`str`):
-            The directory to load the classifier weights from.
+            The directory or HF model repo ID to load the classifier weights from.
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place. If applicable, `use_cache` must be False.
         adapters (`list` or `dict`):
@@ -254,7 +256,7 @@ def from_pretrained(
             The new model.
     """
 
-    with open(os.path.join(load_directory, "xlora_config.json"), "r") as f:
+    with open(xlora_utils._get_file_path(load_directory, "xlora_config.json"), "r") as f:
         conf = json.load(f)
         conf["device"] = torch.device(device)
 
@@ -263,7 +265,9 @@ def from_pretrained(
         xlora_config = xLoRAConfig(**conf)
 
     if use_trainable_adapters:
-        adapters_dict: Dict[str, str] = {name: os.path.join(load_directory, "adapters", name) for name in adapters}
+        adapters_dict: Dict[str, str] = {
+            name: xlora_utils._get_file_path_dir(load_directory, name, "adapters") for name in adapters
+        }
     else:
         assert isinstance(adapters, dict)
         adapters_dict = adapters
@@ -273,11 +277,11 @@ def from_pretrained(
     if from_safetensors:
         state_dict = load_model(
             classifier,
-            os.path.join(load_directory, "xlora_classifier.safetensors"),
+            xlora_utils._get_file_path(load_directory, "xlora_classifier.safetensors"),
         )
         classifier.to(device)
     else:
-        state_dict = torch.load(os.path.join(load_directory, "xlora_classifier.pt"))
+        state_dict = torch.load(xlora_utils._get_file_path(load_directory, "xlora_classifier.pt"))
         classifier.load_state_dict(state_dict)  # type: ignore
 
     return model_peft

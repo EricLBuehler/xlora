@@ -3,3 +3,4 @@ safetensors
 transformers
 numpy
 torch
+huggingface_hub

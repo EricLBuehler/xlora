@@ -1,6 +1,8 @@
 import json
+import os
 import pathlib
 from typing import Dict, List, Optional, Tuple, Union
+import huggingface_hub  # type: ignore
 
 import numpy
 import torch
@@ -12,9 +14,24 @@ from transformers.tokenization_utils_fast import PreTrainedTokenizerFast  # type
 from .xlora import from_pretrained, xLoRAModel  # type: ignore
 
 
+def _get_file_path(
+    load_directory: str,
+    name: str,
+) -> str:
+    if os.path.exists(os.path.join(load_directory, name)):
+        return os.path.join(load_directory, name)
+    return huggingface_hub.hf_hub_download(load_directory, filename=name)
+
+
+def _get_file_path_dir(load_directory: str, name: str, dir: str) -> str:
+    if os.path.exists(os.path.join(load_directory, dir, name)):
+        return os.path.join(load_directory, dir, name)
+    return huggingface_hub.hf_hub_download(load_directory, filename=name, subfolder=dir)
+
+
 def load_model(
     model_name: str,
-    fine_tune_model_name: Optional[str],
+    xlora_path: Optional[str],
     device: str,
     dtype: torch.dtype,
     adapters: Union[List[str], Dict[str, str]],
@@ -30,7 +47,7 @@ def load_model(
     Args:
         model_name (`str`):
             AutoModelForCausalLM pretrained model name or path
-        fine_tune_model_name (`str`, *optional*):
+        xlora_path (`str`, *optional*):
             Directory to load the xLoRAClassifier from.
         device (`str`):
             Device to load the base model and the xLoRA model to.
@@ -77,9 +94,9 @@ def load_model(
     tokenizer.padding_side = "right"
 
     if load_xlora:
-        assert fine_tune_model_name is not None
+        assert xlora_path is not None
         model = from_pretrained(
-            load_directory=fine_tune_model_name,
+            load_directory=xlora_path,
             from_safetensors=from_safetensors,
             model=model,
             adapters=adapters,
