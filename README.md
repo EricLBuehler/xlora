@@ -15,6 +15,7 @@ X-LoRA is easily applied to any HuggingFace Transformers model.
 - Efficient fine-tuning: low trainable parameter count
 - Hierarchical encapsulated strategy: Re-use existing trained models or model section and re-use them to address complex tasks that cut across experts, following a bio-inspired strategy 
 - Easy-to-use API: `add_xlora_to_model`, broad compatibility 
+- Dynamically mix LoRA adapters: Deep layer-wise combinations of adapters.
 
 See the [examples](examples) folder for some examples of how to get started with X-LoRA.
 
