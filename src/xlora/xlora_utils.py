@@ -2,8 +2,8 @@ import json
 import os
 import pathlib
 from typing import Dict, List, Optional, Tuple, Union
-import huggingface_hub  # type: ignore
 
+import huggingface_hub  # type: ignore
 import numpy
 import torch
 import tqdm  # type: ignore

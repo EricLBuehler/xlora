@@ -37,8 +37,10 @@ class xLoRAConfig:
             Dropout probability of the X-LoRA classifier, irrelevant if `xlora_depth=1` or `enable_relu_and_dropout=True`.
         stop_token_id (`int`, *optional*):
             The id of the stop token for the input. If this is None, the sequence length is calculated using the attention mask.
-        use_trainable_adapters (`bool`, *optional`, defaults to False):
+        use_trainable_adapters (`bool`, *optional*, defaults to False):
             Make the adapters trainable.
+        scaling_pass_value (`float`, *optional*, defaults to 0):
+            Scaling pass value
     """
 
     model_type = "xlora"
@@ -57,6 +59,7 @@ class xLoRAConfig:
     use_trainable_adapters: bool = False
     softmax_temperature: float = 1.0
     top_k_lora: Optional[int] = None
+    scaling_pass_value: float = 0.0
 
     def __post_init__(self):
         if self.enable_softmax_topk and self.top_k_lora is None:

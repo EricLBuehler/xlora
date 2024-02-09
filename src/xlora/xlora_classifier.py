@@ -58,7 +58,7 @@ class xLoRAClassifier(nn.Module):
         self.config = config
         self.log_scalings: List[torch.Tensor] = []
         self.softmax = TemperatureScaledSoftmax(temperature=self.config.softmax_temperature)
-        self.override_scaling_pass_value: Number = 1 / n_classes
+        self.override_scaling_pass_value: Number = config.scaling_pass_value
 
         self.n_predictions_lifetime = 0
         self.scalings_logging = False
@@ -315,3 +315,4 @@ class xLoRAClassifier(nn.Module):
             self.override_scaling_pass_value = 1 / self.n_classes
         else:
             self.override_scaling_pass_value = value
+        self.config.scaling_pass_value = self.override_scaling_pass_value
