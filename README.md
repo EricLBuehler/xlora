@@ -263,12 +263,12 @@ The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the
   - Print the trainable and non-trainable parameters for the given model, including with the X-LoRA components.
 #### Setting the trainable adapters
 - `xLoraModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
-  - Set the trainability of the adapters.
+  - Set the trainability of the adapters. This is reflected in the config.
 - `xLoraModel.get_use_trainable_adapters(self) -> bool`
   - Get the trainable or not trainable state of the adapters.
 #### Scalings
 - `xLoraModel.set_scaling_pass_value(self, value: Union[Number, None])`
-  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings.
+  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings. This is reflected in the config.
 - `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
   - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
 

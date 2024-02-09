@@ -246,6 +246,8 @@ class PeftModelWrapper:
         """
         Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default
         scalings.
+
+        This is reflected in the config.
         """
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         classifier.set_override_scaling_pass_value(value)
@@ -316,6 +318,8 @@ class PeftModelWrapper:
     def set_use_trainable_adapters(self, use_trainable_adapters: bool):
         """
         Set the adapters to trainable or not trainable.
+
+        This is reflected in the config.
         """
         for name, param in self.model.base_model.named_parameters():
             if "lora_" in name:
