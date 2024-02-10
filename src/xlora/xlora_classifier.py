@@ -245,7 +245,7 @@ class xLoRAClassifier(nn.Module):
             self.n_predictions_lifetime -= 1
 
         if self.scalings_logging:
-            self.log_scalings.append(scalings.unsqueeze(0))
+            self.log_scalings.append(scalings)
 
         return scalings
 
@@ -297,13 +297,13 @@ class xLoRAClassifier(nn.Module):
                 seqlens_map[seq_len][1].append(scaling)
 
         if len(seqlens_map) == 1:
-            self._save_scalings(path, self.log_scalings)
+            self._save_scalings(path, [scaling.unsqueeze(0) for scaling in self.log_scalings])
         else:
             indices_map: Dict[str, List[int]] = {}
             for seq_len, (indices, scalings_list) in seqlens_map.items():
                 indices_map[f"{path}-{seq_len}.npy"] = indices
 
-                self._save_scalings(f"{path}-{seq_len}", scalings_list)
+                self._save_scalings(f"{path}-{seq_len}", [scaling.unsqueeze(0) for scaling in scalings_list])
 
             with open(f"{path}-mapping.json", "w") as f:
                 f.write(json.dumps(indices_map))
