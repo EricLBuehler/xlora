@@ -267,7 +267,7 @@ Args:
 ### Global API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
   - Convert a model to an xLoraModel, instantiating the classifier and adapters.
-- `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True, hf_hub_subdir: Optional[str] = None,) -> xLoraModel`
+- `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True, hf_hub_subdir: Optional[str] = None) -> xLoraModel`
   - Load the X-LoRA classifier and potentially adapters. This should be called after an X-LoRA classifier has been trained.
 
 ### Utility API
