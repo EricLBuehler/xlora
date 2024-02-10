@@ -54,7 +54,7 @@ def load_model(
         model_name (`str`):
             AutoModelForCausalLM pretrained model name or path
         xlora_path (`str`, *optional*):
-            Directory to load the xLoRAClassifier from.
+            Directory or HF model repo ID to load the xLoRAClassifier from.
         device (`str`):
             Device to load the base model and the xLoRA model to.
         dtype (`torch.dtype`):
