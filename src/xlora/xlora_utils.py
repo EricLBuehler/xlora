@@ -14,7 +14,7 @@ from transformers.tokenization_utils_fast import PreTrainedTokenizerFast  # type
 from .xlora import from_pretrained, xLoRAModel  # type: ignore
 
 
-def _get_file_path(
+def _get_file_path_single(
     load_directory: str,
     name: str,
 ) -> str:
@@ -29,6 +29,12 @@ def _get_file_path_dir(load_directory: str, name: str, dir: str) -> str:
     return huggingface_hub.hf_hub_download(load_directory, filename=name, subfolder=dir)
 
 
+def _get_file_path(load_directory: str, name: str, dir: Optional[str]) -> str:
+    if dir is not None:
+        return _get_file_path_dir(load_directory, name, dir)
+    return _get_file_path_single(load_directory, name)
+
+
 def load_model(
     model_name: str,
     xlora_path: Optional[str],
@@ -39,6 +45,7 @@ def load_model(
     load_xlora: bool = True,
     verbose: bool = False,
     from_safetensors: bool = True,
+    hf_hub_subdir: Optional[str] = None,
 ) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]]:
     """
     Convenience function to load a model, converting it to xLoRA if specified.
@@ -47,7 +54,7 @@ def load_model(
         model_name (`str`):
             AutoModelForCausalLM pretrained model name or path
         xlora_path (`str`, *optional*):
-            Directory to load the xLoRAClassifier from.
+            Directory or HF model repo ID to load the xLoRAClassifier from.
         device (`str`):
             Device to load the base model and the xLoRA model to.
         dtype (`torch.dtype`):
@@ -63,6 +70,8 @@ def load_model(
             Enable verbose loading.
         from_safetensors (`bool`, *optional*, defaults to True):
             Whether to load the classifier weights from a .pt or .safetensors file.
+        hf_hub_subdir (`str`, *optional*, defaults to None):
+            If `xlora_path` is a HF model repo ID, specify a subdirectory where the weights may be found.
 
     Returns:
         Tuple whose elements are respectively:
