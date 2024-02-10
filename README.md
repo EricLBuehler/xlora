@@ -235,13 +235,13 @@ Args:
 ### Global API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
   - Convert a model to an xLoraModel, instantiating the classifier and adapters.
-- `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True) -> xLoraModel`
+- `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: adapters: Optional[Dict[str, str]] = None, verbose: bool, device: str, from_safetensors: bool = True) -> xLoraModel`
   - Load the X-LoRA classifier and potentially adapters. This should be called after an X-LoRA classifier has been trained.
 
 ### Utility API
 - `xlora.xlora_utils.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
-- `xlora.xlora_utils.load_model(model_name: str, fine_tune_model_name: str, device: str, dtype: torch.dtype, adapters: Dict[str, str], use_flash_attention_2: bool = False, load_xlora: bool = False, verbose: bool = False, use_cache: bool = False) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
+- `xlora.xlora_utils.load_model(model_name: str, fine_tune_model_name: str, device: str, dtype: torch.dtype, adapters: Optional[Dict[str, str]] = None, use_flash_attention_2: bool = False, load_xlora: bool = False, verbose: bool = False, use_cache: bool = False) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
   - Convenience function to load a model, converting it to xLoRA if specified.
 
 ### Model API
