@@ -274,7 +274,7 @@ Args:
 - `xlora.xlora_utils.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
 - `xlora.xlora_utils.load_model(model_name: str, fine_tune_model_name: str, device: str, dtype: torch.dtype, adapters: Dict[str, str], use_flash_attention_2: bool = False, load_xlora: bool = False, verbose: bool = False, use_cache: bool = False, hf_hub_subdir: Optional[str] = None) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
-  - Convenience function to load a model, converting it to xLoRA if specified.
+  - Convenience function to load a model, converting it to X-LoRA if specified.
 
 ### Model API
 #### Scalings
