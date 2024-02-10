@@ -200,8 +200,8 @@ def add_xlora_to_model(
     assert not hasattr(model_peft, "disable_scalings_logging")
     model_peft.disable_scalings_logging = peft_model_wrapper.disable_scalings_logging  # type: ignore
 
-    assert not hasattr(model_peft, "disable_scalings_logging")
-    model_peft.disable_scalings_logging = peft_model_wrapper.disable_scalings_logging  # type: ignore
+    assert not hasattr(model_peft, "flush_log_scalings")
+    model_peft.flush_log_scalings = peft_model_wrapper.flush_log_scalings  # type: ignore
 
     assert not hasattr(model_peft, "get_scalings_log")
     model_peft.get_scalings_log = peft_model_wrapper.get_scalings_log  # type: ignore
