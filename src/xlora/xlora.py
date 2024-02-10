@@ -243,7 +243,7 @@ def from_pretrained(
             Device of the model, used to load the classifier.
         adapters (`list` or `dict`, *optional*, defaults to None):
             Specify a mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
-            Specify the list if the adapters were trainable. Specify this parameter to override use of the trained adapters. 
+            Specify the list if the adapters were trainable. Specify this parameter to override use of the trained adapters.
         verbose (`bool`, defaults to `False`):
             Display tqdm, total swapping count.
         from_safetensors (`bool`, *optional*, defaults to True):
@@ -264,7 +264,12 @@ def from_pretrained(
 
     if adapters is None or xlora_config.use_trainable_adapters:
         adapters_real: Dict[str, str] = {
-            name: xlora_utils._get_file_path_dir(load_directory, name, os.path.join(hf_hub_subdir, "adapters") if hf_hub_subdir is not None else "adapters") for name in xlora_config.adapters
+            name: xlora_utils._get_file_path_dir(
+                load_directory,
+                name,
+                os.path.join(hf_hub_subdir, "adapters") if hf_hub_subdir is not None else "adapters",
+            )
+            for name in xlora_config.adapters
         }
     else:
         assert isinstance(adapters, dict)

@@ -61,7 +61,7 @@ def load_model(
             Datatype for the base model.
         adapters (`list` or `dict`, *optional*, defaults to None):
             Specify a mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
-            Specify the list if the adapters were trainable. Specify this parameter to override use of the trained adapters. 
+            Specify the list if the adapters were trainable. Specify this parameter to override use of the trained adapters.
         use_flash_attention_2 (`bool`, *optional*, defaults to False):
             Use FlashAttention v2 for the base model.
         load_xlora (`bool`, *optional*, defaults to True):
