@@ -110,6 +110,7 @@ def load_model(
             adapters=adapters,
             verbose=verbose,
             device=device,
+            hf_hub_subdir=hf_hub_subdir,
         )
         if verbose:
             print("X-LoRA loaded.")
