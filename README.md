@@ -315,8 +315,8 @@ Pending a pip release, `git clone` this repository and run `pip install -e .`.
 
 Cite this work as:
 ```bibtex
-@article{NiBuehler_2024,
-    title   = {X-LoRA: Mixture of Low-Rank Adaptor Experts, a flexible mixture-of-expert framework for large language models},
+@article{Buehler_XLoRA_2024,
+    title   = {X-LoRA: Mixture of Low-Rank Adapter Experts, a Flexible Framework for Large Language Models with Applications in Protein Mechanics and Design},
     author  = {E.L. Buehler, M.J. Buehler},
     journal = {},
     year    = {2024},
