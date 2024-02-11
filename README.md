@@ -6,9 +6,7 @@ gate the LoRA experts in a dense fashion. Additionally, all LoRA adapters and th
 
 X-LoRA is easily applied to any HuggingFace Transformers model. Please see our weights, [here](https://huggingface.co/lamm-mit/x-lora).
 
-<p align="center">
-    <img src="./res/general_arch_v5.png" alt="General Architecture" width=75%/>
-</p>
+![Token-by-token scalings](./res/token_by_token_scalings.gif)
 
 ## Advantages and features
 - Effective: Dense gating of experts allows effective mixing
@@ -17,7 +15,9 @@ X-LoRA is easily applied to any HuggingFace Transformers model. Please see our w
 - Easy-to-use API: `add_xlora_to_model`, broad compatibility 
 - Dynamically mix LoRA adapters: Deep layer-wise combinations of adapters.
 
-![](./res/token_by_token_scalings.gif)
+<p align="center">
+    <img src="./res/general_arch_v5.png" alt="General Architecture" width=75%/>
+</p>
 
 See the [examples](examples) folder for some examples of how to get started with X-LoRA.
 
