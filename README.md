@@ -17,7 +17,7 @@ X-LoRA is easily applied to any HuggingFace Transformers model. Please see our w
 - Easy-to-use API: `add_xlora_to_model`, broad compatibility 
 - Dynamically mix LoRA adapters: Deep layer-wise combinations of adapters.
 
-<video src="/res/cropped_movie.mp4">
+<video src="/res/cropped_movie.mp4" width=180/>
 
 See the [examples](examples) folder for some examples of how to get started with X-LoRA.
 
