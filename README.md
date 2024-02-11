@@ -17,7 +17,7 @@ X-LoRA is easily applied to any HuggingFace Transformers model. Please see our w
 - Easy-to-use API: `add_xlora_to_model`, broad compatibility 
 - Dynamically mix LoRA adapters: Deep layer-wise combinations of adapters.
 
-<video controls src="https://github.com/EricLBuehler/xlora/assets/65165915/23d8ab6e-7381-4669-a42a-7440e3c76297" title="Token by token scalings" width=50%>Token by token scalings</video>
+<video controls src="https://github.com/EricLBuehler/xlora/assets/65165915/31a18a3d-c787-426a-92c7-12a5d6d17583" title="Token by token scalings" width=50%></video>
 
 See the [examples](examples) folder for some examples of how to get started with X-LoRA.
 
