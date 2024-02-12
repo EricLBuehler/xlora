@@ -210,6 +210,12 @@ def add_xlora_to_model(
     assert not hasattr(model_peft, "set_scaling_pass_value")
     model_peft.set_scaling_pass_value = peft_model_wrapper.set_scaling_pass_value  # type: ignore
 
+    assert not hasattr(model_peft, "set_global_scaling_weight")
+    model_peft.set_global_scaling_weight = peft_model_wrapper.set_global_scaling_weight  # type: ignore
+
+    assert not hasattr(model_peft, "get_global_scaling_weight")
+    model_peft.get_global_scaling_weight = peft_model_wrapper.get_global_scaling_weight  # type: ignore
+
     model_peft.get_nb_trainable_parameters = peft_model_wrapper.get_nb_trainable_parameters  # type: ignore
 
     model_peft.print_trainable_parameters = peft_model_wrapper.print_trainable_parameters  # type: ignore
