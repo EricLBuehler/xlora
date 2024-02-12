@@ -39,6 +39,7 @@ Excerpt from [this](./examples/simple.ipynb) example.
 - [Trainable parameters](README.md#trainable-parameters)
 - [Setting trainability of adapters dynamically](README.md#setting-trainability-of-adapters-dynamically)
 - [Setting and resetting the scaling pass value](README.md#setting-and-resetting-the-scaling-pass-value)
+- [Setting and getting the global LoRA weight](README.md#setting-and-getting-the-global-lora-weight)
 
 ### Converting a model
 ```python
@@ -212,7 +213,7 @@ model.set_scaling_pass_value(0)
 model.set_scaling_pass_value(None)
 ```
 
-### Setting the global LoRA weight
+### Setting and getting the global LoRA weight
 ```python
 model: xLoRAModel = ... # Load the model
 
