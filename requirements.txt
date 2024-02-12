@@ -1,4 +1,4 @@
-peft==0.7.1
+peft
 safetensors
 transformers
 numpy
