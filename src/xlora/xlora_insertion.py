@@ -20,7 +20,7 @@ class xLoRALayer:
     xLoRA algorithm.
     """
 
-    __slots__ = {"model", "target_forward", "target", "layer_number", "disabled", "top_k_lora"}
+    __slots__ = {"model", "target_forward", "target", "layer_number", "disabled", "config"}
 
     def __init__(
         self,
@@ -28,14 +28,14 @@ class xLoRALayer:
         target: lora.LoraLayer,
         target_forward: Callable[..., Any],
         layer_number: int,
-        top_k_lora: Optional[int],
+        config: xLoRAConfig,
     ) -> None:
         self.model = model
         self.target_forward = target_forward
         self.target = target
         self.layer_number = layer_number
         self.disabled = False  # TODO(EricLBuehler): Pending removal following analysis
-        self.top_k_lora = top_k_lora
+        self.config = config
 
     @staticmethod
     def apply_scalings_to_x(x: torch.Tensor, scalings_layer: torch.Tensor, adapter: int) -> torch.Tensor:
@@ -48,8 +48,8 @@ class xLoRALayer:
         # xlora_scalings = [batch_size, seq_len, n_classes]
         xlora_scalings: Tensor = self.model.internal_xlora_scalings[:, :, self.layer_number, :]  # type: ignore
 
-        if self.top_k_lora is not None:
-            _, topk_indices = torch.topk(xlora_scalings, k=self.top_k_lora, dim=1)
+        if self.config.top_k_lora is not None:
+            _, topk_indices = torch.topk(xlora_scalings, k=self.config.top_k_lora, dim=1)
 
             # Mask the topk to True, the rest to False
             mask = torch.zeros_like(xlora_scalings, dtype=torch.bool)
@@ -73,9 +73,9 @@ class xLoRALinearLayer(xLoRALayer):
         target: lora.Linear,
         target_forward: Callable[..., Any],
         layer_number: int,
-        top_k_lora: Optional[int],
+        config: xLoRAConfig,
     ) -> None:
-        super().__init__(model, target, target_forward, layer_number, top_k_lora)
+        super().__init__(model, target, target_forward, layer_number, config)
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
@@ -104,7 +104,7 @@ class xLoRALinearLayer(xLoRALayer):
                 scaling = self.target.scaling[active_adapter]
                 x = x.to(lora_A.weight.dtype)  # type: ignore
                 x_mod = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
-                result += lora_B(lora_A(dropout(x_mod))) * scaling
+                result += lora_B(lora_A(dropout(x_mod))) * scaling * self.config.global_scaling_weight
 
         result = result.to(previous_dtype)
         return result
@@ -117,9 +117,9 @@ class xLoRAEmbeddingLayer(xLoRALayer):
         target: lora.Embedding,
         target_forward: Callable[..., Any],
         layer_number: int,
-        top_k_lora: Optional[int],
+        config: xLoRAConfig,
     ) -> None:
-        super().__init__(model, target, target_forward, layer_number, top_k_lora)
+        super().__init__(model, target, target_forward, layer_number, config)
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
@@ -146,7 +146,7 @@ class xLoRAEmbeddingLayer(xLoRALayer):
                 scaling = self.target.scaling[active_adapter]
                 x_mod = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
                 after_A = self.target._embed(x_mod, embedding_A)  # type: ignore
-                result += (after_A @ embedding_B) * scaling
+                result += (after_A @ embedding_B) * scaling * self.config.global_scaling_weight
 
         return result
 
@@ -158,9 +158,9 @@ class xLoRAConv2dLayer(xLoRALayer):
         target: lora.Conv2d,
         target_forward: Callable[..., Any],
         layer_number: int,
-        top_k_lora: Optional[int],
+        config: xLoRAConfig,
     ) -> None:
-        super().__init__(model, target, target_forward, layer_number, top_k_lora)
+        super().__init__(model, target, target_forward, layer_number, config)
 
     def forward(self, x: Tensor, *args: Any, **kwargs: Any) -> Tensor:
         """
@@ -188,7 +188,7 @@ class xLoRAConv2dLayer(xLoRALayer):
                 scaling = self.target.scaling[active_adapter]
                 x = x.to(lora_A.weight.dtype)  # type: ignore
                 x_mod = self.apply_scalings_to_x(x, xlora_scalings, adapter_n)
-                result += lora_B(lora_A(dropout(x_mod))) * scaling
+                result += lora_B(lora_A(dropout(x_mod))) * scaling * self.config.global_scaling_weight
 
         result = result.to(previous_dtype)
         return result
@@ -227,6 +227,20 @@ class PeftModelWrapper:
                 if "lora_" in name:
                     param.requires_grad = False
         return res
+
+    def set_global_scaling_weight(self, weight: float):
+        """
+        Set the global LoRA weight, a scalar to multiply the output of each LoRA adapter by. This is reflected in the config.
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        classifier.config.global_scaling_weight = weight
+
+    def get_global_scaling_weight(self) -> float:
+        """
+        Get the global LoRA weight.
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        return classifier.config.global_scaling_weight
 
     def get_latest_scalings(self) -> Optional[Tensor]:
         """

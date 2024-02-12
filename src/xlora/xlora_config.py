@@ -41,6 +41,8 @@ class xLoRAConfig:
             Make the adapters trainable.
         scaling_pass_value (`float`, *optional*, defaults to 0):
             Scaling pass value.
+        global_scaling_weight (`float`, *optional*, defaults to 1):
+            Weight to multiply output of each LoRA adapter by.
     """
 
     model_type = "xlora"
@@ -60,6 +62,7 @@ class xLoRAConfig:
     softmax_temperature: float = 1.0
     top_k_lora: Optional[int] = None
     scaling_pass_value: float = 0.0
+    global_scaling_weight: float = 1.0
 
     def __post_init__(self):
         if self.enable_softmax_topk and self.top_k_lora is None:
