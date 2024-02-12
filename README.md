@@ -147,7 +147,7 @@ model_loaded, tokenizer = load_model(
     model_name="HuggingFaceH4/zephyr-7b-beta",
     device="cuda:0",
     dtype=torch.bfloat16,
-    fine_tune_model_name=XLoRA_model_name,
+    xlora_path=XLoRA_model_name,
     adapters={
         "adapter_1": "./path/to/the/checkpoint/",
         "adapter_2": "./path/to/the/checkpoint/",
