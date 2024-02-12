@@ -224,6 +224,15 @@ model.set_global_scaling_weight(2)
 res = model.get_global_scaling_weight()
 ```
 
+### Setting and getting the top-k lora value
+```python
+# Use the top 2 lora experts
+model_created.set_topk_lora(2)
+
+# Returns 2
+res = model_created.get_topk_lora()
+```
+
 ## API
 The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the "Utility API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models while the Utility API provides useful utility functions.
 
