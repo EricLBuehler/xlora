@@ -230,7 +230,7 @@ class PeftModelWrapper:
 
     def set_topk_lora(self, value: Optional[int]):
         """
-        Sparsely select the specified top_k LoRA experts instead of the default dense method. Set to None to use dense.
+        Sparsely select the specified top_k LoRA experts instead of the default dense method. Set to None to use dense. This is reflected in the config.
         """
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         classifier.config.top_k_lora = value
