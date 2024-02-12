@@ -294,6 +294,8 @@ Args:
         Make the adapters trainable.
     scaling_pass_value (`float`, *optional*, defaults to 0):
         Scaling pass value.
+    global_scaling_weight (`float`, *optional*, defaults to 1):
+        Weight to multiply output of each LoRA adapter by.
 ```
 
 ### Global API
