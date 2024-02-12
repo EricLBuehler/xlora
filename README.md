@@ -40,6 +40,7 @@ Excerpt from [this](./examples/simple.ipynb) example.
 - [Setting trainability of adapters dynamically](README.md#setting-trainability-of-adapters-dynamically)
 - [Setting and resetting the scaling pass value](README.md#setting-and-resetting-the-scaling-pass-value)
 - [Setting and getting the global LoRA weight](README.md#setting-and-getting-the-global-lora-weight)
+- [Setting and getting the top-k lora value](README.md#setting-and-getting-the-top-k-lora-value)
 
 ### Converting a model
 ```python
