@@ -230,7 +230,7 @@ class PeftModelWrapper:
 
     def set_global_scaling_weight(self, weight: float):
         """
-        Set the global LoRA weight, a scalar to multiply the output of each LoRA adapter by. This is reflected in the config.
+        Set the global LoRA weight, a scalar to multiply the output of each LoRA adapter by. This is by default 1. This is reflected in the config.
         """
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         classifier.config.global_scaling_weight = weight
