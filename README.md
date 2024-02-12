@@ -38,6 +38,8 @@ Excerpt from [this](./examples/simple.ipynb) example.
 - [Trainable parameters](README.md#trainable-parameters)
 - [Setting trainability of adapters dynamically](README.md#setting-trainability-of-adapters-dynamically)
 - [Setting and resetting the scaling pass value](README.md#setting-and-resetting-the-scaling-pass-value)
+- [Setting and getting the global LoRA weight](README.md#setting-and-getting-the-global-lora-weight)
+- [Setting and getting the top-k lora value](README.md#setting-and-getting-the-top-k-lora-value)
 
 ### Converting a model
 ```python
@@ -180,6 +182,26 @@ model.set_scaling_pass_value(0)
 model.set_scaling_pass_value(None)
 ```
 
+### Setting and getting the global LoRA weight
+```python
+model: xLoRAModel = ... # Load the model
+
+# Multiply the output of each LoRA adapter by 2, additionally to the scalings.
+model.set_global_scaling_weight(2)
+
+# Returns 2
+res = model.get_global_scaling_weight()
+```
+
+### Setting and getting the top-k lora value
+```python
+# Use the top 2 lora experts
+model_created.set_topk_lora(2)
+
+# Returns 2
+res = model_created.get_topk_lora()
+```
+
 ## API
 The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the "Utility API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models while the Utility API provides useful utility functions.
 
@@ -190,20 +212,21 @@ The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the
   - `xlora.xlora_utils.load_scalings_log`
   - `xlora.xlora_utils.load_model`
 - [Model API](README.md#model-api): `xLoraModel.*`
-  - [Scalings](README.md#scalings-1)
+  - [Scalings](README.md#scalings)
     - `xLoraModel.disable_scalings_logging`
     - `xLoraModel.enable_scalings_logging`
     - `xLoraModel.flush_log_scalings`
     - `xLoraModel.get_scalings_log`
+    - `xLoraModel.set_scaling_pass_value`
+    - `xLoraModel.get_latest_scalings`
+    - `xLoraModel.set_global_lora_weight`
+    - `xLoraModel.get_global_lora_weight`
   - [Trainable parameters](README.md#trainable-parameters-1)
     - `xLoraModel.get_nb_trainable_parameters`
     - `xLoraModel.print_trainable_parameters`
   - [Trainable adapters](README.md#setting-the-trainable-adapters)
     - `xLoraModel.set_use_trainable_adapters`
     - `xLoraModel.get_use_trainable_adapters`
-  - [Scalings](README.md#scalings-1)
-    - `xLoraModel.set_scaling_pass_value`
-    - `xLoraModel.get_latest_scalings`
 
 ### X-LoRA Config
 The X-LoRA Config saves the full configuration of an X-LoRA model.
@@ -269,6 +292,14 @@ Args:
 - `xLoraModel.get_scalings_log(self) -> List[Tensor]`
   - Returns a shallow (only copying the list itself not the tensors) copy of the list containing the scalings log. Editing the list does not change the underlying log.
     The tensors are of shape (batch_size, seq_len, n_layers, n_classes). The seq_len dim may vary with input dimension.
+- `xLoraModel.set_scaling_pass_value(self, value: Union[Number, None])`
+  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings. This is reflected in the config.
+- `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
+  - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
+- `xLoraModel.set_global_scaling_weight(self, weight: float)`
+  - Set the global LoRA weight, a scalar to multiply the output of each LoRA adapter by. This is by default 1. This is reflected in the config.
+- `xLoraModel.get_global_scaling_weight(self) -> float`
+  - Get the global LoRA weight.
 #### Trainable parameters
 - `xLoraModel.get_nb_trainable_parameters() -> Tuple[int, int]`
   - Return a tuple `(num_trainable, num_all_params)`
@@ -279,11 +310,11 @@ Args:
   - Set the trainability of the adapters. This is reflected in the config.
 - `xLoraModel.get_use_trainable_adapters(self) -> bool`
   - Get the trainable or not trainable state of the adapters.
-#### Scalings
-- `xLoraModel.set_scaling_pass_value(self, value: Union[Number, None])`
-  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings. This is reflected in the config.
-- `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
-  - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
+#### Top-k
+- `xLoraModel.set_topk_lora(self, value: Optional[int])`
+  - Sparsely select the specified top_k LoRA experts instead of the default dense method. Set to None to use dense. This is reflected in the config.
+- `xLoraModel.get_topk_lora(self) -> Optional[int]`
+  - Get the current top_k LoRA experts value.
 
 ## Original paper and citation
 
