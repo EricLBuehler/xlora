@@ -235,6 +235,13 @@ class PeftModelWrapper:
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         classifier.config.global_scaling_weight = weight
 
+    def get_global_scaling_weight(self) -> float:
+        """
+        Get the global LoRA weight.
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
+        return classifier.config.global_scaling_weight
+
     def get_latest_scalings(self) -> Optional[Tensor]:
         """
         Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).

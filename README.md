@@ -218,6 +218,9 @@ model: xLoRAModel = ... # Load the model
 
 # Multiply the output of each LoRA adapter by 2, additionally to the scalings.
 model.set_global_scaling_weight(2)
+
+# Returns 2
+res = model.get_global_scaling_weight()
 ```
 
 ## API
@@ -235,9 +238,10 @@ The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the
     - `xLoraModel.enable_scalings_logging`
     - `xLoraModel.flush_log_scalings`
     - `xLoraModel.get_scalings_log`
-    - `xLoraModel.set_manual_lora_weight`
     - `xLoraModel.set_scaling_pass_value`
     - `xLoraModel.get_latest_scalings`
+    - `xLoraModel.set_global_lora_weight`
+    - `xLoraModel.get_global_lora_weight`
   - [Trainable parameters](README.md#trainable-parameters-1)
     - `xLoraModel.get_nb_trainable_parameters`
     - `xLoraModel.print_trainable_parameters`
@@ -315,6 +319,8 @@ Args:
   - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
 - `xLoraModel.set_global_lora_weight(self, weight: float)`
   - Set the global LoRA weight, a scalar to multiply the output of each LoRA adapter by. This is reflected in the config.
+- `xLoraModel.get_global_scaling_weight(self) -> float`
+  - Get the global LoRA weight.
 #### Trainable parameters
 - `xLoraModel.get_nb_trainable_parameters() -> Tuple[int, int]`
   - Return a tuple `(num_trainable, num_all_params)`
