@@ -32,7 +32,7 @@ class xLoRAModel(PeftModel, PeftModelWrapper):
 def convert_layers_to_xlora(
     base: PeftModel,
     verbose: bool,
-    top_k_lora: Optional[int],
+    config: xLoRAConfig,
 ) -> int:
     """
     Returns the number of swapped layers.
@@ -53,7 +53,7 @@ def convert_layers_to_xlora(
                 target=module,
                 target_forward=module.forward,
                 layer_number=total_swapped,
-                top_k_lora=top_k_lora,
+                config=config,
             )
             module.forward = new_layer.forward  # type: ignore[method-assign]
             total_swapped += 1
@@ -64,7 +64,7 @@ def convert_layers_to_xlora(
                 target=module,
                 target_forward=module.forward,
                 layer_number=total_swapped,
-                top_k_lora=top_k_lora,
+                config=config,
             )
             module.forward = new_layer.forward  # type: ignore[method-assign]
             total_swapped += 1
@@ -75,7 +75,7 @@ def convert_layers_to_xlora(
                 target=module,
                 target_forward=module.forward,
                 layer_number=total_swapped,
-                top_k_lora=top_k_lora,
+                config=config,
             )
             module.forward = new_layer.forward  # type: ignore[method-assign]
             total_swapped += 1
@@ -169,7 +169,7 @@ def add_xlora_to_model(
     total_swapped = convert_layers_to_xlora(
         model_peft,
         verbose,
-        xlora_config.top_k_lora,
+        xlora_config,
     )
 
     n_classes = len(adapters)
