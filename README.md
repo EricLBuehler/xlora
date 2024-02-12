@@ -332,6 +332,11 @@ Args:
   - Set the trainability of the adapters. This is reflected in the config.
 - `xLoraModel.get_use_trainable_adapters(self) -> bool`
   - Get the trainable or not trainable state of the adapters.
+#### Top-k
+- `xLoraModel.set_topk_lora(self, value: Optional[int])`
+  - Sparsely select the specified top_k LoRA experts instead of the default dense method. Set to None to use dense.
+- `xLoraModel.get_topk_lora(self) -> Optional[int]`
+  - Get the current top_k LoRA experts value.
 
 ## Original paper and citation
 
