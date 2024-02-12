@@ -212,6 +212,14 @@ model.set_scaling_pass_value(0)
 model.set_scaling_pass_value(None)
 ```
 
+### Setting the global LoRA weight
+```python
+model: xLoRAModel = ... # Load the model
+
+# Multiply the output of each LoRA adapter by 2, additionally to the scalings.
+model.set_global_scaling_weight(2)
+```
+
 ## API
 The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the "Utility API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models while the Utility API provides useful utility functions.
 
