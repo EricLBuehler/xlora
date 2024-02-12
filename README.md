@@ -318,8 +318,8 @@ Args:
   - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings. This is reflected in the config.
 - `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
   - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
-- `xLoraModel.set_global_lora_weight(self, weight: float)`
-  - Set the global LoRA weight, a scalar to multiply the output of each LoRA adapter by. This is reflected in the config.
+- `xLoraModel.set_global_scaling_weight(self, weight: float)`
+  - Set the global LoRA weight, a scalar to multiply the output of each LoRA adapter by. This is by default 1. This is reflected in the config.
 - `xLoraModel.get_global_scaling_weight(self) -> float`
   - Get the global LoRA weight.
 #### Trainable parameters
