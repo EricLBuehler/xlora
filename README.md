@@ -4,7 +4,7 @@ Mixture of LoRA Experts: Leverage the power of fine-tuned LoRA experts by employ
 X-LoRA works by learning scaling values for LoRA adapters. These learned scalings values are used to
 gate the LoRA experts in a dense fashion. Additionally, all LoRA adapters and the base model are frozen, allowing efficient fine tuning due to a low parameter count.
 
-X-LoRA is easily applied to any HuggingFace Transformers model. Please see our weights, [here](https://huggingface.co/lamm-mit/x-lora).
+X-LoRA is easily applied to any HuggingFace Transformers model. Please see our weights, [here](https://huggingface.co/lamm-mit/x-lora) and our [paper](https://arxiv.org/abs/2402.07148).
 
 ### Token-by-token scalings
 ![Token-by-token scalings](./res/token_by_token_scalings.gif)
@@ -361,7 +361,7 @@ Cite this work as:
     year    = {2024},
     volume  = {},
     pages   = {},
-    url     = {https://arxiv.org/abs/XXXX.YYYYY}
+    url     = {https://arxiv.org/abs/2402.07148}
 }
 ```
 
