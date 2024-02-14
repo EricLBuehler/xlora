@@ -40,7 +40,7 @@ def load_model(
     xlora_path: Optional[str],
     device: str,
     dtype: torch.dtype,
-    adapters: Union[List[str], Dict[str, str]],
+    adapters: Optional[Dict[str, str]] = None,
     use_flash_attention_2: bool = False,
     load_xlora: bool = True,
     verbose: bool = False,
@@ -59,9 +59,9 @@ def load_model(
             Device to load the base model and the xLoRA model to.
         dtype (`torch.dtype`):
             Datatype for the base model.
-        adapters (`list` or `dict):
-            List of adapter names (the keys of the adapters `dict` in `add_xlora_to_model`) OR Mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
-            Specify the list if the adapters were trainable.
+        adapters (`list` or `dict`, *optional*, defaults to None):
+            Specify a mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
+            Specify the list if the adapters were trainable. Specify this parameter to override use of the trained adapters.
         use_flash_attention_2 (`bool`, *optional*, defaults to False):
             Use FlashAttention v2 for the base model.
         load_xlora (`bool`, *optional*, defaults to True):
@@ -107,10 +107,10 @@ def load_model(
             load_directory=xlora_path,
             from_safetensors=from_safetensors,
             model=model,
-            adapters=adapters,
             verbose=verbose,
             device=device,
             hf_hub_subdir=hf_hub_subdir,
+            adapters=adapters,
         )
         if verbose:
             print("X-LoRA loaded.")

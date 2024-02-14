@@ -32,8 +32,7 @@ Pending a pip release, run the following command to install X-LoRA.
 Excerpt from [this](./examples/simple.ipynb) example.
 
 - [Converting a model](README.md#converting-a-model)
-- [Loading a trained X-LoRA model *trained without trainable adapters* from scratch](README.md#loading-a-trained-x-lora-model-trained-without-trainable-adapters-from-scratch)
-- [Loading a trained X-LoRA model *trained with trainable adapters* from scratch](README.md#loading-a-trained-x-lora-model-trained-with-trainable-adapters-from-scratch)
+- [Loading a trained X-LoRA model from scratch](README.md#loading-a-trained-x-lora-model-from-scratch)
 - [Loading a trained X-LoRA model with a convenience function](README.md#loading-a-trained-x-lora-model-with-a-convenience-function)
 - [Scalings logging](README.md#scalings-logging)
 - [Trainable parameters](README.md#trainable-parameters)
@@ -66,17 +65,20 @@ config = AutoConfig.from_pretrained(
 ### Convert the model to X-LoRA
 model_created = xlora.add_xlora_to_model(
     model=model,
-    xlora_config=xlora.xLoRAConfig(config.hidden_size, xlora_depth=8, device=torch.device("cuda")),
+    xlora_config=xlora.xLoRAConfig(
+        config.hidden_size,
+        xlora_depth=8,
+        device=torch.device("cuda"),
+        adapters={
+            "adapter_1": "./path/to/the/checkpoint/",
+            "adapter_2": "./path/to/the/checkpoint/",
+            "adapter_n": "./path/to/the/checkpoint/",
+        },
+    ),
     verbose=True,
-    adapters={
-        "adapter_1": "./path/to/the/checkpoint_adapter_1/",
-        "adapter_2": "./path/to/the/checkpoint_adapter_2/",
-        "adapter_n": "./path/to/the/checkpoint_adapter_3/",
-    },
 )
 ```
-
-### Loading a trained X-LoRA model *trained without trainable adapters* from scratch
+### Loading a trained X-LoRA model from scratch
 ```python
 import torch
 import xlora
@@ -100,40 +102,6 @@ config = AutoConfig.from_pretrained(
 model_created = xlora.from_pretrained(
     "./path/to/saved/model",
     model,
-    {
-        "adapter_1": "./path/to/the/checkpoint/",
-        "adapter_2": "./path/to/the/checkpoint/",
-        "adapter_n": "./path/to/the/checkpoint/",
-    },
-    "cuda",
-)
-```
-
-### Loading a trained X-LoRA model *trained with trainable adapters* from scratch
-```python
-import torch
-import xlora
-from transformers import AutoConfig, AutoModelForCausalLM # type: ignore
-
-model = AutoModelForCausalLM.from_pretrained(
-    "mistralai/Mistral-7B-Instruct-v0.1",
-    trust_remote_code=True,
-    use_flash_attention_2=False,
-    device_map="cuda:0",
-    torch_dtype=torch.bfloat16,
-)
-
-config = AutoConfig.from_pretrained(
-    "mistralai/Mistral-7B-Instruct-v0.1",
-    trust_remote_code=True,
-    use_flash_attention_2=False,
-    device_map="auto",
-)
-
-model_created = xlora.from_pretrained(
-    "./path/to/saved/model",
-    model,
-    ["adapter_1", "adapter_2", "adapter_n"],
     "cuda",
 )
 ```
@@ -301,13 +269,13 @@ Args:
 ### Global API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
   - Convert a model to an xLoraModel, instantiating the classifier and adapters.
-- `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: Union[List[str], Dict[str, str]], verbose: bool, device: str, from_safetensors: bool = True, hf_hub_subdir: Optional[str] = None) -> xLoraModel`
+- `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: adapters: Optional[Dict[str, str]] = None, verbose: bool, device: str, from_safetensors: bool = True, hf_hub_subdir: Optional[str] = None) -> xLoraModel`
   - Load the X-LoRA classifier and potentially adapters. This should be called after an X-LoRA classifier has been trained.
 
 ### Utility API
 - `xlora.xlora_utils.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
-- `xlora.xlora_utils.load_model(model_name: str, fine_tune_model_name: str, device: str, dtype: torch.dtype, adapters: Dict[str, str], use_flash_attention_2: bool = False, load_xlora: bool = False, verbose: bool = False, use_cache: bool = False, hf_hub_subdir: Optional[str] = None) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
+- `xlora.xlora_utils.load_model(model_name: str, fine_tune_model_name: str, device: str, dtype: torch.dtype, adapters: Optional[Dict[str, str]] = None, use_flash_attention_2: bool = False, load_xlora: bool = False, verbose: bool = False, use_cache: bool = False, hf_hub_subdir: Optional[str] = None) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
   - Convenience function to load a model, converting it to X-LoRA if specified.
 
 ### Model API

@@ -393,20 +393,20 @@ class PeftModelWrapper:
 
         conf = classifier.config.__dict__.copy()
         del conf["device"]
+
+        if is_main_process:
+            os.makedirs(os.path.join(save_directory, "adapters"), exist_ok=True)
+        self.base_model_save(
+            save_directory=os.path.join(save_directory, "adapters"),
+            safe_serialization=safe_serialization,
+            is_main_process=is_main_process,
+            selected_adapters=selected_adapters,
+            save_embedding_layers=save_embedding_layers,
+            **kwargs,
+        )
+
         with open(os.path.join(save_directory, "xlora_config.json"), "w") as f:
             json.dump(conf, f)
-
-        if self.config.use_trainable_adapters:
-            if is_main_process:
-                os.makedirs(os.path.join(save_directory, "adapters"), exist_ok=True)
-            self.base_model_save(
-                save_directory=os.path.join(save_directory, "adapters"),
-                safe_serialization=safe_serialization,
-                is_main_process=is_main_process,
-                selected_adapters=selected_adapters,
-                save_embedding_layers=save_embedding_layers,
-                **kwargs,
-            )
 
         if safe_serialization:
             # https://github.com/huggingface/peft/blob/main/src/peft/peft_model.py#L223
