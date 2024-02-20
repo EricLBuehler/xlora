@@ -88,7 +88,6 @@ def load_model(
         device_map=device,
         torch_dtype=dtype,
         use_flash_attention_2=use_flash_attention_2,
-        verbose=verbose,
     )
     if hasattr(model.config, "use_cache"):
         model.config.use_cache = False
@@ -96,7 +95,6 @@ def load_model(
         model_name,
         trust_remote_code=True,
         device_map=device,
-        verbose=verbose,
     )
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
