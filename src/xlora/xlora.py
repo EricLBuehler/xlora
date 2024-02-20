@@ -256,7 +256,7 @@ def from_pretrained(
             The model to add the LoRA adapters to. It may be modified in place. If applicable, `use_cache` must be False.
         device (`str`):
             Device of the model, used to load the classifier.
-        adapters (`list` or `dict`, *optional*, defaults to None):
+        adapters (`dict`, *optional*, defaults to None):
             Specify a mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
             Specify the list if the adapters were trainable. Specify this parameter to override use of the trained adapters.
         verbose (`bool`, defaults to `False`):
@@ -275,6 +275,8 @@ def from_pretrained(
         conf = json.load(f)
         conf["device"] = torch.device(device)
 
+        if "adapters" not in conf:
+            conf["adapters"] = adapters
         xlora_config = xLoRAConfig(**conf)
 
     if adapters is None or xlora_config.use_trainable_adapters:
