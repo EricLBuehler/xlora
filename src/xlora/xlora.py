@@ -137,8 +137,8 @@ def add_xlora_to_model(
 
             model_peft.internal_xlora_scalings = torch.full(  # type: ignore
                 (payload.batch_size, payload.seq_len, xlora_classifier.n_layers, xlora_classifier.n_classes),
-                payload.override_scaling_pass_value,  # requires_grad=True
-            )  # TODO(EricLBuehler): is the requires_grad=True necessary?
+                payload.override_scaling_pass_value,
+            )
 
             return
 

@@ -20,7 +20,7 @@ class xLoRALayer:
     xLoRA algorithm.
     """
 
-    __slots__ = {"model", "target_forward", "target", "layer_number", "disabled", "config"}
+    __slots__ = {"model", "target_forward", "target", "layer_number", "config"}
 
     def __init__(
         self,
@@ -34,7 +34,6 @@ class xLoRALayer:
         self.target_forward = target_forward
         self.target = target
         self.layer_number = layer_number
-        self.disabled = False  # TODO(EricLBuehler): Pending removal following analysis
         self.config = config
 
     @staticmethod
