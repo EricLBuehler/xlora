@@ -40,14 +40,8 @@ def convert_layers_to_xlora(
     assert isinstance(base.base_model, lora.LoraModel)
     total_swapped = 0
 
-    scaling_keys = None
     for module in base.modules():
-        if isinstance(module, lora.LoraLayer):
-            if not scaling_keys:
-                scaling_keys = list(module.scaling.keys())  # NOTE(EricLBuehler): Python 3.7: dicts are ordered!
-
         if isinstance(module, lora.Linear):
-            assert scaling_keys is not None
             new_layer: Union[xLoRALinearLayer, xLoRAEmbeddingLayer, xLoRAConv2dLayer] = xLoRALinearLayer(
                 model=base,
                 target=module,
@@ -58,7 +52,6 @@ def convert_layers_to_xlora(
             module.forward = new_layer.forward  # type: ignore[method-assign]
             total_swapped += 1
         elif isinstance(module, lora.Embedding):
-            assert scaling_keys is not None
             new_layer = xLoRAEmbeddingLayer(
                 model=base,
                 target=module,
@@ -69,7 +62,6 @@ def convert_layers_to_xlora(
             module.forward = new_layer.forward  # type: ignore[method-assign]
             total_swapped += 1
         elif isinstance(module, lora.Conv2d):
-            assert scaling_keys is not None
             new_layer = xLoRAConv2dLayer(
                 model=base,
                 target=module,
