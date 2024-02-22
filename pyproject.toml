@@ -1,8 +1,8 @@
 [tool.ruff]
-ignore = ["C901", "E501", "E741", "W605"]
-select = ["C", "E", "F", "I", "W"]
+lint.ignore = ["C901", "E501", "E741", "W605"]
+lint.select = ["C", "E", "F", "I", "W"]
 line-length = 119
 extend-include = ["*.ipynb"]
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F401"]
