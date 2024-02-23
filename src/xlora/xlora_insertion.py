@@ -295,10 +295,16 @@ class PeftModelWrapper:
 
     def disable_scalings_logging(self):
         """
-        Disable scalings logging, clearing the log.
+        Disable scalings logging, without clearing the log.
         """
         classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         classifier.scalings_logging = False
+
+    def clear_scalings_log(self):
+        """
+        Clear the scalings log.
+        """
+        classifier: xLoRAClassifier = self.model.internal_xlora_classifier  # type: ignore
         classifier.log_scalings = []
 
     def flush_log_scalings(self, path: str):

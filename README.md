@@ -128,24 +128,25 @@ model_loaded, tokenizer = load_model(
 
 ### Scalings logging
 ```python
-model: xLoRAModel = ... # Load the model
-
 # Enable scalings logging and begin a log
-model.enable_scalings_logging()
+model_created.enable_scalings_logging()
 
 # Run forward passes to accumulate a log
 
 # Write the log to a file, or multiple.
-model.flush_log_scalings("./path/to/output/file")
+model_created.flush_log_scalings("./path/to/output/file")
 
 # Get a shallow copy of the scalings
-log_copy = model.get_scalings_log()
+log_copy = model_created.get_scalings_log()
 
-# Disable scalings logging and clear the log
-model.disable_scalings_logging()
+# Disable scalings logging
+model_created.disable_scalings_logging()
+
+# Clear the scalings log
+model_created.clear_scalings_log()
 
 # Get the latest scalings prediction
-scalings_pred = model.get_latest_scalings()
+scalings_pred = model_created.get_latest_scalings()
 
 # Load the scalings log from a file, or multiple automatically.
 loaded_log = xlora.xlora_utils.load_scalings_log("./path/to/output/file", verbose=True)
@@ -281,7 +282,9 @@ Args:
 ### Model API
 #### Scalings
 - `xLoraModel.disable_scalings_logging()`
-  - Disable scalings logging, clearing the log.
+  - Disable scalings logging, without clearing the log.
+- `xLoraModel.clear_scalings_log()`
+  - Clear the scalings log.
 - `xLoraModel.enable_scalings_logging()`
   - Enable scalings logging. Each time a forward pass occurs, the predicted scalings will be logged.
 - `xLoraModel.flush_log_scalings(path: str)`
