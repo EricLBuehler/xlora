@@ -1,5 +1,4 @@
 import json
-import os
 from typing import Dict, Optional, Union
 
 import peft
@@ -272,14 +271,7 @@ def from_pretrained(
         xlora_config = xLoRAConfig(**conf)
 
     if adapters is None or xlora_config.use_trainable_adapters:
-        adapters_real: Dict[str, str] = {
-            name: xlora_utils._get_file_path_dir(
-                load_directory,
-                name,
-                os.path.join(hf_hub_subdir, "adapters") if hf_hub_subdir is not None else "adapters",
-            )
-            for name in xlora_config.adapters
-        }
+        adapters_real = xlora_config.adapters
     else:
         assert isinstance(adapters, dict)
         adapters_real = adapters
