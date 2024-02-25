@@ -1,7 +1,6 @@
 import json
 from typing import Dict, Optional, Union
 
-import peft
 import torch
 import tqdm  # type: ignore
 from peft.peft_model import PeftModel
@@ -36,7 +35,6 @@ def convert_layers_to_xlora(
     """
     Returns the number of swapped layers.
     """
-    assert isinstance(base.base_model, lora.LoraModel)
     total_swapped = 0
 
     for module in base.modules():
@@ -152,7 +150,7 @@ def add_xlora_to_model(
         if verbose:
             print(f"Froze {total_frozen} adapters.")
 
-    assert isinstance(model_peft.base_model, peft.tuners.lora.LoraModel)
+    assert isinstance(model_peft.base_model, lora.LoraModel)
 
     total_swapped = convert_layers_to_xlora(
         model_peft,
