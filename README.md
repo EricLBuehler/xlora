@@ -23,8 +23,8 @@ X-LoRA is easily applied to any HuggingFace Transformers model. Please see our w
 
 See the [examples](examples) folder for some examples of how to get started with X-LoRA.
 
-## Efficent Inference Support
-[Mistral.rs](https://github.com/EricLBuehler/mistral.rs) is an inference framework which supports X-LoRA! To use it, follow the installation instructions and run the following command to start up an X-LoRA inference platform!
+## Efficient Inference Support
+[Mistral.rs](https://github.com/EricLBuehler/mistral.rs) is an inference framework which supports X-LoRA! To use it, follow the installation instructions and run the following command to start up an X-LoRA inference platform.
 
 `./mistralrs-server --port 1234 x-lora-mistral -o ordering.json`
 
