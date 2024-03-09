@@ -380,8 +380,9 @@ class PeftModelWrapper:
 
         Args:
             save_directory (`str`):
-                Directory where the adapter model and configuration files will be saved (will be created if it does not
-                exist).
+                Directory where the adapter model and configuration files will be saved. This can be either:
+                    - A local directory (will be created if it does not exist)
+                    - An HF Hub model ID
             safe_serialization (`bool`, *optional*):
                 Whether to save the adapter files in safetensors format, defaults to `True`.
             is_main_process (`bool`, *optional*):
