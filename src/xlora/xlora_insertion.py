@@ -408,10 +408,7 @@ class PeftModelWrapper:
             **kwargs,
         )
 
-        conf["adapters"] = {
-            name: os.path.join(save_directory, name) if name != "default" else save_directory
-            for name in conf["adapters"]
-        }
+        conf["adapters"] = list(conf["adapters"].keys())
         with open(os.path.join(save_directory, "xlora_config.json"), "w") as f:
             json.dump(conf, f)
 
