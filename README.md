@@ -74,6 +74,7 @@ model_created = xlora.add_xlora_to_model(
     model=model,
     xlora_config=xlora.xLoRAConfig(
         config.hidden_size,
+        base_model_id="mistralai/Mistral-7B-Instruct-v0.1",
         xlora_depth=8,
         device=torch.device("cuda"),
         adapters={
@@ -118,18 +119,12 @@ model_created = xlora.from_pretrained(
 import torch
 from xlora.xlora_utils import load_model  # type: ignore
 
-XLoRA_model_name = "XLoRA/checkpoint-XYZ/"
+XLoRA_model_name = "myuser/repo"
 
 model_loaded, tokenizer = load_model(
-    model_name="HuggingFaceH4/zephyr-7b-beta",
+    model_name=XLoRA_model_name,
     device="cuda:0",
     dtype=torch.bfloat16,
-    xlora_path=XLoRA_model_name,
-    adapters={
-        "adapter_1": "./path/to/the/checkpoint/",
-        "adapter_2": "./path/to/the/checkpoint/",
-        "adapter_n": "./path/to/the/checkpoint/",
-    },
 )
 ```
 
@@ -283,7 +278,7 @@ Args:
 ### Utility API
 - `xlora.xlora_utils.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
-- `xlora.xlora_utils.load_model(model_name: str, fine_tune_model_name: str, device: str, dtype: torch.dtype, adapters: Optional[Dict[str, str]] = None, use_flash_attention_2: bool = False, load_xlora: bool = False, verbose: bool = False, use_cache: bool = False, hf_hub_subdir: Optional[str] = None) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
+- `xlora.xlora_utils.load_model(model_name: str, device: str, dtype: torch.dtype, adapters: Optional[Dict[str, str]] = None, use_flash_attention_2: bool = False, load_xlora: bool = True, verbose: bool = False, hf_hub_subdir: Optional[str] = None) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
   - Convenience function to load a model, converting it to X-LoRA if specified.
 
 ### Model API

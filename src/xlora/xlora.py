@@ -256,7 +256,7 @@ def from_pretrained(
         from_safetensors (`bool`, *optional*, defaults to True):
             Whether to load the classifier weights from a .pt or .safetensors file.
         hf_hub_subdir (`str`, *optional*, defaults to None):
-            If `xlora_path` is a HF model repo ID, specify a subdirectory where the weights may be found.
+            If `load_directory` is a HF model repo ID, specify a subdirectory where the xLoRA config and classifier may be found.
 
     Returns:
         model (`xLoRAModel`):

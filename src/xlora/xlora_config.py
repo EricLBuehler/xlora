@@ -15,6 +15,8 @@ class xLoRAConfig:
     Args:
         hidden_size (`int`):
             Hidden size of the base model.
+        base_model_id (`str`):
+            Base model HF id.
         device (`torch.device`):
             Device for the X-LoRA classifier.
         adapters (`dict`):
@@ -50,6 +52,7 @@ class xLoRAConfig:
     model_type = "xlora"
 
     hidden_size: int
+    base_model_id: str
     device: torch.device
     adapters: Dict[str, str]
     enable_softmax: bool = True

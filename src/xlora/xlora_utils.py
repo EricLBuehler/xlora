@@ -11,6 +11,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
 from transformers.tokenization_utils import PreTrainedTokenizer  # type: ignore
 from transformers.tokenization_utils_fast import PreTrainedTokenizerFast  # type: ignore
 
+from xlora.xlora_config import xLoRAConfig  # type: ignore
+
 from .xlora import from_pretrained, xLoRAModel  # type: ignore
 
 
@@ -37,7 +39,6 @@ def _get_file_path(load_directory: str, name: str, dir: Optional[str]) -> str:
 
 def load_model(
     model_name: str,
-    xlora_path: Optional[str],
     device: str,
     dtype: torch.dtype,
     adapters: Optional[Dict[str, str]] = None,
@@ -52,9 +53,7 @@ def load_model(
 
     Args:
         model_name (`str`):
-            AutoModelForCausalLM pretrained model name or path
-        xlora_path (`str`, *optional*):
-            Directory or HF model repo ID to load the xLoRAClassifier from.
+            Directory or HF model repo ID to load the xLoRA model from.
         device (`str`):
             Device to load the base model and the xLoRA model to.
         dtype (`torch.dtype`):
@@ -71,7 +70,7 @@ def load_model(
         from_safetensors (`bool`, *optional*, defaults to True):
             Whether to load the classifier weights from a .pt or .safetensors file.
         hf_hub_subdir (`str`, *optional*, defaults to None):
-            If `xlora_path` is a HF model repo ID, specify a subdirectory where the weights may be found.
+            If `model_name` is a HF model repo ID, specify a subdirectory where the xLoRA config and classifier may be found.
 
     Returns:
         Tuple whose elements are respectively:
@@ -82,8 +81,16 @@ def load_model(
         tokenizer (`AutoTokenizer`):
             The tokenizer.
     """
+    with open(_get_file_path(model_name, "xlora_config.json", hf_hub_subdir), "r") as f:
+        conf = json.load(f)
+        conf["device"] = torch.device(device)
+
+        if "adapters" not in conf:
+            conf["adapters"] = adapters
+        xlora_config = xLoRAConfig(**conf)
+
     model = AutoModelForCausalLM.from_pretrained(
-        model_name,
+        xlora_config.base_model_id,
         trust_remote_code=True,
         device_map=device,
         torch_dtype=dtype,
@@ -92,7 +99,7 @@ def load_model(
     if hasattr(model.config, "use_cache"):
         model.config.use_cache = False
     tokenizer = AutoTokenizer.from_pretrained(
-        model_name,
+        xlora_config.base_model_id,
         trust_remote_code=True,
         device_map=device,
     )
@@ -100,9 +107,8 @@ def load_model(
     tokenizer.padding_side = "right"
 
     if load_xlora:
-        assert xlora_path is not None
         model = from_pretrained(
-            load_directory=xlora_path,
+            load_directory=model_name,
             from_safetensors=from_safetensors,
             model=model,
             verbose=verbose,
