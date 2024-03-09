@@ -125,6 +125,11 @@ model_loaded, tokenizer = load_model(
     model_name=XLoRA_model_name,
     device="cuda:0",
     dtype=torch.bfloat16,
+    adapters={
+        "adapter_1": "./path/to/the/checkpoint/",
+        "adapter_2": "./path/to/the/checkpoint/",
+        "adapter_n": "./path/to/the/checkpoint/",
+    },
 )
 ```
 
@@ -278,8 +283,8 @@ Args:
 ### Utility API
 - `xlora.xlora_utils.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
   - Load the scalings log, with awareness to the two types.
-- `xlora.xlora_utils.load_model(model_name: str, device: str, dtype: torch.dtype, adapters: Optional[Dict[str, str]] = None, use_flash_attention_2: bool = False, load_xlora: bool = True, verbose: bool = False, hf_hub_subdir: Optional[str] = None) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
-  - Convenience function to load a model, converting it to X-LoRA if specified.
+- `xlora.xlora_utils.load_model(model_name: str, device: str, dtype: torch.dtype, adapters: Dict[str, str], use_flash_attention_2: bool = False, load_xlora: bool = True, verbose: bool = False, hf_hub_subdir: Optional[str] = None) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
+  - Convenience function to load a model with the specified adapters like the X-LoRA config, converting it to X-LoRA if specified.
 
 ### Model API
 #### Scalings

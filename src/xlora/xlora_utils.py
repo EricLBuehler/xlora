@@ -41,7 +41,7 @@ def load_model(
     model_name: str,
     device: str,
     dtype: torch.dtype,
-    adapters: Optional[Dict[str, str]] = None,
+    adapters: Dict[str, str],
     use_flash_attention_2: bool = False,
     load_xlora: bool = True,
     verbose: bool = False,
@@ -49,7 +49,7 @@ def load_model(
     hf_hub_subdir: Optional[str] = None,
 ) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]]:
     """
-    Convenience function to load a model, converting it to xLoRA if specified.
+    Convenience function to load a model with the specified adapters like the X-LoRA config, converting it to xLoRA if specified.
 
     Args:
         model_name (`str`):
@@ -58,7 +58,7 @@ def load_model(
             Device to load the base model and the xLoRA model to.
         dtype (`torch.dtype`):
             Datatype for the base model.
-        adapters (`list` or `dict`, *optional*, defaults to None):
+        adapters (`list` or `dict`, defaults to None):
             Specify a mapping of adapter names to the LoRA adapter id, as per PeftModel.load_adapter. *They will be automatically loaded*, to use as LoRA experts.
             Specify the list if the adapters were trainable. Specify this parameter to override use of the trained adapters.
         use_flash_attention_2 (`bool`, *optional*, defaults to False):
