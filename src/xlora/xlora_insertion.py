@@ -48,7 +48,6 @@ class xLoRALayer:
         xlora_scalings: Tensor = self.model.internal_xlora_scalings[:, :, self.layer_number, :]  # type: ignore
 
         if self.config.top_k_lora is not None:
-            print(xlora_scalings.shape)
             _, topk_indices = torch.topk(xlora_scalings, k=self.config.top_k_lora, dim=-1)
 
             # Mask the topk to True, the rest to False
