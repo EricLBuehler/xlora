@@ -71,7 +71,11 @@ def load_model(
         config_path = huggingface_hub.hf_hub_download(model_name, xlora_config)
 
         # The names of the adapters which must be in folders
-        adapter_names = [name for name in filenames if "adapter_" in name]
+        adapter_names = [
+            file["name"][len(model_name) + 1 :]  # type: ignore
+            for file in s.ls(model_name)
+            if file["type"] == "directory"  # type: ignore
+        ]
         if "adapter_config" in adapter_names:
             raise ValueError("Got adapter_config in the adapter names. That should not be there.")
         adapter_paths = {}
@@ -172,7 +176,7 @@ def load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]:
         maxindex = -1
 
         if verbose:
-            iterator = iter(tqdm.tqdm(mapping.items()))
+            iterator = iter(tqdm.tqdm(mapping.items()))  # type: ignore
         else:
             iterator = iter(mapping.items())
 
