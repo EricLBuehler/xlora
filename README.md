@@ -125,11 +125,6 @@ model_loaded, tokenizer = load_model(
     model_name=XLoRA_model_name,
     device="cuda:0",
     dtype=torch.bfloat16,
-    adapters={
-        "adapter_1": "./path/to/the/checkpoint/",
-        "adapter_2": "./path/to/the/checkpoint/",
-        "adapter_n": "./path/to/the/checkpoint/",
-    },
 )
 ```
 
