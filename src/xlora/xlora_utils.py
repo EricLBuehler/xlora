@@ -16,6 +16,7 @@ from xlora.xlora_config import xLoRAConfig  # type: ignore
 
 from .xlora import from_pretrained, xLoRAModel  # type: ignore
 
+
 def load_model(
     model_name: str,
     device: str,
