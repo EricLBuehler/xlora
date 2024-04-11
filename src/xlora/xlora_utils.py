@@ -16,16 +16,6 @@ from xlora.xlora_config import xLoRAConfig  # type: ignore
 
 from .xlora import from_pretrained, xLoRAModel  # type: ignore
 
-
-def _get_file_path_single(
-    load_directory: str,
-    name: str,
-) -> str:
-    if os.path.exists(os.path.join(load_directory, name)):
-        return os.path.join(load_directory, name)
-    return
-
-
 def load_model(
     model_name: str,
     device: str,
@@ -70,19 +60,25 @@ def load_model(
     if not os.path.exists(model_name):
         s = HfFileSystem()
         filenames = [file["name"][len(model_name) + 1 :] for file in s.ls(model_name)]  # type: ignore
+
+        # Download classifier, conf and get paths
         xlora_classifier = [
             name for name in filenames if "xlora_classifier.safetensors" in name or "xlora_classifier.pt" in name
         ][0]
         xlora_config = [name for name in filenames if "xlora_config.json" in name][0]
         classifier_path = huggingface_hub.hf_hub_download(model_name, xlora_classifier)
         config_path = huggingface_hub.hf_hub_download(model_name, xlora_config)
+
+        # The names of the adapters which must be in folders
         adapter_names = [name for name in filenames if "adapter_" in name]
         if "adapter_config" in adapter_names:
             raise ValueError("Got adapter_config in the adapter names. That should not be there.")
         adapter_paths = {}
+        # Effective model ID (path)
         new_model_id = config_path.replace("/xlora_config.json", "")
         if adapters is None:
             subfolders = []
+            # Download adapters and confs, taking note of effective subdirs for them and the paths
             for adapter_name in adapter_names:
                 adapter_name_path = os.path.join(model_name, adapter_name)
                 adapter_filename = [
