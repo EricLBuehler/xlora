@@ -7,6 +7,7 @@ import huggingface_hub  # type: ignore
 import numpy
 import torch
 import tqdm  # type: ignore
+from huggingface_hub import HfFileSystem
 from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
 from transformers.tokenization_utils import PreTrainedTokenizer  # type: ignore
 from transformers.tokenization_utils_fast import PreTrainedTokenizerFast  # type: ignore
@@ -22,31 +23,18 @@ def _get_file_path_single(
 ) -> str:
     if os.path.exists(os.path.join(load_directory, name)):
         return os.path.join(load_directory, name)
-    return huggingface_hub.hf_hub_download(load_directory, filename=name)
-
-
-def _get_file_path_dir(load_directory: str, name: str, dir: str) -> str:
-    if os.path.exists(os.path.join(load_directory, dir, name)):
-        return os.path.join(load_directory, dir, name)
-    return huggingface_hub.hf_hub_download(load_directory, filename=name, subfolder=dir)
-
-
-def _get_file_path(load_directory: str, name: str, dir: Optional[str]) -> str:
-    if dir is not None:
-        return _get_file_path_dir(load_directory, name, dir)
-    return _get_file_path_single(load_directory, name)
+    return
 
 
 def load_model(
     model_name: str,
     device: str,
     dtype: torch.dtype,
-    adapters: Dict[str, str],
+    adapters: Optional[Dict[str, str]] = None,
     use_flash_attention_2: bool = False,
     load_xlora: bool = True,
     verbose: bool = False,
     from_safetensors: bool = True,
-    hf_hub_subdir: Optional[str] = None,
 ) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]]:
     """
     Convenience function to load a model with the specified adapters like the X-LoRA config, converting it to xLoRA if specified.
@@ -69,8 +57,6 @@ def load_model(
             Enable verbose loading.
         from_safetensors (`bool`, *optional*, defaults to True):
             Whether to load the classifier weights from a .pt or .safetensors file.
-        hf_hub_subdir (`str`, *optional*, defaults to None):
-            If `model_name` is a HF model repo ID, specify a subdirectory where the xLoRA config and classifier may be found.
 
     Returns:
         Tuple whose elements are respectively:
@@ -81,7 +67,49 @@ def load_model(
         tokenizer (`AutoTokenizer`):
             The tokenizer.
     """
-    with open(_get_file_path(model_name, "xlora_config.json", hf_hub_subdir), "r") as f:
+    if not os.path.exists(model_name):
+        s = HfFileSystem()
+        filenames = [file["name"][len(model_name) + 1 :] for file in s.ls(model_name)]  # type: ignore
+        xlora_classifier = [
+            name for name in filenames if "xlora_classifier.safetensors" in name or "xlora_classifier.pt" in name
+        ][0]
+        xlora_config = [name for name in filenames if "xlora_config.json" in name][0]
+        classifier_path = huggingface_hub.hf_hub_download(model_name, xlora_classifier)
+        config_path = huggingface_hub.hf_hub_download(model_name, xlora_config)
+        adapter_names = [name for name in filenames if "adapter_" in name]
+        if "adapter_config" in adapter_names:
+            raise ValueError("Got adapter_config in the adapter names. That should not be there.")
+        adapter_paths = {}
+        new_model_id = config_path.replace("/xlora_config.json", "")
+        if adapters is None:
+            subfolders = []
+            for adapter_name in adapter_names:
+                adapter_name_path = os.path.join(model_name, adapter_name)
+                adapter_filename = [
+                    name
+                    for name in [file["name"][len(adapter_name_path) + 1 :] for file in s.ls(adapter_name_path)]  # type: ignore
+                    if name.endswith(".safetensors")
+                ][0]
+                huggingface_hub.hf_hub_download(model_name, adapter_filename, subfolder=adapter_name)
+                cfg_filename = [
+                    name
+                    for name in [file["name"][len(adapter_name_path) + 1 :] for file in s.ls(adapter_name_path)]  # type: ignore
+                    if name == "adapter_config.json"
+                ][0]
+                huggingface_hub.hf_hub_download(model_name, cfg_filename, subfolder=adapter_name)
+                subfolders.append(adapter_name)
+                adapter_paths[adapter_name] = os.path.join(model_name, new_model_id)
+        else:
+            subfolders = None
+            adapter_paths = adapters
+    else:
+        adapter_paths = adapters
+        classifier_path = None
+        config_path = None
+        new_model_id = model_name
+        subfolders = None
+
+    with open(config_path if config_path is not None else os.path.join(model_name, "xlora_config.json"), "r") as f:
         conf = json.load(f)
         conf["device"] = torch.device(device)
 
@@ -113,8 +141,10 @@ def load_model(
             model=model,
             verbose=verbose,
             device=device,
-            hf_hub_subdir=hf_hub_subdir,
-            adapters=adapters,
+            adapters=adapter_paths,
+            config_path=config_path,
+            classifier_path=classifier_path,
+            subfolders=subfolders,
         )
         if verbose:
             print("X-LoRA loaded.")
