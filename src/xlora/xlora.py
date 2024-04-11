@@ -1,14 +1,15 @@
 import json
+import os
 from typing import Dict, Optional, Union
 
+import huggingface_hub
 import torch
 import tqdm  # type: ignore
 from peft.peft_model import PeftModel
 from peft.tuners import lora
 from safetensors.torch import load_model  # type: ignore
-from transformers import PreTrainedModel  # type: ignore
+from transformers import PreTrainedModel
 
-from . import xlora_utils  # type: ignore
 from .xlora_classifier import InhibitorFlagPayload, xLoRAClassifier
 from .xlora_config import xLoRAConfig
 from .xlora_insertion import (
@@ -81,6 +82,7 @@ def add_xlora_to_model(
     model: PreTrainedModel,
     xlora_config: xLoRAConfig,
     verbose: bool = False,
+    **kwargs,
 ) -> xLoRAModel:
     """
     This method converts all LoRA adapters to xLoRA layers, and it is one of the intended entrypoints
@@ -101,14 +103,34 @@ def add_xlora_to_model(
 
     use_trainable_adapters = xlora_config.use_trainable_adapters
     if verbose:
-        adapters_items = iter(tqdm.tqdm(xlora_config.adapters.items()))
+        if "subfolders" in kwargs:
+            adapters_items = iter(tqdm.tqdm(zip(xlora_config.adapters.items(), kwargs["subfolders"])))
+        else:
+            adapters_items = iter(tqdm.tqdm(xlora_config.adapters.items()))
     else:
-        adapters_items = iter(xlora_config.adapters.items())
+        if "subfolders" in kwargs:
+            adapters_items = iter(zip(xlora_config.adapters.items(), kwargs["subfolders"]))
+        else:
+            adapters_items = iter(xlora_config.adapters.items())
     first_item = next(adapters_items)
-    model_peft = PeftModel.from_pretrained(model, first_item[1], first_item[0], is_trainable=use_trainable_adapters)
+    if "subfolders" in kwargs:
+        model_peft = PeftModel.from_pretrained(
+            model, first_item[0][1], first_item[0][0], is_trainable=use_trainable_adapters, subfolder=first_item[1]
+        )
+    else:
+        model_peft = PeftModel.from_pretrained(
+            model,
+            first_item[1],
+            first_item[0],  # type: ignore
+            is_trainable=use_trainable_adapters,  # type: ignore
+        )
 
-    for adapter_name, model_id in adapters_items:
-        model_peft.load_adapter(model_id, adapter_name, is_trainable=use_trainable_adapters)
+    if "subfolders" in kwargs:
+        for (adapter_name, model_id), subfolder in adapters_items:
+            model_peft.load_adapter(model_id, adapter_name, is_trainable=use_trainable_adapters, subfolder=subfolder)
+    else:
+        for adapter_name, model_id in adapters_items:
+            model_peft.load_adapter(model_id, adapter_name, is_trainable=use_trainable_adapters)  # type: ignore
 
     model_peft.base_model.set_adapter(list(xlora_config.adapters.keys()))
 
@@ -230,9 +252,11 @@ def from_pretrained(
     model: PreTrainedModel,
     device: str,
     adapters: Optional[Dict[str, str]] = None,
+    classifier_path: Optional[str] = None,
+    config_path: Optional[str] = None,
     verbose: bool = False,
     from_safetensors: bool = True,
-    hf_hub_subdir: Optional[str] = None,
+    **kwargs,
 ) -> xLoRAModel:
     """
     Loads a pretrained classifier and potentially adapters from the specified folder while initializing the model. This is the counterpart to `save_pretrained`.
@@ -243,7 +267,7 @@ def from_pretrained(
 
     Args:
         load_directory (`str`):
-            The directory or HF model repo ID to load the classifier weights from.
+            The directory or HF model repo ID to load the weights from.
         model (`PreTrainedModel`):
             The model to add the LoRA adapters to. It may be modified in place. If applicable, `use_cache` must be False.
         device (`str`):
@@ -255,39 +279,48 @@ def from_pretrained(
             Display tqdm, total swapping count.
         from_safetensors (`bool`, *optional*, defaults to True):
             Whether to load the classifier weights from a .pt or .safetensors file.
-        hf_hub_subdir (`str`, *optional*, defaults to None):
-            If `load_directory` is a HF model repo ID, specify a subdirectory where the xLoRA config and classifier may be found.
 
     Returns:
         model (`xLoRAModel`):
             The new model.
     """
 
-    with open(xlora_utils._get_file_path(load_directory, "xlora_config.json", hf_hub_subdir), "r") as f:
+    if not os.path.exists(load_directory):
+        config_path = huggingface_hub.hf_hub_download(repo_id=load_directory, filename="xlora_config.json")
+        if from_safetensors:
+            classifier_path = huggingface_hub.hf_hub_download(
+                repo_id=load_directory, filename="xlora_classifier.safetensors"
+            )
+        else:
+            classifier_path = huggingface_hub.hf_hub_download(repo_id=load_directory, filename="xlora_classifier.pt")
+
+    with open(config_path if config_path is not None else os.path.join(load_directory, "xlora_config.json"), "r") as f:
         conf = json.load(f)
         conf["device"] = torch.device(device)
 
-        if "adapters" not in conf:
-            conf["adapters"] = adapters
+        conf["adapters"] = adapters
         xlora_config = xLoRAConfig(**conf)
-
     if adapters is None or xlora_config.use_trainable_adapters:
         adapters_real = xlora_config.adapters
     else:
         assert isinstance(adapters, dict)
         adapters_real = adapters
     xlora_config.adapters = adapters_real
-
-    model_peft = add_xlora_to_model(model, xlora_config, verbose)
+    model_peft = add_xlora_to_model(model, xlora_config, verbose, **kwargs)
     classifier: xLoRAClassifier = model_peft.internal_xlora_classifier  # type: ignore
+
     if from_safetensors:
         state_dict = load_model(
             classifier,
-            xlora_utils._get_file_path(load_directory, "xlora_classifier.safetensors", hf_hub_subdir),
+            classifier_path
+            if classifier_path is not None
+            else os.path.join(load_directory, "xlora_classifier.safetensors"),
         )
         classifier.to(device)
     else:
-        state_dict = torch.load(xlora_utils._get_file_path(load_directory, "xlora_classifier.pt", hf_hub_subdir))
+        state_dict = torch.load(
+            classifier_path if classifier_path is not None else os.path.join(load_directory, "xlora_classifier.pt")
+        )
         classifier.load_state_dict(state_dict)  # type: ignore
 
     return model_peft
