@@ -253,12 +253,12 @@ Args:
         Depth of the X-LoRA classifier.
     xlora_size (`int`, *optional*, defaults to 2048):
         Hidden size of the X-LoRA classifier, irrelevant if `xlora_depth=1`.
-    enable_relu_and_dropout (`bool`, *optional*, defaults to `False`):
+    enable_relu_and_dropout (`bool`, *optional*, defaults to `True`):
         Enable ReLU activation and Dropout application of the X-LoRA classifier.
     use_bias (`bool`, *optional*, defaults to `True`):
         Enable bias in X-LoRA classifier.
     xlora_dropout_p (`float`, *optional*, defaults to 0.2):
-        Dropout probability of the X-LoRA classifier, irrelevant if `xlora_depth=1` or `enable_relu_and_dropout=True`.
+        Dropout probability of the X-LoRA classifier, irrelevant if `xlora_depth=1` or `enable_relu_and_dropout=False`.
     stop_token_id (`int`, *optional*):
         The id of the stop token for the input. If this is None, the sequence length is calculated using the attention mask.
     use_trainable_adapters (`bool`, *optional*, defaults to False):
