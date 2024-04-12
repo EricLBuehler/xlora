@@ -85,11 +85,8 @@ class xLoRALinearLayer(xLoRALayer):
         previous_dtype = x.dtype
         xlora_scalings = self.get_maybe_topk_scalings()
 
-        if self.target.disable_adapters:
-            if self.target.merged:
-                self.target.unmerge()
-            result = self.target.base_layer(x, *args, **kwargs)
-        elif self.target.merged:
+        # Ignore if disabled. We want to make sure this is always run.
+        if self.target.merged:
             result = self.target.base_layer(x, *args, **kwargs)
         else:
             result = self.target.base_layer(x, *args, **kwargs)
@@ -128,12 +125,8 @@ class xLoRAEmbeddingLayer(xLoRALayer):
 
         xlora_scalings = self.get_maybe_topk_scalings()
 
-        # TODO: no dtype conversion here, unlike in Linear, is that correct?
-        if self.target.disable_adapters:
-            if self.target.merged:
-                self.target.unmerge()
-            result = self.target.base_layer(x, *args, **kwargs)
-        elif self.target.merged:
+        # Ignore if disabled. We want to make sure this is always run.
+        if self.target.merged:
             result = self.target.base_layer(x, *args, **kwargs)
         else:
             result = self.target.base_layer(x, *args, **kwargs)
@@ -170,11 +163,8 @@ class xLoRAConv2dLayer(xLoRALayer):
         previous_dtype = x.dtype
         xlora_scalings = self.get_maybe_topk_scalings()
 
-        if self.target.disable_adapters:
-            if self.target.merged:
-                self.target.unmerge()
-            result = self.target.base_layer(x, *args, **kwargs)
-        elif self.target.merged:
+        # Ignore if disabled. We want to make sure this is always run.
+        if self.target.merged:
             result = self.target.base_layer(x, *args, **kwargs)
         else:
             result = self.target.base_layer(x, *args, **kwargs)
