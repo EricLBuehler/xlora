@@ -39,6 +39,15 @@ def convert_layers_to_xlora(
     total_swapped = 0
 
     for module in base.modules():
+        if hasattr(lora, "Linear8bitLt"):
+            if isinstance(module, lora.Linear8bitLt):
+                total_swapped += 1
+                # TODO(EricLBuehler)
+        if hasattr(lora, "Linear4bit"):
+            if isinstance(module, lora.Linear4bit):
+                total_swapped += 1
+                # TODO(EricLBuehler)
+        
         if isinstance(module, lora.Linear):
             new_layer: Union[xLoRALinearLayer, xLoRAEmbeddingLayer, xLoRAConv2dLayer] = xLoRALinearLayer(
                 model=base,
