@@ -102,18 +102,19 @@ def add_xlora_to_model(
         assert not model.config.use_cache, "`use_cache` must be False"
 
     use_trainable_adapters = xlora_config.use_trainable_adapters
+    subfolders_in_kwargs = "subfolders" in kwargs and kwargs["subfolders"] is not None
     if verbose:
-        if "subfolders" in kwargs:
+        if subfolders_in_kwargs:
             adapters_items = iter(tqdm.tqdm(zip(xlora_config.adapters.items(), kwargs["subfolders"])))
         else:
             adapters_items = iter(tqdm.tqdm(xlora_config.adapters.items()))
     else:
-        if "subfolders" in kwargs:
+        if subfolders_in_kwargs:
             adapters_items = iter(zip(xlora_config.adapters.items(), kwargs["subfolders"]))
         else:
             adapters_items = iter(xlora_config.adapters.items())
     first_item = next(adapters_items)
-    if "subfolders" in kwargs:
+    if subfolders_in_kwargs:
         model_peft = PeftModel.from_pretrained(
             model, first_item[0][1], first_item[0][0], is_trainable=use_trainable_adapters, subfolder=first_item[1]
         )
@@ -125,7 +126,7 @@ def add_xlora_to_model(
             is_trainable=use_trainable_adapters,  # type: ignore
         )
 
-    if "subfolders" in kwargs:
+    if subfolders_in_kwargs:
         for (adapter_name, model_id), subfolder in adapters_items:
             model_peft.load_adapter(model_id, adapter_name, is_trainable=use_trainable_adapters, subfolder=subfolder)
     else:
