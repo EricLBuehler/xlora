@@ -1,42 +1,41 @@
 # X-LoRA
-Mixture of LoRA Experts: Leverage the power of fine-tuned LoRA experts by employing a mixture of experts, or MoE technique.
+LoRA Uzmanları Karışımı (Mixture of LoRA Experts): Uzmanların karışımı veya MoE tekniğini kullanarak, ince ayar yapılmış (fine-tuned) LoRA uzmanlarının gücünden yararlanın.
 
-X-LoRA works by learning scaling values for LoRA adapters. These learned scalings values are used to
-gate the LoRA experts in a dense fashion. Additionally, all LoRA adapters and the base model are frozen, allowing efficient fine tuning due to a low parameter count.
+X-LoRA, LoRA adaptörleri için ölçekleme değerlerini öğrenerek çalışır. Öğrenilen bu ölçekleme değerleri, LoRA uzmanlarını yoğun (dense) bir biçimde yönetmek (gating) için kullanılır. Ayrıca, tüm LoRA adaptörleri ve temel model dondurulmuştur; bu durum, düşük parametre sayısı sayesinde verimli bir ince ayar (fine-tuning) yapılmasına olanak tanır.
 
-X-LoRA is easily applied to any HuggingFace Transformers model. Please see our weights, [here](https://huggingface.co/lamm-mit/x-lora) and our [paper](https://arxiv.org/abs/2402.07148).
+X-LoRA, herhangi bir HuggingFace Transformers modeline kolayca uygulanabilir. Lütfen ağırlıklarımızı inceleyin, [burdan](https://huggingface.co/lamm-mit/x-lora) ve bizim [dökümantasyon](https://arxiv.org/abs/2402.07148).
 
-### Token-by-token scalings
-![Token-by-token scalings](./res/token_by_token_scalings.gif)
+### Token bazlı ölçeklendirmeler
+![Token bazlı ölçeklendirmeler](./res/token_by_token_scalings.gif)
 
-## Advantages and features
-- Effective: Dense gating of experts allows effective mixing
-- Efficient fine-tuning: low trainable parameter count
-- Hierarchical encapsulated strategy: Re-use existing trained models or model section and re-use them to address complex tasks that cut across experts, following a bio-inspired strategy 
-- Easy-to-use API: `add_xlora_to_model`, broad compatibility 
-- Dynamically mix LoRA adapters: Deep layer-wise combinations of adapters.
+## Avantajlar ve Özellikler
 
-### Architecture
+- Etkili: Uzmanların yoğun (dense) bir şekilde yönlendirilmesi (gating), etkili bir harmanlama/karışım sağlar.
+- Verimli İnce Ayar (Fine-tuning): Düşük eğitilebilir parametre sayısı.
+- Hiyerarşik Kapsülleme Stratejisi: Biyolojiden esinlenen bir strateji izleyerek; mevcut eğitilmiş modelleri veya model bölümlerini yeniden kullanır ve bunları, birden fazla uzmanı ilgilendiren karmaşık görevleri çözmek için kullanır.
+- Kullanımı Kolay API: `add_xlora_to_model` fonksiyonu ve geniş uyumluluk.
+- LoRA Adaptörlerini Dinamik Olarak Karıştırma: Adaptörlerin derinlemesine ve katman bazlı (layer-wise) kombinasyonları.
+
+### Mimari
 <p align="center">
     <img src="./res/general_arch_v5.png" alt="General Architecture" width=75%/>
 </p>
 
-See the [examples](examples) folder for some examples of how to get started with X-LoRA.
+X-LoRA'ya nasıl başlayacağınıza dair bazı örnekler için [örnekler](examples) klasörüne bakın.
 
-## Efficient Inference Support
-[Mistral.rs](https://github.com/EricLBuehler/mistral.rs) is an inference framework which supports X-LoRA! To use it, follow the installation instructions and run the following command to start up an X-LoRA inference platform.
+## Verimli Çıkarım Desteği
+[Mistral.rs](https://github.com/EricLBuehler/mistral.rs) X-LoRA'yı destekleyen bir çıkarım çerçevesidir! Kullanmak için kurulum talimatlarını izleyin ve bir X-LoRA çıkarım platformunu başlatmak üzere aşağıdaki komutu çalıştırın.
 
 `./mistralrs-server --port 1234 x-lora-mistral -o ordering.json`
 
-Base and X-LoRA Huggingface model IDs may be specified through command line switches to use your own models. Please see the Github page for further details.
+Kendi modellerinizi kullanmak için Temel ve X-LoRA Huggingface model kimlikleri (ID'leri), komut satırı anahtarları aracılığıyla belirtilebilir. Daha fazla ayrıntı için lütfen Github sayfasına bakınız.
 
-## Installation
-Pending a pip release, run the following command to install X-LoRA.
-
+## Kurulum
+Pip sürümü yayınlanana kadar, X-LoRA'yı yüklemek için aşağıdaki komutu çalıştırın.
 `pip install git+https://github.com/EricLBuehler/xlora.git`
 
 ## Examples
-Excerpt from [this](./examples/simple.ipynb) example.
+Örnekler [bu](./examples/simple.ipynb) örnekten alıntı.
 
 - [Converting a model](README.md#converting-a-model)
 - [Loading a trained X-LoRA model from scratch](README.md#loading-a-trained-x-lora-model-from-scratch)
@@ -48,7 +47,7 @@ Excerpt from [this](./examples/simple.ipynb) example.
 - [Setting and getting the global LoRA weight](README.md#setting-and-getting-the-global-lora-weight)
 - [Setting and getting the top-k lora value](README.md#setting-and-getting-the-top-k-lora-value)
 
-### Converting a model
+### Model Dönüştürmek
 ```python
 import torch
 import xlora
@@ -86,7 +85,7 @@ model_created = xlora.add_xlora_to_model(
     verbose=True,
 )
 ```
-### Loading a trained X-LoRA model from scratch
+### Eğitilmiş bir X-LoRA modelini sıfırdan yükleme
 ```python
 import torch
 import xlora
@@ -114,7 +113,7 @@ model_created = xlora.from_pretrained(
 )
 ```
 
-### Loading a trained X-LoRA model with a convenience function
+### Eğitilmiş bir X-LoRA modelini yardımcı (kolaylaştırıcı) bir fonksiyonla yükleme
 ```python
 import torch
 from xlora.xlora_utils import load_model  # type: ignore
@@ -128,7 +127,7 @@ model_loaded, tokenizer = load_model(
 )
 ```
 
-### Scalings logging
+### Ölçeklemeleri günlüğe kaydetme (Loglama)
 ```python
 # Enable scalings logging and begin a log
 model_created.enable_scalings_logging()
@@ -154,7 +153,7 @@ scalings_pred = model_created.get_latest_scalings()
 loaded_log = xlora.xlora_utils.load_scalings_log("./path/to/output/file", verbose=True)
 ```
 
-### Trainable parameters
+### Eğitilebilir parametreler
 ```python
 model: xLoRAModel = ... # Load the model
 
@@ -163,7 +162,7 @@ num_trainable, num_all_params = model.get_nb_trainable_parameters()
 model.print_trainable_parameters()
 ```
 
-### Setting trainability of adapters dynamically
+### Adaptörlerin eğitilebilirliğini dinamik olarak ayarlamay
 ```python
 model: xLoRAModel = ... # Load the model
 
@@ -174,7 +173,7 @@ model.set_use_trainable_adapters(True)
 model.get_use_trainable_adapters()
 ```
 
-### Setting and resetting the scaling pass value
+### Ölçekleme geçiş değerini ayarlama ve sıfırlama
 ```python
 model: xLoRAModel = ... # Load the model
 
@@ -185,7 +184,7 @@ model.set_scaling_pass_value(0)
 model.set_scaling_pass_value(None)
 ```
 
-### Setting and getting the global LoRA weight
+### Global LoRA ağırlığını ayarlama ve alma (okuma)
 ```python
 model: xLoRAModel = ... # Load the model
 
@@ -196,7 +195,7 @@ model.set_global_scaling_weight(2)
 res = model.get_global_scaling_weight()
 ```
 
-### Setting and getting the top-k lora value
+### Top-k LoRA değerini ayarlama ve alma
 ```python
 # Use the top 2 lora experts
 model_created.set_topk_lora(2)
@@ -206,7 +205,7 @@ res = model_created.get_topk_lora()
 ```
 
 ## API
-The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the "Utility API". Generally the global API is used to create X-LoRA models and the model API is used to interface with the models while the Utility API provides useful utility functions.
+X-LoRA API'si 3 bölümden oluşur: "Global API", "Model API" ve "Utility API".Genellikle Global API, X-LoRA modelleri oluşturmak için kullanılır; Model API, modellerle etkileşim kurmak için kullanılırken, Utility API ise yararlı yardımcı fonksiyonlar sağlar.
 
 - [Global API](README.md#global-api): `xlora.*`
   - `xlora.add_xlora_to_model`
@@ -231,8 +230,8 @@ The X-LoRA API is composed of 3 parts: the "Global API", the "Model API" and the
     - `xLoraModel.set_use_trainable_adapters`
     - `xLoraModel.get_use_trainable_adapters`
 
-### X-LoRA Config
-The X-LoRA Config saves the full configuration of an X-LoRA model.
+### X-LoRA Yapılandırması (Config)
+X-LoRA Yapılandırması, bir X-LoRA modelinin tam yapılandırmasını kaydeder.
 ```python
 Args:
     hidden_size (`int`):
@@ -271,61 +270,63 @@ Args:
 
 ### Global API
 - `xlora.add_xlora_to_model(model: PreTrainedModel, xlora_config: xLoRAConfig, adapters: Dict[str, str], verbose: bool) -> xLoraModel`
-  - Convert a model to an xLoraModel, instantiating the classifier and adapters.
+  - Bir modeli bir xLoraModel'e dönüştürerek sınıflandırıcıyı (classifier) ve adaptörleri örneklendirin (instantiate).
 - `xlora.from_pretrained(load_directory: str, model: PreTrainedModel, adapters: adapters: Optional[Dict[str, str]] = None, verbose: bool, device: str, from_safetensors: bool = True) -> xLoraModel`
-  - Load the X-LoRA classifier and adapters from the specified local path or HuggingFace model ID. This should be called after an X-LoRA classifier has been trained.
+  - X-LoRA sınıflandırıcısını ve adaptörlerini, belirtilen yerel yoldan veya HuggingFace model kimliğinden (ID) yükleyin. Bu işlem, bir X-LoRA sınıflandırıcısı eğitildikten sonra çağrılmalıdır.
 
 ### Utility API
 - `xlora.xlora_utils.load_scalings_log(path: str, verbose: bool = False) -> List[torch.Tensor]`
-  - Load the scalings log, with awareness to the two types.
+  - İki türü dikkate alarak ölçekleme günlüğünü yükleyin.
 - `xlora.xlora_utils.load_model(model_name: str, device: str, dtype: torch.dtype, adapters: Dict[str, str], use_flash_attention_2: bool = False, load_xlora: bool = True, verbose: bool = False) -> Tuple[Union[AutoModelForCausalLM, xLoRAModel], Union[PreTrainedTokenizer, PreTrainedTokenizerFast]`
-  - Convenience function to load a model with the specified adapters like the X-LoRA config, converting it to X-LoRA if specified. `model_name` can be a HuggingFace model ID, and it will automatically download all necessary weights.
+  - X-LoRA yapılandırmasındaki gibi belirtilen adaptörlerle bir modeli yüklemek ve eğer belirtilirse onu X-LoRA'ya dönüştürmek için kullanılan yardımcı fonksiyon. model_name bir HuggingFace model kimliği (ID) olabilir; bu durumda gerekli tüm ağırlıklar otomatik olarak indirilecektir.
 
 ### Model API
 #### Scalings
 - `xLoraModel.disable_scalings_logging()`
-  - Disable scalings logging, without clearing the log.
+  - Ölçekleme günlüğe kaydetmeyi (scalings logging) durdurun, ancak günlüğü temizlemeyin.
 - `xLoraModel.clear_scalings_log()`
-  - Clear the scalings log.
+  - Ölçekleme günlüğünü temizle.
 - `xLoraModel.enable_scalings_logging()`
-  - Enable scalings logging. Each time a forward pass occurs, the predicted scalings will be logged.
+  - Ölçekleme günlüğe kaydetmeyi (scalings logging) etkinleştirin. Her bir ileri geçiş (forward pass) gerçekleştiğinde, tahmin edilen ölçeklemeler günlüğe kaydedilecektir.
 - `xLoraModel.flush_log_scalings(path: str)`
-  - Write the scalings log (a tensor of shape (num_logged, batch_size, seq_len, n_layers, n_classes)) to the specified path.
-    If the tensor cannot be constructed, multiple files are written containing tensors of shape
-    (num_logged, batch_size, seq_len, n_layers, n_classes) such that each file contains one sequence length. Additionally a JSON
-    file is outputted containing the mapping from each sequence log file to the index of the contained tensor so that one may reconstruct
-    the log order.
-    The file specified should not contain an extension.
+  - Ölçekleme günlüğünü ((num_logged, batch_size, seq_len, n_layers, n_classes) boyutunda bir tensör olarak) belirtilen yola kaydedin.
+
+Eğer tensör oluşturulamazsa, her biri bir dizi uzunluğunu (sequence length) içerecek şekilde, (num_logged, batch_size, seq_len, n_layers, n_classes) boyutunda tensörler içeren birden fazla dosya yazılır. Ayrıca, günlük sırasının yeniden oluşturulabilmesi için, her bir dizi günlük dosyasını içerdiği tensörün indeksine eşleyen bir JSON dosyası çıktı olarak verilir.
+
+Belirtilen dosya (adı) bir uzantı içermemelidir
 - `xLoraModel.get_scalings_log(self) -> List[Tensor]`
-  - Returns a shallow (only copying the list itself not the tensors) copy of the list containing the scalings log. Editing the list does not change the underlying log.
-    The tensors are of shape (batch_size, seq_len, n_layers, n_classes). The seq_len dim may vary with input dimension.
+  - Ölçekleme günlüğünü içeren listenin sığ bir kopyasını (tensörleri değil, sadece listenin kendisini kopyalayarak) döndürür. Listeyi düzenlemek, altta yatan (asıl) günlüğü değiştirmez.
+Tensörler `(batch_size, seq_len, n_layers, n_classes)` boyutundadır. `seq_len` boyutu, girdi boyutuna göre değişiklik gösterebilir.
 - `xLoraModel.set_scaling_pass_value(self, value: Union[Number, None])`
-  - Manually set the scalings to a specific value during the scaling pass, forever. Call this function with None to enable the default scalings. This is reflected in the config.
+  - Ölçekleme geçişi sırasında ölçeklemeleri kalıcı olarak belirli bir değere manuel olarak ayarlayın. Varsayılan ölçeklemeleri etkinleştirmek için bu fonksiyonu `None` ile çağırın. Bu değişiklik yapılandırmaya (config) yansıtılır.
 - `xLoraModel.get_latest_scalings(self) -> Optional[Tensor]`
-  - Returns the latest scalings prediction, or None if no scalings have been predicted. The tensor is of shape (batch_size, seq_len, n_layers, n_classes).
+  - En son ölçekleme tahminini veya eğer hiç ölçekleme tahmin edilmemişse `None` değerini döndürür. Tensör `(batch_size, seq_len, n_layers, n_classes)` boyutundadır.
 - `xLoraModel.set_global_scaling_weight(self, weight: float)`
-  - Set the global LoRA weight, a scalar to multiply the output of each LoRA adapter by. This is by default 1. This is reflected in the config.
+  - Her bir LoRA adaptörünün çıktısının çarpılacağı bir skaler olan **global LoRA ağırlığını** ayarlayın. Bu değer varsayılan olarak 1'dir ve yapılandırmaya (config) yansıtılır.
 - `xLoraModel.get_global_scaling_weight(self) -> float`
-  - Get the global LoRA weight.
-#### Trainable parameters
+  - Global LoRA ağırlığını alın.
+#### Eğitilebilir parametreler.
 - `xLoraModel.get_nb_trainable_parameters() -> Tuple[int, int]`
-  - Return a tuple `(num_trainable, num_all_params)`
+  - Desteye dön `(num_trainable, num_all_params)`
 - `xLoraModel.print_trainable_parameters()`
-  - Print the trainable and non-trainable parameters for the given model, including with the X-LoRA components.
-#### Setting the trainable adapters
+  - İşte bu teknik cümlenin Türkçe çevirisi:
+
+Verilen model için, X-LoRA bileşenleri dahil olmak üzere eğitilebilir ve eğitilemez parametreleri yazdırın (gösterin).
+
+#### Eğitilebilir Adaptörlerin Ayarlanması
 - `xLoraModel.set_use_trainable_adapters(use_trainable_adapters: bool)`
-  - Set the trainability of the adapters. This is reflected in the config.
+  - Adaptörlerin eğitilebilirliğini ayarlayın. Bu, yapılandırmaya (config) yansıtılır.
 - `xLoraModel.get_use_trainable_adapters(self) -> bool`
-  - Get the trainable or not trainable state of the adapters.
+  - Adaptörlerin eğitilebilir (trainable) veya eğitilemez (not trainable) durumunu alın.
 #### Top-k
 - `xLoraModel.set_topk_lora(self, value: Optional[int])`
-  - Sparsely select the specified top_k LoRA experts instead of the default dense method. Set to None to use dense. This is reflected in the config.
+  - Varsayılan yoğun (dense) yöntem yerine, belirtilen `top_k` LoRA uzmanlarını seyrek (sparse) olarak seçin. Yoğun yöntemi kullanmak için `None` olarak ayarlayın. Bu, yapılandırmaya (config) yansıtılır.
 - `xLoraModel.get_topk_lora(self) -> Optional[int]`
-  - Get the current top_k LoRA experts value.
+  - **Mevcut `top_k` LoRA uzmanları değerini alın.**
 
-## Original paper and citation
+## Orijinal makale ve atıf
 
-Cite this work as:
+Bu çalışmaya şu şekilde atıfta bulunun:
 ```bibtex
 @article{Buehler_XLoRA_2024,
     title   = {X-LoRA: Mixture of Low-Rank Adapter Experts, a Flexible Framework for Large Language Models with Applications in Protein Mechanics and Design},
@@ -338,5 +339,5 @@ Cite this work as:
 }
 ```
 
-## Contributing
-Please run `make style` before submitting a PR.
+## **Katkıda Bulunma**
+Lütfen bir PR (Pull Request) göndermeden önce `make style` komutunu çalıştırın.
